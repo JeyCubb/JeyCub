@@ -1,13 +1,14 @@
 # Discord Small Debt Bot
 
-This repo is now an interactions-only Discord bot built for free hosting:
+This bot is back on the simpler Discord gateway setup:
 
-- Discord outgoing webhooks instead of a 24/7 gateway connection
-- FastAPI serverless app for Vercel
-- Postgres storage for cloud persistence
-- Same slash commands and list formatting as the old bot, as closely as possible
+- no public webhook URL
+- no custom domain
+- no `Interactions Endpoint URL`
+- local SQLite storage again
+- slash commands still work through `discord.py`
 
-## What stayed the same
+## Features
 
 - `/utang`
 - `/list`
@@ -16,42 +17,29 @@ This repo is now an interactions-only Discord bot built for free hosting:
 - `/remove`
 - `/clear`
 - Manila-based date codes like `03-14-26-G3`
-- Person list totals
-- Latest-first boxed tables
-- Paid amounts struck through in the person list
+- person list totals
+- latest-first boxed tables
+- paid amounts struck through in the person list
 - 30-day `1% interest 30 days after` entries
-- Name and date autocomplete
-- Clearing previous bot list messages in the channel before showing the new one
-
-## What changed
-
-- The bot no longer logs into Discord through the gateway.
-- Discord sends interactions to your HTTPS endpoint instead.
-- The database is now Postgres through `DATABASE_URL`.
-- Paging buttons are stateless so they work in serverless deployments.
-- Button rows expire after 30 minutes when clicked again, then the buttons disappear.
-
-## Stack
-
-- Hosting: Vercel free tier
-- Runtime: FastAPI + Python
-- Database: any managed Postgres URL
-- Good free options: Neon or Supabase Postgres
+- name and date autocomplete
+- previous bot list messages get cleared before the next list is shown
+- existing `debts.db` data can keep working
 
 ## Environment variables
 
 ```bash
-DISCORD_APPLICATION_ID=your_application_id_here
-DISCORD_PUBLIC_KEY=your_interactions_public_key_here
 DISCORD_TOKEN=your_bot_token_here
-DATABASE_URL=postgresql://postgres:password@db.example.com:5432/postgres?sslmode=require
+DEBT_DB_PATH=debts.db
+DEBT_DB_SEED_PATH=seed_debts.db
 DISCORD_GUILD_ID=your_server_id_here
 BOT_TIMEZONE=Asia/Manila
-HOST=0.0.0.0
-PORT=8000
 ```
 
-`DISCORD_GUILD_ID` is optional but recommended while you are iterating so command updates appear quickly.
+`DISCORD_GUILD_ID` is optional but recommended while you are iterating so slash-command updates appear right away in one server.
+
+`DEBT_DB_PATH` defaults to `debts.db`.
+
+`DEBT_DB_SEED_PATH` defaults to `seed_debts.db`. If the main database file does not exist yet and the seed file is present, the bot copies the seed file first.
 
 ## Local setup
 
@@ -61,65 +49,32 @@ PORT=8000
 python -m pip install -r requirements.txt
 ```
 
-2. Copy `.env.example` to `.env` and fill in your Discord and Postgres values.
+2. Copy `.env.example` to `.env` and fill in your token.
 
-3. Run the local webhook server:
+3. Run:
 
 ```bash
 python bot.py
 ```
 
-4. Expose it with an HTTPS tunnel like `ngrok` or `cloudflared`.
+4. Invite the bot to your server with permission to:
+   - read messages
+   - read message history
+   - send messages
+   - use slash commands
 
-5. In Discord Developer Portal:
-   - open your application
-   - go to `General Information`
-   - copy the `Public Key` into `.env`
-   - go to `Interactions Endpoint URL`
-   - set it to your public HTTPS URL
-   - Discord will validate the signature automatically
+On startup, the bot syncs slash commands automatically. If `DISCORD_GUILD_ID` is set, it syncs to that guild for faster updates. Otherwise it syncs globally.
 
-6. Register slash commands:
+## Wispbyte setup
 
-```bash
-python scripts/register_commands.py
-```
+This version is meant to be easier on free bot hosting:
 
-If `DISCORD_GUILD_ID` is set, commands register to that guild. Otherwise they register globally.
+1. Put your real token in `.env`
+2. Keep the startup command pointing at `bot.py`
+3. Restart the server
+4. Do not set an `Interactions Endpoint URL` in Discord
 
-## Deploying to Vercel
-
-1. Push this repo to GitHub.
-2. Create a Vercel project from the repo.
-3. Add the environment variables above in Vercel.
-4. Deploy.
-5. Set the Discord `Interactions Endpoint URL` to:
-
-```text
-https://your-project.vercel.app/api
-```
-
-6. Run command registration once:
-
-```bash
-python scripts/register_commands.py
-```
-
-## Migrating the old SQLite data
-
-If you want to keep the current `debts.db`, point `DATABASE_URL` at your cloud Postgres and run:
-
-```bash
-python scripts/migrate_sqlite_to_postgres.py --sqlite-path debts.db
-```
-
-The script reads the local SQLite rows and inserts them into Postgres while preserving:
-
-- names
-- date codes
-- paid state
-- amount scale
-- interest flags
+If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` manually. The repo ignores `*.db`, so GitHub clone alone will not carry your saved debt data.
 
 ## Commands
 
@@ -139,5 +94,5 @@ The script reads the local SQLite rows and inserts them into Postgres while pres
 - `/utang date_time:` accepts examples like `2026-03-14 20:30` or `03-14-26 8:30pm`.
 - `/list` shows everyone latest-first and does not total the all-people view.
 - Person-specific renders still trigger the 30-day interest check.
-- `/clear` removes only unpaid entries and replies ephemerally.
-- The webhook server expects Discord-signed requests, so `DISCORD_PUBLIC_KEY` is required.
+- `/clear` removes only unpaid entries and replies privately.
+- Paging buttons time out after 30 minutes.
