@@ -15,6 +15,14 @@ class Settings:
     port: int
 
 
+@dataclass(frozen=True)
+class GatewaySettings:
+    bot_token: str
+    database_path: str
+    seed_database_path: Optional[str]
+    guild_id: Optional[int]
+
+
 def _get_env(*names: str, default: Optional[str] = None) -> Optional[str]:
     for name in names:
         value = os.getenv(name)
@@ -61,4 +69,26 @@ def get_settings() -> Settings:
         guild_id=_get_env("DISCORD_GUILD_ID"),
         host=_get_env("HOST", default="0.0.0.0") or "0.0.0.0",
         port=port,
+    )
+
+
+@lru_cache(maxsize=1)
+def get_gateway_settings() -> GatewaySettings:
+    bot_token = _get_env("DISCORD_TOKEN", "DISCORD_BOT_TOKEN")
+    if not bot_token:
+        raise RuntimeError("Missing required environment variable: DISCORD_TOKEN")
+
+    guild_text = _get_env("DISCORD_GUILD_ID")
+    guild_id: Optional[int] = None
+    if guild_text:
+        try:
+            guild_id = int(guild_text)
+        except ValueError as exc:
+            raise RuntimeError("DISCORD_GUILD_ID must be an integer.") from exc
+
+    return GatewaySettings(
+        bot_token=bot_token,
+        database_path=_get_env("DEBT_DB_PATH", default="debts.db") or "debts.db",
+        seed_database_path=_get_env("DEBT_DB_SEED_PATH", default="seed_debts.db"),
+        guild_id=guild_id,
     )
