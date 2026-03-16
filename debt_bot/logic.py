@@ -249,6 +249,64 @@ def format_row_amount(row: DebtRow) -> str:
     return format_peso(row["amount"], int(row["amount_scale"] or 0))
 
 
+def escape_markdown_text(text: str) -> str:
+    return re.sub(r"([\\`*_~|])", r"\\\1", text)
+
+
+def build_markdown_row(row: DebtRow, *, include_name: bool) -> str:
+    parts = [format_row_amount(row)]
+    if include_name:
+        parts.append(normalize_spaces(str(row["name"])))
+    parts.append(normalize_spaces(str(row["reason"])))
+
+    details = " - ".join(escape_markdown_text(part) for part in parts if part)
+    if bool(row["is_paid"]):
+        details = f"~~{details}~~"
+    return f"- `{row['entry_code']}` - {details}"
+
+
+def join_markdown_lines(title: str, row_lines: list[str], *, suffix_lines: Optional[list[str]] = None) -> str:
+    lines = [title]
+    lines.extend(row_lines)
+    if suffix_lines:
+        lines.append("")
+        lines.extend(suffix_lines)
+    return "\n".join(lines)
+
+
+def chunk_markdown_rows(title: str, row_lines: list[str]) -> list[str]:
+    if not row_lines:
+        return [f"{title}\nNo utang."]
+
+    reserve = len(title) + 12
+    limit = max(200, DISCORD_MESSAGE_SOFT_LIMIT - reserve)
+    chunks: list[list[str]] = []
+    current_chunk: list[str] = []
+    current_length = 0
+
+    for row_line in row_lines:
+        addition = len(row_line) + 1
+        if current_chunk and current_length + addition > limit:
+            chunks.append(current_chunk)
+            current_chunk = [row_line]
+            current_length = addition
+        else:
+            current_chunk.append(row_line)
+            current_length += addition
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    if len(chunks) == 1:
+        return [join_markdown_lines(title, chunks[0])]
+
+    total_chunks = len(chunks)
+    return [
+        join_markdown_lines(f"{title} ({index}/{total_chunks})", chunk)
+        for index, chunk in enumerate(chunks, start=1)
+    ]
+
+
 def format_row_amount_cell(row: DebtRow, width: int) -> str:
     amount_text = format_row_amount(row)
     return f"{amount_text:<{width}}"
@@ -342,61 +400,30 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
 
 def build_person_list_content(person_name: str, rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
-    boxed_list = build_boxed_list(page_rows)
+    row_lines = [build_markdown_row(row, include_name=False) for row in page_rows]
     total = sum(float(row["amount"]) for row in rows if not bool(row["is_paid"]))
-    lines = [
-        f"Utang list for **{person_name}**",
-        boxed_list,
-        f"Total: **{format_peso(total)}**",
-    ]
+    suffix_lines = [f"Total: **{format_peso(total)}**"]
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
-        lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
-    return "\n".join(lines)
+        suffix_lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
+    return join_markdown_lines(f"Utang list for **{person_name}**", row_lines, suffix_lines=suffix_lines)
 
 
 def build_all_list_content(rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
-    boxed_list = build_boxed_all_list(page_rows)
-    lines = [
-        "All utang",
-        boxed_list,
-    ]
+    row_lines = [build_markdown_row(row, include_name=True) for row in page_rows]
+    suffix_lines: list[str] = []
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
-        lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
-    return "\n".join(lines)
+        suffix_lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
+    return join_markdown_lines("All utang", row_lines, suffix_lines=suffix_lines or None)
 
 
 def build_all_list_snapshot_contents(rows: list[DebtRow]) -> list[str]:
-    if not rows:
-        return [f"{ALL_LIST_PREFIX}\nNo utang."]
-
-    chunks: list[list[DebtRow]] = []
-    current_chunk: list[DebtRow] = []
-
-    for row in rows:
-        candidate_chunk = current_chunk + [row]
-        candidate_content = f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(candidate_chunk)}"
-        if current_chunk and len(candidate_content) > DISCORD_MESSAGE_SOFT_LIMIT:
-            chunks.append(current_chunk)
-            current_chunk = [row]
-        else:
-            current_chunk = candidate_chunk
-
-    if current_chunk:
-        chunks.append(current_chunk)
-
-    if len(chunks) == 1:
-        return [f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(chunks[0])}"]
-
-    total_chunks = len(chunks)
-    return [
-        f"{ALL_LIST_PREFIX} ({index}/{total_chunks})\n{build_boxed_all_list(chunk)}"
-        for index, chunk in enumerate(chunks, start=1)
-    ]
+    row_lines = [build_markdown_row(row, include_name=True) for row in rows]
+    return chunk_markdown_rows(ALL_LIST_PREFIX, row_lines)
 
 
 def build_pager_custom_id(mode: str, page_index: int, issued_at: datetime) -> str:
