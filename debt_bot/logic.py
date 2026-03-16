@@ -206,7 +206,7 @@ def clip_text(text: str, width: int) -> str:
 
 def strikethrough_visible_text(text: str) -> str:
     return "".join(
-        character + "\u0335" if character == PESO_SIGN or character.isalnum() else character
+        character + "\u0335\u2060" if character == PESO_SIGN or character.isalnum() else character
         for character in text
     )
 
