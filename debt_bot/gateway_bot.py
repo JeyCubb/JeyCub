@@ -12,9 +12,7 @@ from debt_bot.config import GatewaySettings
 from debt_bot.logic import (
     BUTTON_TIMEOUT_SECONDS,
     build_all_list_content,
-    build_all_list_snapshot_contents,
     build_person_list_content,
-    is_all_list_message_content,
     is_list_message_content,
     is_person_list_message_content,
     normalize_entry_code,
@@ -181,42 +179,6 @@ def run_bot(settings: GatewaySettings) -> None:
     async def delete_previous_person_lists(channel: Optional[discord.abc.Messageable]) -> None:
         await delete_matching_bot_messages(channel, is_person_list_message_content)
 
-    async def delete_stale_all_lists(
-        channel: Optional[discord.abc.Messageable],
-        keep_ids: set[int],
-    ) -> None:
-        await delete_matching_bot_messages(
-            channel,
-            is_all_list_message_content,
-            keep_ids=keep_ids,
-        )
-
-    async def publish_all_list_snapshot(
-        channel: Optional[discord.abc.Messageable],
-        guild_id: int,
-    ) -> list[discord.Message]:
-        if channel is None or not hasattr(channel, "send"):
-            return []
-
-        rows = store.list_debts(guild_id=guild_id, include_paid=True)
-        messages: list[discord.Message] = []
-        for content in build_all_list_snapshot_contents(rows):
-            try:
-                message = await channel.send(content)
-            except discord.HTTPException:
-                break
-            messages.append(message)
-        return messages
-
-    async def refresh_all_list_snapshot(
-        channel: Optional[discord.abc.Messageable],
-        guild_id: int,
-    ) -> None:
-        sent_messages = await publish_all_list_snapshot(channel, guild_id)
-        if not sent_messages:
-            return
-        await delete_stale_all_lists(channel, {message.id for message in sent_messages})
-
     async def refresh_visible_lists(
         channel: Optional[discord.abc.Messageable],
         guild_id: int,
@@ -229,7 +191,6 @@ def run_bot(settings: GatewaySettings) -> None:
             rendered = await render_person_list(guild_id, person_name, interaction_dt)
 
         await delete_previous_person_lists(channel)
-        await refresh_all_list_snapshot(channel, guild_id)
         if rendered is not None:
             await send_channel_rendered(channel, rendered)
 
