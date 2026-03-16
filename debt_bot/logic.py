@@ -206,7 +206,7 @@ def clip_text(text: str, width: int) -> str:
 
 def strikethrough_visible_text(text: str) -> str:
     return "".join(
-        character + "\u0336" if character == PESO_SIGN or character.isalnum() else character
+        character + "\u0335" if character == PESO_SIGN or character.isalnum() else character
         for character in text
     )
 
@@ -341,12 +341,19 @@ def chunk_markdown_rows(title: str, entry_blocks: list[str]) -> list[str]:
 
 def format_row_amount_cell(row: DebtRow, width: int) -> str:
     amount_text = format_row_amount(row)
-    return f"{amount_text:<{width}}"
+    padded_amount = f"{amount_text:<{width}}"
+    if bool(row["is_paid"]):
+        padding = " " * max(width - len(amount_text), 0)
+        return strikethrough_visible_text(amount_text) + padding
+    return padded_amount
 
 
 def format_row_text_cell(text: str, width: int, *, is_paid: bool) -> str:
     visible_text = text[:width]
-    return f"{visible_text:<{width}}"
+    padding = " " * max(width - len(visible_text), 0)
+    if is_paid:
+        return strikethrough_visible_text(visible_text) + padding
+    return visible_text + padding
 
 
 def build_boxed_list(rows: list[DebtRow]) -> str:
@@ -354,29 +361,22 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     reason_width = 14
-    show_status = any(bool(row["is_paid"]) for row in shown)
-    status_width = len("Status")
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
     separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
-    if show_status:
-        header += f"|{'Status':<{status_width}}"
-        separator += f"+{'-' * status_width}"
     lines = [header, separator]
     full_width = len(header)
 
     for row in shown:
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
         amount_text = format_row_amount_cell(row, amount_width)
-        reason_text = format_row_text_cell(first_reason, reason_width, is_paid=False)
-        line = (
+        reason_text = format_row_text_cell(first_reason, reason_width, is_paid=bool(row["is_paid"]))
+        if bool(row["is_paid"]):
+            extra_reason_lines = [strikethrough_visible_text(line) for line in extra_reason_lines]
+        lines.append(
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
             f"{reason_text}"
         )
-        if show_status:
-            status_text = "PAID" if bool(row["is_paid"]) else ""
-            line += f"|{status_text:<{status_width}}"
-        lines.append(line)
         lines.extend(extra_reason_lines)
 
     return "```text\n" + "\n".join(lines) + "\n```"
@@ -388,8 +388,6 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     name_width = min(8, max(4, max(len(str(row["name"])) for row in shown)))
     reason_width = 10
-    show_status = any(bool(row["is_paid"]) for row in shown)
-    status_width = len("Status")
     header = (
         f"{'Date':<{date_width}}|"
         f"{'Amount':<{amount_width}}|"
@@ -402,9 +400,6 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         f"{'-' * name_width}+"
         f"{'-' * reason_width}"
     )
-    if show_status:
-        header += f"|{'Status':<{status_width}}"
-        separator += f"+{'-' * status_width}"
     lines = [header, separator]
     full_width = len(header)
 
@@ -413,18 +408,16 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         name_text = clip_text(str(row["name"]), name_width)
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
         paid_row = bool(row["is_paid"])
-        name_cell = format_row_text_cell(name_text, name_width, is_paid=False)
-        reason_cell = format_row_text_cell(first_reason, reason_width, is_paid=False)
-        line = (
+        name_cell = format_row_text_cell(name_text, name_width, is_paid=paid_row)
+        reason_cell = format_row_text_cell(first_reason, reason_width, is_paid=paid_row)
+        if paid_row:
+            extra_reason_lines = [strikethrough_visible_text(line) for line in extra_reason_lines]
+        lines.append(
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
             f"{name_cell}|"
             f"{reason_cell}"
         )
-        if show_status:
-            status_text = "PAID" if paid_row else ""
-            line += f"|{status_text:<{status_width}}"
-        lines.append(line)
         lines.extend(extra_reason_lines)
 
     return "```text\n" + "\n".join(lines) + "\n```"
@@ -432,36 +425,61 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
 
 def build_person_list_content(person_name: str, rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
-    entry_blocks = [build_markdown_entry_block(row, include_name=False) for row in page_rows]
+    boxed_list = build_boxed_list(page_rows)
     total = sum(float(row["amount"]) for row in rows if not bool(row["is_paid"]))
-    suffix_lines = [f"Total: **{format_peso(total)}**"]
+    lines = [
+        f"Utang list for **{person_name}**",
+        boxed_list,
+        f"Total: **{format_peso(total)}**",
+    ]
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
-        suffix_lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
-    return join_markdown_lines(
-        f"Utang list for **{person_name}**",
-        entry_blocks,
-        suffix_lines=suffix_lines,
-    )
+        lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
+    return "\n".join(lines)
 
 
 def build_all_list_content(rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
-    entry_blocks = [build_markdown_entry_block(row, include_name=True) for row in page_rows]
-    suffix_lines: list[str] = []
+    boxed_list = build_boxed_all_list(page_rows)
+    lines = [
+        "All utang",
+        boxed_list,
+    ]
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
-        suffix_lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
-    return join_markdown_lines("All utang", entry_blocks, suffix_lines=suffix_lines or None)
+        lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
+    return "\n".join(lines)
 
 
 def build_all_list_snapshot_contents(rows: list[DebtRow]) -> list[str]:
     if not rows:
         return [f"{ALL_LIST_PREFIX}\nNo utang."]
-    entry_blocks = [build_markdown_entry_block(row, include_name=True) for row in rows]
-    return chunk_markdown_rows(ALL_LIST_PREFIX, entry_blocks)
+
+    chunks: list[list[DebtRow]] = []
+    current_chunk: list[DebtRow] = []
+
+    for row in rows:
+        candidate_chunk = current_chunk + [row]
+        candidate_content = f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(candidate_chunk)}"
+        if current_chunk and len(candidate_content) > DISCORD_MESSAGE_SOFT_LIMIT:
+            chunks.append(current_chunk)
+            current_chunk = [row]
+        else:
+            current_chunk = candidate_chunk
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    if len(chunks) == 1:
+        return [f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(chunks[0])}"]
+
+    total_chunks = len(chunks)
+    return [
+        f"{ALL_LIST_PREFIX} ({index}/{total_chunks})\n{build_boxed_all_list(chunk)}"
+        for index, chunk in enumerate(chunks, start=1)
+    ]
 
 
 def build_pager_custom_id(mode: str, page_index: int, issued_at: datetime) -> str:
