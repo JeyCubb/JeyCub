@@ -1,6 +1,5 @@
 import os
 import re
-import textwrap
 from datetime import date, datetime, timedelta, timezone, tzinfo
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Mapping, Optional
@@ -227,13 +226,10 @@ def slice_page(rows: list[DebtRow], page_index: int) -> list[DebtRow]:
 
 
 def wrap_cell(text: str, width: int) -> list[str]:
-    wrapped = textwrap.wrap(
-        normalize_spaces(text),
-        width=width,
-        break_long_words=True,
-        break_on_hyphens=False,
-    )
-    return wrapped or [""]
+    normalized = normalize_spaces(text)
+    if not normalized:
+        return [""]
+    return [normalized[index : index + width] for index in range(0, len(normalized), width)]
 
 
 def split_reason_lines(reason: str, first_width: int, full_width: int) -> tuple[str, list[str]]:
