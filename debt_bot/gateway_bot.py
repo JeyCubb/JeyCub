@@ -401,6 +401,7 @@ def run_bot(settings: GatewaySettings) -> None:
             await clear_deferred_response(interaction)
             return
 
+        await delete_previous_person_lists(interaction.channel)
         await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
         await clear_deferred_response(interaction)
 
