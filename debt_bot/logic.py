@@ -251,18 +251,12 @@ def format_row_amount(row: DebtRow) -> str:
 
 def format_row_amount_cell(row: DebtRow, width: int) -> str:
     amount_text = format_row_amount(row)
-    padded_amount = f"{amount_text:<{width}}"
-    if bool(row["is_paid"]):
-        return strikethrough_all_text(padded_amount)
-    return padded_amount
+    return f"{amount_text:<{width}}"
 
 
 def format_row_text_cell(text: str, width: int, *, is_paid: bool) -> str:
     visible_text = text[:width]
-    padded_text = f"{visible_text:<{width}}"
-    if is_paid:
-        return strikethrough_all_text(padded_text)
-    return padded_text
+    return f"{visible_text:<{width}}"
 
 
 def build_boxed_list(rows: list[DebtRow]) -> str:
@@ -270,22 +264,29 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     reason_width = 14
+    show_status = any(bool(row["is_paid"]) for row in shown)
+    status_width = len("Status")
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
     separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
+    if show_status:
+        header += f"|{'Status':<{status_width}}"
+        separator += f"+{'-' * status_width}"
     lines = [header, separator]
     full_width = len(header)
 
     for row in shown:
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
         amount_text = format_row_amount_cell(row, amount_width)
-        reason_text = format_row_text_cell(first_reason, reason_width, is_paid=bool(row["is_paid"]))
-        if bool(row["is_paid"]):
-            extra_reason_lines = [strikethrough_all_text(line) for line in extra_reason_lines]
-        lines.append(
+        reason_text = format_row_text_cell(first_reason, reason_width, is_paid=False)
+        line = (
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
             f"{reason_text}"
         )
+        if show_status:
+            status_text = "PAID" if bool(row["is_paid"]) else ""
+            line += f"|{status_text:<{status_width}}"
+        lines.append(line)
         lines.extend(extra_reason_lines)
 
     return "```text\n" + "\n".join(lines) + "\n```"
@@ -297,6 +298,8 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     name_width = min(8, max(4, max(len(str(row["name"])) for row in shown)))
     reason_width = 10
+    show_status = any(bool(row["is_paid"]) for row in shown)
+    status_width = len("Status")
     header = (
         f"{'Date':<{date_width}}|"
         f"{'Amount':<{amount_width}}|"
@@ -309,6 +312,9 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         f"{'-' * name_width}+"
         f"{'-' * reason_width}"
     )
+    if show_status:
+        header += f"|{'Status':<{status_width}}"
+        separator += f"+{'-' * status_width}"
     lines = [header, separator]
     full_width = len(header)
 
@@ -317,16 +323,18 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         name_text = clip_text(str(row["name"]), name_width)
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
         paid_row = bool(row["is_paid"])
-        name_cell = format_row_text_cell(name_text, name_width, is_paid=paid_row)
-        reason_cell = format_row_text_cell(first_reason, reason_width, is_paid=paid_row)
-        if paid_row:
-            extra_reason_lines = [strikethrough_all_text(line) for line in extra_reason_lines]
-        lines.append(
+        name_cell = format_row_text_cell(name_text, name_width, is_paid=False)
+        reason_cell = format_row_text_cell(first_reason, reason_width, is_paid=False)
+        line = (
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
             f"{name_cell}|"
             f"{reason_cell}"
         )
+        if show_status:
+            status_text = "PAID" if paid_row else ""
+            line += f"|{status_text:<{status_width}}"
+        lines.append(line)
         lines.extend(extra_reason_lines)
 
     return "```text\n" + "\n".join(lines) + "\n```"
