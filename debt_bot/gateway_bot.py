@@ -217,6 +217,22 @@ def run_bot(settings: GatewaySettings) -> None:
             return
         await delete_stale_all_lists(channel, {message.id for message in sent_messages})
 
+    async def refresh_visible_lists(
+        channel: Optional[discord.abc.Messageable],
+        guild_id: int,
+        *,
+        person_name: Optional[str] = None,
+        interaction_dt: Optional[datetime] = None,
+    ) -> None:
+        rendered: Optional[RenderedList] = None
+        if person_name and interaction_dt is not None:
+            rendered = await render_person_list(guild_id, person_name, interaction_dt)
+
+        await delete_previous_person_lists(channel)
+        await refresh_all_list_snapshot(channel, guild_id)
+        if rendered is not None:
+            await send_channel_rendered(channel, rendered)
+
     async def send_channel_rendered(
         channel: Optional[discord.abc.Messageable],
         rendered: RenderedList,
@@ -368,10 +384,12 @@ def run_bot(settings: GatewaySettings) -> None:
             reason=clean_reason,
             created_by=interaction.user.id,
         )
-        await delete_previous_person_lists(interaction.channel)
-        rendered = await render_person_list(interaction.guild_id, clean_name, to_bot_timezone(interaction.created_at))
-        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-        await send_channel_rendered(interaction.channel, rendered)
+        await refresh_visible_lists(
+            interaction.channel,
+            interaction.guild_id,
+            person_name=clean_name,
+            interaction_dt=to_bot_timezone(interaction.created_at),
+        )
         await clear_deferred_response(interaction)
 
     @utang.autocomplete("name")
@@ -394,15 +412,16 @@ def run_bot(settings: GatewaySettings) -> None:
         await interaction.response.defer(thinking=True)
         interaction_dt = to_bot_timezone(interaction.created_at)
         if name and normalize_spaces(name):
-            await delete_previous_person_lists(interaction.channel)
-            rendered = await render_person_list(interaction.guild_id, name, interaction_dt)
-            await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-            await send_channel_rendered(interaction.channel, rendered)
+            await refresh_visible_lists(
+                interaction.channel,
+                interaction.guild_id,
+                person_name=name,
+                interaction_dt=interaction_dt,
+            )
             await clear_deferred_response(interaction)
             return
 
-        await delete_previous_person_lists(interaction.channel)
-        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
+        await refresh_visible_lists(interaction.channel, interaction.guild_id)
         await clear_deferred_response(interaction)
 
     @list_command.autocomplete("name")
@@ -429,8 +448,7 @@ def run_bot(settings: GatewaySettings) -> None:
 
         await interaction.response.defer(ephemeral=True, thinking=True)
         cleared = store.clear_debts(interaction.guild_id, display_name)
-        await delete_previous_person_lists(interaction.channel)
-        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
+        await refresh_visible_lists(interaction.channel, interaction.guild_id)
         message = f"Cleared **{display_name}**." if cleared else f"No unpaid entries for **{display_name}**."
         await interaction.edit_original_response(content=message, view=None)
 
@@ -464,20 +482,23 @@ def run_bot(settings: GatewaySettings) -> None:
             await interaction.response.send_message("Date must look like `03-14-26-G3`.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         updated = updater(interaction.guild_id, display_name, entry_code)
         if not updated:
+            await refresh_visible_lists(interaction.channel, interaction.guild_id)
             await interaction.edit_original_response(
                 content=missing_message.format(name=display_name, entry_code=entry_code),
                 view=None,
             )
             return
 
-        await delete_previous_person_lists(interaction.channel)
-        rendered = await render_person_list(interaction.guild_id, display_name, to_bot_timezone(interaction.created_at))
-        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-        await send_channel_rendered(interaction.channel, rendered)
-        await clear_deferred_response(interaction)
+        await refresh_visible_lists(
+            interaction.channel,
+            interaction.guild_id,
+            person_name=display_name,
+            interaction_dt=to_bot_timezone(interaction.created_at),
+        )
+        await interaction.edit_original_response(content="Updated.", view=None)
 
     @bot.tree.command(name="remove", description="Remove one utang entry by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
