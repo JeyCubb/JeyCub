@@ -339,7 +339,7 @@ def format_row_amount_cell(row: DebtRow, width: int) -> str:
     padded_amount = f"{amount_text:<{width}}"
     if bool(row["is_paid"]):
         padding = " " * max(width - len(amount_text) - 1, 0)
-        return strikethrough_visible_text(amount_text) + padding + " "
+        return " " + strikethrough_visible_text(amount_text) + padding
     return padded_amount
 
 
@@ -348,7 +348,7 @@ def format_row_text_cell(text: str, width: int, *, is_paid: bool) -> str:
     padding = " " * max(width - len(visible_text), 0)
     if is_paid:
         paid_padding = " " * max(width - len(visible_text) - 1, 0)
-        return strikethrough_visible_text(visible_text) + paid_padding + " "
+        return " " + strikethrough_visible_text(visible_text) + paid_padding
     return visible_text + padding
 
 
@@ -356,8 +356,6 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
-    if any(bool(row["is_paid"]) for row in shown):
-        amount_width += 1
     reason_width = 14
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
     separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
@@ -389,10 +387,7 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     name_width = min(8, max(4, max(len(str(row["name"])) for row in shown)))
-    if any(bool(row["is_paid"]) for row in shown):
-        amount_width += 1
-        name_width += 1
-    reason_width = 10
+    reason_width = 14
     header = (
         f"{'Date':<{date_width}}|"
         f"{'Amount':<{amount_width}}|"
@@ -452,10 +447,7 @@ def build_person_list_content(person_name: str, rows: list[DebtRow], page_index:
 def build_all_list_content(rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
     boxed_list = build_boxed_all_list(page_rows)
-    lines = [
-        "All utang",
-        boxed_list,
-    ]
+    lines = [boxed_list]
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
@@ -465,14 +457,14 @@ def build_all_list_content(rows: list[DebtRow], page_index: int) -> str:
 
 def build_all_list_snapshot_contents(rows: list[DebtRow]) -> list[str]:
     if not rows:
-        return [f"{ALL_LIST_PREFIX}\nNo utang."]
+        return ["No utang."]
 
     chunks: list[list[DebtRow]] = []
     current_chunk: list[DebtRow] = []
 
     for row in rows:
         candidate_chunk = current_chunk + [row]
-        candidate_content = f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(candidate_chunk)}"
+        candidate_content = build_boxed_all_list(candidate_chunk)
         if current_chunk and len(candidate_content) > DISCORD_MESSAGE_SOFT_LIMIT:
             chunks.append(current_chunk)
             current_chunk = [row]
@@ -483,11 +475,11 @@ def build_all_list_snapshot_contents(rows: list[DebtRow]) -> list[str]:
         chunks.append(current_chunk)
 
     if len(chunks) == 1:
-        return [f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(chunks[0])}"]
+        return [build_boxed_all_list(chunks[0])]
 
     total_chunks = len(chunks)
     return [
-        f"{ALL_LIST_PREFIX} ({index}/{total_chunks})\n{build_boxed_all_list(chunk)}"
+        f"Page {index}/{total_chunks}\n{build_boxed_all_list(chunk)}"
         for index, chunk in enumerate(chunks, start=1)
     ]
 

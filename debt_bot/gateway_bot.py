@@ -14,7 +14,6 @@ from debt_bot.logic import (
     build_all_list_content,
     build_person_list_content,
     is_list_message_content,
-    is_person_list_message_content,
     normalize_entry_code,
     normalize_name,
     normalize_spaces,
@@ -176,8 +175,8 @@ def run_bot(settings: GatewaySettings) -> None:
         except discord.HTTPException:
             return
 
-    async def delete_previous_person_lists(channel: Optional[discord.abc.Messageable]) -> None:
-        await delete_matching_bot_messages(channel, is_person_list_message_content)
+    async def delete_previous_list_messages(channel: Optional[discord.abc.Messageable]) -> None:
+        await delete_matching_bot_messages(channel, is_list_message_content)
 
     async def refresh_visible_lists(
         channel: Optional[discord.abc.Messageable],
@@ -190,7 +189,7 @@ def run_bot(settings: GatewaySettings) -> None:
         if person_name and interaction_dt is not None:
             rendered = await render_person_list(guild_id, person_name, interaction_dt)
 
-        await delete_previous_person_lists(channel)
+        await delete_previous_list_messages(channel)
         if rendered is not None:
             await send_channel_rendered(channel, rendered)
 
