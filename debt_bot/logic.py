@@ -21,6 +21,8 @@ DISCORD_EPOCH_MS = 1420070400000
 DISCORD_MESSAGE_SOFT_LIMIT = 1900
 PERSON_LIST_PREFIX = "Utang list for **"
 ALL_LIST_PREFIX = "All utang"
+NBSP = "\u00A0"
+LIST_INDENT = NBSP * 2
 LIST_MESSAGE_PREFIXES = (
     PERSON_LIST_PREFIX,
     ALL_LIST_PREFIX,
@@ -253,20 +255,65 @@ def escape_markdown_text(text: str) -> str:
     return re.sub(r"([\\`*_~|])", r"\\\1", text)
 
 
-def build_markdown_row(row: DebtRow, *, include_name: bool) -> str:
-    parts = [format_row_amount(row)]
+def format_markdown_cell(text: str, width: int, *, is_paid: bool) -> str:
+    visible_text = text[:width]
+    escaped_text = escape_markdown_text(visible_text)
+    if is_paid and escaped_text:
+        escaped_text = f"~~{escaped_text}~~"
+    padding = NBSP * max(width - len(visible_text), 0)
+    return escaped_text + padding
+
+
+def build_markdown_rows(
+    rows: list[DebtRow],
+    *,
+    include_name: bool,
+) -> tuple[str, list[str]]:
+    date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in rows))
+    amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in rows))
+
+    header_parts = [
+        format_markdown_cell("Date", date_width, is_paid=False),
+        format_markdown_cell("Amount", amount_width, is_paid=False),
+    ]
+
     if include_name:
-        parts.append(normalize_spaces(str(row["name"])))
-    parts.append(normalize_spaces(str(row["reason"])))
+        name_width = min(8, max(4, max(len(normalize_spaces(str(row["name"]))) for row in rows)))
+        header_parts.append(format_markdown_cell("Name", name_width, is_paid=False))
+    else:
+        name_width = 0
 
-    details = " - ".join(escape_markdown_text(part) for part in parts if part)
-    if bool(row["is_paid"]):
-        details = f"~~{details}~~"
-    return f"- `{row['entry_code']}` - {details}"
+    header_line = f"{LIST_INDENT}" + f"{NBSP}|{NBSP}".join(header_parts) + f"{NBSP}|{NBSP}Reason"
+
+    row_lines: list[str] = []
+    for row in rows:
+        parts = [
+            format_markdown_cell(str(row["entry_code"]), date_width, is_paid=False),
+            format_markdown_cell(format_row_amount(row), amount_width, is_paid=bool(row["is_paid"])),
+        ]
+
+        if include_name:
+            name_text = clip_text(normalize_spaces(str(row["name"])), name_width)
+            parts.append(format_markdown_cell(name_text, name_width, is_paid=bool(row["is_paid"])))
+
+        reason_text = escape_markdown_text(normalize_spaces(str(row["reason"])))
+        if bool(row["is_paid"]) and reason_text:
+            reason_text = f"~~{reason_text}~~"
+
+        row_lines.append(f"{LIST_INDENT}" + f"{NBSP}|{NBSP}".join(parts) + f"{NBSP}|{NBSP}{reason_text}")
+
+    return header_line, row_lines
 
 
-def join_markdown_lines(title: str, row_lines: list[str], *, suffix_lines: Optional[list[str]] = None) -> str:
+def join_markdown_lines(
+    title: str,
+    header_line: str,
+    row_lines: list[str],
+    *,
+    suffix_lines: Optional[list[str]] = None,
+) -> str:
     lines = [title]
+    lines.append(header_line)
     lines.extend(row_lines)
     if suffix_lines:
         lines.append("")
@@ -274,11 +321,11 @@ def join_markdown_lines(title: str, row_lines: list[str], *, suffix_lines: Optio
     return "\n".join(lines)
 
 
-def chunk_markdown_rows(title: str, row_lines: list[str]) -> list[str]:
+def chunk_markdown_rows(title: str, header_line: str, row_lines: list[str]) -> list[str]:
     if not row_lines:
         return [f"{title}\nNo utang."]
 
-    reserve = len(title) + 12
+    reserve = len(title) + len(header_line) + 12
     limit = max(200, DISCORD_MESSAGE_SOFT_LIMIT - reserve)
     chunks: list[list[str]] = []
     current_chunk: list[str] = []
@@ -298,11 +345,11 @@ def chunk_markdown_rows(title: str, row_lines: list[str]) -> list[str]:
         chunks.append(current_chunk)
 
     if len(chunks) == 1:
-        return [join_markdown_lines(title, chunks[0])]
+        return [join_markdown_lines(title, header_line, chunks[0])]
 
     total_chunks = len(chunks)
     return [
-        join_markdown_lines(f"{title} ({index}/{total_chunks})", chunk)
+        join_markdown_lines(f"{title} ({index}/{total_chunks})", header_line, chunk)
         for index, chunk in enumerate(chunks, start=1)
     ]
 
@@ -400,30 +447,37 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
 
 def build_person_list_content(person_name: str, rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
-    row_lines = [build_markdown_row(row, include_name=False) for row in page_rows]
+    header_line, row_lines = build_markdown_rows(page_rows, include_name=False)
     total = sum(float(row["amount"]) for row in rows if not bool(row["is_paid"]))
     suffix_lines = [f"Total: **{format_peso(total)}**"]
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
         suffix_lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
-    return join_markdown_lines(f"Utang list for **{person_name}**", row_lines, suffix_lines=suffix_lines)
+    return join_markdown_lines(
+        f"Utang list for **{person_name}**",
+        header_line,
+        row_lines,
+        suffix_lines=suffix_lines,
+    )
 
 
 def build_all_list_content(rows: list[DebtRow], page_index: int) -> str:
     page_rows = slice_page(rows, page_index)
-    row_lines = [build_markdown_row(row, include_name=True) for row in page_rows]
+    header_line, row_lines = build_markdown_rows(page_rows, include_name=True)
     suffix_lines: list[str] = []
     if len(rows) > MAX_LIST_ROWS:
         start = page_index * MAX_LIST_ROWS + 1
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
         suffix_lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
-    return join_markdown_lines("All utang", row_lines, suffix_lines=suffix_lines or None)
+    return join_markdown_lines("All utang", header_line, row_lines, suffix_lines=suffix_lines or None)
 
 
 def build_all_list_snapshot_contents(rows: list[DebtRow]) -> list[str]:
-    row_lines = [build_markdown_row(row, include_name=True) for row in rows]
-    return chunk_markdown_rows(ALL_LIST_PREFIX, row_lines)
+    if not rows:
+        return [f"{ALL_LIST_PREFIX}\nNo utang."]
+    header_line, row_lines = build_markdown_rows(rows, include_name=True)
+    return chunk_markdown_rows(ALL_LIST_PREFIX, header_line, row_lines)
 
 
 def build_pager_custom_id(mode: str, page_index: int, issued_at: datetime) -> str:
