@@ -253,7 +253,7 @@ def run_bot(settings: GatewaySettings) -> None:
             await interaction.delete_original_response()
         except discord.HTTPException:
             try:
-                await interaction.edit_original_response(content="Updated.", view=None)
+                await interaction.edit_original_response(content="\u200b", view=None)
             except discord.HTTPException:
                 return
 
@@ -508,7 +508,7 @@ def run_bot(settings: GatewaySettings) -> None:
             person_name=display_name,
             interaction_dt=to_bot_timezone(interaction.created_at),
         )
-        await interaction.edit_original_response(content="Updated.", view=None)
+        await clear_deferred_response(interaction)
 
     @bot.tree.command(name="remove", description="Remove one utang entry by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
