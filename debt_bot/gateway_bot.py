@@ -188,15 +188,18 @@ def run_bot(settings: GatewaySettings) -> None:
         if interaction_dt is None:
             interaction_dt = to_bot_timezone(datetime.now(timezone.utc))
 
-        rendered: Optional[RenderedList] = None
+        rendered_all: Optional[RenderedList] = None
+        rendered_person: Optional[RenderedList] = None
+        if interaction_dt is not None:
+            rendered_all = render_all_list(guild_id, interaction_dt)
         if person_name and interaction_dt is not None:
-            rendered = await render_person_list(guild_id, person_name, interaction_dt)
-        elif interaction_dt is not None:
-            rendered = render_all_list(guild_id, interaction_dt)
+            rendered_person = await render_person_list(guild_id, person_name, interaction_dt)
 
         await delete_previous_list_messages(channel)
-        if rendered is not None:
-            await send_channel_rendered(channel, rendered)
+        if rendered_all is not None:
+            await send_channel_rendered(channel, rendered_all)
+        if rendered_person is not None:
+            await send_channel_rendered(channel, rendered_person)
 
     async def send_channel_rendered(
         channel: Optional[discord.abc.Messageable],
