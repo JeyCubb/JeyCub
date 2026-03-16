@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 import discord
@@ -185,6 +185,9 @@ def run_bot(settings: GatewaySettings) -> None:
         person_name: Optional[str] = None,
         interaction_dt: Optional[datetime] = None,
     ) -> None:
+        if interaction_dt is None:
+            interaction_dt = to_bot_timezone(datetime.now(timezone.utc))
+
         rendered: Optional[RenderedList] = None
         if person_name and interaction_dt is not None:
             rendered = await render_person_list(guild_id, person_name, interaction_dt)
