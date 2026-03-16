@@ -237,16 +237,11 @@ def wrap_cell(text: str, width: int) -> list[str]:
 
 def split_reason_lines(reason: str, first_width: int, full_width: int) -> tuple[str, list[str]]:
     normalized = normalize_spaces(reason)
-    first_lines = wrap_cell(normalized, first_width)
-    first_line = first_lines[0]
+    wrapped_lines = wrap_cell(normalized, first_width)
+    first_line = wrapped_lines[0]
     if not first_line:
         return "", []
-
-    remainder = normalized[len(first_line):].lstrip()
-    if not remainder:
-        return first_line, []
-
-    return first_line, wrap_cell(remainder, full_width)
+    return first_line, wrapped_lines[1:]
 
 
 def format_row_amount(row: DebtRow) -> str:
@@ -370,14 +365,18 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
         amount_text = format_row_amount_cell(row, amount_width)
         reason_text = format_row_text_cell(first_reason, reason_width, is_paid=bool(row["is_paid"]))
-        if bool(row["is_paid"]):
-            extra_reason_lines = [strikethrough_visible_text(line) for line in extra_reason_lines]
         lines.append(
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
             f"{reason_text}"
         )
-        lines.extend(extra_reason_lines)
+        for extra_reason_line in extra_reason_lines:
+            extra_reason_text = format_row_text_cell(extra_reason_line, reason_width, is_paid=bool(row["is_paid"]))
+            lines.append(
+                f"{'':<{date_width}}|"
+                f"{'':<{amount_width}}|"
+                f"{extra_reason_text}"
+            )
 
     return "```text\n" + "\n".join(lines) + "\n```"
 
@@ -410,15 +409,20 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         paid_row = bool(row["is_paid"])
         name_cell = format_row_text_cell(name_text, name_width, is_paid=paid_row)
         reason_cell = format_row_text_cell(first_reason, reason_width, is_paid=paid_row)
-        if paid_row:
-            extra_reason_lines = [strikethrough_visible_text(line) for line in extra_reason_lines]
         lines.append(
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
             f"{name_cell}|"
             f"{reason_cell}"
         )
-        lines.extend(extra_reason_lines)
+        for extra_reason_line in extra_reason_lines:
+            extra_reason_text = format_row_text_cell(extra_reason_line, reason_width, is_paid=paid_row)
+            lines.append(
+                f"{'':<{date_width}}|"
+                f"{'':<{amount_width}}|"
+                f"{'':<{name_width}}|"
+                f"{extra_reason_text}"
+            )
 
     return "```text\n" + "\n".join(lines) + "\n```"
 
