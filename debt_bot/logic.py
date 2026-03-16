@@ -21,6 +21,7 @@ DISCORD_EPOCH_MS = 1420070400000
 DISCORD_MESSAGE_SOFT_LIMIT = 1900
 PERSON_LIST_PREFIX = "Utang list for **"
 ALL_LIST_PREFIX = "All utang"
+ALL_LIST_BOX_PREFIX = "```text\nDate"
 NBSP = "\u00A0"
 LIST_INDENT = NBSP * 2
 REASON_INDENT = LIST_INDENT + NBSP * 2
@@ -338,8 +339,8 @@ def format_row_amount_cell(row: DebtRow, width: int) -> str:
     amount_text = format_row_amount(row)
     padded_amount = f"{amount_text:<{width}}"
     if bool(row["is_paid"]):
-        padding = " " * max(width - len(amount_text) - 1, 0)
-        return " " + strikethrough_visible_text(amount_text) + padding
+        padding = " " * max(width - len(amount_text), 0)
+        return strikethrough_visible_text(amount_text) + padding
     return padded_amount
 
 
@@ -347,8 +348,7 @@ def format_row_text_cell(text: str, width: int, *, is_paid: bool) -> str:
     visible_text = text[:width]
     padding = " " * max(width - len(visible_text), 0)
     if is_paid:
-        paid_padding = " " * max(width - len(visible_text) - 1, 0)
-        return " " + strikethrough_visible_text(visible_text) + paid_padding
+        return strikethrough_visible_text(visible_text) + padding
     return visible_text + padding
 
 
@@ -544,11 +544,11 @@ def extract_person_name_from_list_content(content: str) -> Optional[str]:
 
 
 def is_list_message_content(content: str) -> bool:
-    return any(content.startswith(prefix) for prefix in LIST_MESSAGE_PREFIXES)
+    return any(content.startswith(prefix) for prefix in LIST_MESSAGE_PREFIXES) or is_all_list_message_content(content)
 
 
 def is_all_list_message_content(content: str) -> bool:
-    return content.startswith(ALL_LIST_PREFIX)
+    return content.startswith(ALL_LIST_PREFIX) or content.startswith(ALL_LIST_BOX_PREFIX)
 
 
 def is_person_list_message_content(content: str) -> bool:

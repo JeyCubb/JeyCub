@@ -188,6 +188,8 @@ def run_bot(settings: GatewaySettings) -> None:
         rendered: Optional[RenderedList] = None
         if person_name and interaction_dt is not None:
             rendered = await render_person_list(guild_id, person_name, interaction_dt)
+        elif interaction_dt is not None:
+            rendered = render_all_list(guild_id, interaction_dt)
 
         await delete_previous_list_messages(channel)
         if rendered is not None:
@@ -225,6 +227,16 @@ def run_bot(settings: GatewaySettings) -> None:
             mode="person",
             issued_at=interaction_dt,
             person_name=normalize_name(person_name),
+        )
+        return view.render(interaction_dt)
+
+    def render_all_list(guild_id: int, interaction_dt: datetime) -> RenderedList:
+        view = ListPagerView(
+            store=store,
+            actor_id_getter=actor_id,
+            guild_id=guild_id,
+            mode="all",
+            issued_at=interaction_dt,
         )
         return view.render(interaction_dt)
 
