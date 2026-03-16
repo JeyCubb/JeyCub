@@ -12,8 +12,11 @@ from debt_bot.config import GatewaySettings
 from debt_bot.logic import (
     BUTTON_TIMEOUT_SECONDS,
     build_all_list_content,
+    build_all_list_snapshot_contents,
     build_person_list_content,
+    is_all_list_message_content,
     is_list_message_content,
+    is_person_list_message_content,
     normalize_entry_code,
     normalize_name,
     normalize_spaces,
@@ -150,15 +153,23 @@ def run_bot(settings: GatewaySettings) -> None:
         user = bot.user
         return int(user.id) if user else 0
 
-    async def clear_previous_lists(channel: Optional[discord.abc.Messageable]) -> None:
+    async def delete_matching_bot_messages(
+        channel: Optional[discord.abc.Messageable],
+        predicate: Callable[[str], bool],
+        *,
+        keep_ids: Optional[set[int]] = None,
+    ) -> None:
         if channel is None or bot.user is None or not hasattr(channel, "history"):
             return
 
+        keep_ids = keep_ids or set()
         try:
             async for message in channel.history(limit=50):
                 if message.author.id != bot.user.id:
                     continue
-                if not is_list_message_content(message.content):
+                if message.id in keep_ids:
+                    continue
+                if not predicate(message.content):
                     continue
                 try:
                     await message.delete()
@@ -167,10 +178,50 @@ def run_bot(settings: GatewaySettings) -> None:
         except discord.HTTPException:
             return
 
-    async def send_list_response(interaction: discord.Interaction, rendered: RenderedList) -> None:
-        message = await interaction.edit_original_response(
+    async def delete_previous_person_lists(channel: Optional[discord.abc.Messageable]) -> None:
+        await delete_matching_bot_messages(channel, is_person_list_message_content)
+
+    async def delete_stale_all_lists(
+        channel: Optional[discord.abc.Messageable],
+        keep_ids: set[int],
+    ) -> None:
+        await delete_matching_bot_messages(
+            channel,
+            is_all_list_message_content,
+            keep_ids=keep_ids,
+        )
+
+    async def publish_all_list_snapshot(
+        channel: Optional[discord.abc.Messageable],
+        guild_id: int,
+    ) -> list[discord.Message]:
+        if channel is None or not hasattr(channel, "send"):
+            return []
+
+        rows = store.list_debts(guild_id=guild_id, include_paid=True)
+        messages: list[discord.Message] = []
+        for content in build_all_list_snapshot_contents(rows):
+            try:
+                message = await channel.send(content)
+            except discord.HTTPException:
+                break
+            messages.append(message)
+        return messages
+
+    async def refresh_all_list_snapshot(
+        channel: Optional[discord.abc.Messageable],
+        guild_id: int,
+    ) -> None:
+        sent_messages = await publish_all_list_snapshot(channel, guild_id)
+        if not sent_messages:
+            return
+        await delete_stale_all_lists(channel, {message.id for message in sent_messages})
+
+    async def send_followup_rendered(interaction: discord.Interaction, rendered: RenderedList) -> None:
+        message = await interaction.followup.send(
             content=rendered.content,
             view=rendered.view,
+            wait=True,
         )
         if rendered.view is not None:
             rendered.view.message = message
@@ -183,16 +234,6 @@ def run_bot(settings: GatewaySettings) -> None:
             mode="person",
             issued_at=interaction_dt,
             person_name=normalize_name(person_name),
-        )
-        return view.render(interaction_dt)
-
-    async def render_all_list(guild_id: int, interaction_dt: datetime) -> RenderedList:
-        view = ListPagerView(
-            store=store,
-            actor_id_getter=actor_id,
-            guild_id=guild_id,
-            mode="all",
-            issued_at=interaction_dt,
         )
         return view.render(interaction_dt)
 
@@ -312,9 +353,10 @@ def run_bot(settings: GatewaySettings) -> None:
             reason=clean_reason,
             created_by=interaction.user.id,
         )
-        await clear_previous_lists(interaction.channel)
+        await delete_previous_person_lists(interaction.channel)
         rendered = await render_person_list(interaction.guild_id, clean_name, to_bot_timezone(interaction.created_at))
-        await send_list_response(interaction, rendered)
+        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
+        await send_followup_rendered(interaction, rendered)
 
     @utang.autocomplete("name")
     async def utang_name_autocomplete(
@@ -334,13 +376,16 @@ def run_bot(settings: GatewaySettings) -> None:
             return
 
         await interaction.response.defer(thinking=True)
-        await clear_previous_lists(interaction.channel)
         interaction_dt = to_bot_timezone(interaction.created_at)
         if name and normalize_spaces(name):
+            await delete_previous_person_lists(interaction.channel)
             rendered = await render_person_list(interaction.guild_id, name, interaction_dt)
-        else:
-            rendered = await render_all_list(interaction.guild_id, interaction_dt)
-        await send_list_response(interaction, rendered)
+            await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
+            await send_followup_rendered(interaction, rendered)
+            return
+
+        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
+        await interaction.followup.send("Updated full utang list.", ephemeral=True)
 
     @list_command.autocomplete("name")
     async def list_name_autocomplete(
@@ -366,7 +411,8 @@ def run_bot(settings: GatewaySettings) -> None:
 
         await interaction.response.defer(ephemeral=True, thinking=True)
         cleared = store.clear_debts(interaction.guild_id, display_name)
-        await clear_previous_lists(interaction.channel)
+        await delete_previous_person_lists(interaction.channel)
+        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
         message = f"Cleared **{display_name}**." if cleared else f"No unpaid entries for **{display_name}**."
         await interaction.edit_original_response(content=message, view=None)
 
@@ -409,9 +455,10 @@ def run_bot(settings: GatewaySettings) -> None:
             )
             return
 
-        await clear_previous_lists(interaction.channel)
+        await delete_previous_person_lists(interaction.channel)
         rendered = await render_person_list(interaction.guild_id, display_name, to_bot_timezone(interaction.created_at))
-        await send_list_response(interaction, rendered)
+        await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
+        await send_followup_rendered(interaction, rendered)
 
     @bot.tree.command(name="remove", description="Remove one utang entry by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")

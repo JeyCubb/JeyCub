@@ -18,6 +18,7 @@ DEFAULT_BOT_TIMEZONE = "Asia/Manila"
 DEFAULT_BOT_UTC_OFFSET = timedelta(hours=8)
 BUTTON_TIMEOUT_SECONDS = 1800
 DISCORD_EPOCH_MS = 1420070400000
+DISCORD_MESSAGE_SOFT_LIMIT = 1900
 PERSON_LIST_PREFIX = "Utang list for **"
 ALL_LIST_PREFIX = "All utang"
 LIST_MESSAGE_PREFIXES = (
@@ -256,7 +257,7 @@ def format_row_amount_cell(row: DebtRow, width: int) -> str:
 def build_boxed_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
-    amount_width = max(8, max(len(format_row_amount(row)) for row in shown))
+    amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     reason_width = 14
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
     separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
@@ -279,7 +280,7 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
 def build_boxed_all_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
-    amount_width = max(8, max(len(format_row_amount(row)) for row in shown))
+    amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     name_width = min(8, max(4, max(len(str(row["name"])) for row in shown)))
     reason_width = 10
     header = (
@@ -340,6 +341,35 @@ def build_all_list_content(rows: list[DebtRow], page_index: int) -> str:
         end = min((page_index + 1) * MAX_LIST_ROWS, len(rows))
         lines.append(f"Showing {start}-{end} of {len(rows)} entries.")
     return "\n".join(lines)
+
+
+def build_all_list_snapshot_contents(rows: list[DebtRow]) -> list[str]:
+    if not rows:
+        return [f"{ALL_LIST_PREFIX}\nNo utang."]
+
+    chunks: list[list[DebtRow]] = []
+    current_chunk: list[DebtRow] = []
+
+    for row in rows:
+        candidate_chunk = current_chunk + [row]
+        candidate_content = f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(candidate_chunk)}"
+        if current_chunk and len(candidate_content) > DISCORD_MESSAGE_SOFT_LIMIT:
+            chunks.append(current_chunk)
+            current_chunk = [row]
+        else:
+            current_chunk = candidate_chunk
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    if len(chunks) == 1:
+        return [f"{ALL_LIST_PREFIX}\n{build_boxed_all_list(chunks[0])}"]
+
+    total_chunks = len(chunks)
+    return [
+        f"{ALL_LIST_PREFIX} ({index}/{total_chunks})\n{build_boxed_all_list(chunk)}"
+        for index, chunk in enumerate(chunks, start=1)
+    ]
 
 
 def build_pager_custom_id(mode: str, page_index: int, issued_at: datetime) -> str:
@@ -403,3 +433,11 @@ def extract_person_name_from_list_content(content: str) -> Optional[str]:
 
 def is_list_message_content(content: str) -> bool:
     return any(content.startswith(prefix) for prefix in LIST_MESSAGE_PREFIXES)
+
+
+def is_all_list_message_content(content: str) -> bool:
+    return content.startswith(ALL_LIST_PREFIX)
+
+
+def is_person_list_message_content(content: str) -> bool:
+    return is_list_message_content(content) and not is_all_list_message_content(content)
