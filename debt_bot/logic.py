@@ -356,7 +356,7 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
-    reason_width = 14
+    reason_width = 10
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
     separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
     lines = [header, separator]
@@ -383,7 +383,7 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     name_width = max(len("Name"), max(len(normalize_spaces(str(row["name"]))) for row in shown))
-    reason_width = 14
+    reason_width = 10
     header = (
         f"{'Date':<{date_width}}|"
         f"{'Amount':<{amount_width}}|"
