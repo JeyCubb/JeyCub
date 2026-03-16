@@ -268,16 +268,26 @@ def run_bot(settings: GatewaySettings) -> None:
         )
         return view.render(interaction_dt)
 
-    async def autocomplete_names(
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
-        if interaction.guild_id is None:
-            return []
-        return [
-            app_commands.Choice(name=choice, value=choice)
-            for choice in store.suggest_names(interaction.guild_id, current)
-        ]
+    def autocomplete_names(
+        *,
+        include_paid: bool,
+    ) -> Callable[[discord.Interaction, str], list[app_commands.Choice[str]]]:
+        async def inner(
+            interaction: discord.Interaction,
+            current: str,
+        ) -> list[app_commands.Choice[str]]:
+            if interaction.guild_id is None:
+                return []
+            return [
+                app_commands.Choice(name=choice, value=choice)
+                for choice in store.suggest_names(
+                    interaction.guild_id,
+                    current,
+                    include_paid=include_paid,
+                )
+            ]
+
+        return inner
 
     def autocomplete_dates(
         *,
@@ -397,7 +407,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(interaction, current)
+        return await autocomplete_names(include_paid=True)(interaction, current)
 
     @bot.tree.command(name="list", description="Show one person's utang list, or everyone if left blank")
     @app_commands.describe(name="Name to show")
@@ -429,7 +439,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(interaction, current)
+        return await autocomplete_names(include_paid=True)(interaction, current)
 
     @bot.tree.command(name="clear", description="Clear all unpaid utang for one person")
     @app_commands.describe(name="Name of the person")
@@ -457,7 +467,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(interaction, current)
+        return await autocomplete_names(include_paid=False)(interaction, current)
 
     async def handle_entry_command(
         interaction: discord.Interaction,
@@ -512,7 +522,7 @@ def run_bot(settings: GatewaySettings) -> None:
             name=name,
             date=date,
             updater=store.remove_debt_by_code,
-            missing_message="No unpaid entry found for **{name}** on `{entry_code}`.",
+            missing_message="No entry found for **{name}** on `{entry_code}`.",
         )
 
     @remove.autocomplete("name")
@@ -520,14 +530,14 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(interaction, current)
+        return await autocomplete_names(include_paid=True)(interaction, current)
 
     @remove.autocomplete("date")
     async def remove_date_autocomplete(
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_dates(include_paid=False)(interaction, current)
+        return await autocomplete_dates(include_paid=True)(interaction, current)
 
     @bot.tree.command(name="paid", description="Mark one utang entry as paid by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
@@ -549,7 +559,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(interaction, current)
+        return await autocomplete_names(include_paid=False)(interaction, current)
 
     @paid.autocomplete("date")
     async def paid_date_autocomplete(
@@ -578,7 +588,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(interaction, current)
+        return await autocomplete_names(include_paid=True)(interaction, current)
 
     @unpaid.autocomplete("date")
     async def unpaid_date_autocomplete(

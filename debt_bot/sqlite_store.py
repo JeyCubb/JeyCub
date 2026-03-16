@@ -437,7 +437,7 @@ class SQLiteDebtStore:
             cursor = conn.execute(
                 """
                 DELETE FROM debts
-                WHERE guild_id = ? AND name_key = ? AND entry_code = ? AND is_paid = 0
+                WHERE guild_id = ? AND name_key = ? AND entry_code = ?
                 """,
                 (guild_id, make_name_key(name), normalize_spaces(entry_code)),
             )
@@ -485,8 +485,11 @@ class SQLiteDebtStore:
             conn.commit()
             return cursor.rowcount
 
-    def suggest_names(self, guild_id: int, current: str) -> list[str]:
+    def suggest_names(self, guild_id: int, current: str, include_paid: bool = True) -> list[str]:
         self.ensure_schema()
+        where_clause = "WHERE guild_id = ?"
+        if not include_paid:
+            where_clause += " AND is_paid = 0"
         with self._connect() as conn:
             rows = conn.execute(
                 """
@@ -494,7 +497,7 @@ class SQLiteDebtStore:
                 FROM (
                     SELECT MIN(name) AS name
                     FROM debts
-                    WHERE guild_id = ? AND is_paid = 0
+                    """ + where_clause + """
                     GROUP BY name_key
                 ) names
                 ORDER BY lower(name)

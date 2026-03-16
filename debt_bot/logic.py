@@ -200,9 +200,9 @@ def clip_text(text: str, width: int) -> str:
     return cleaned[: width - 3] + "..."
 
 
-def strikethrough_amount_text(text: str) -> str:
+def strikethrough_visible_text(text: str) -> str:
     return "".join(
-        character + "\u0336" if character.isdigit() or character in ",." else character
+        character + "\u0336" if character == PESO_SIGN or character.isalnum() else character
         for character in text
     )
 
@@ -250,7 +250,7 @@ def format_row_amount_cell(row: DebtRow, width: int) -> str:
     padded_amount = f"{amount_text:<{width}}"
     if bool(row["is_paid"]):
         padding = " " * max(width - len(amount_text), 0)
-        return strikethrough_amount_text(amount_text) + padding
+        return strikethrough_visible_text(amount_text) + padding
     return padded_amount
 
 
@@ -267,6 +267,9 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     for row in shown:
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
         amount_text = format_row_amount_cell(row, amount_width)
+        if bool(row["is_paid"]):
+            first_reason = strikethrough_visible_text(first_reason)
+            extra_reason_lines = [strikethrough_visible_text(line) for line in extra_reason_lines]
         lines.append(
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
@@ -302,6 +305,10 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         amount_text = format_row_amount_cell(row, amount_width)
         name_text = clip_text(str(row["name"]), name_width)
         first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
+        if bool(row["is_paid"]):
+            name_text = strikethrough_visible_text(name_text)
+            first_reason = strikethrough_visible_text(first_reason)
+            extra_reason_lines = [strikethrough_visible_text(line) for line in extra_reason_lines]
         lines.append(
             f"{row['entry_code']:<{date_width}}|"
             f"{amount_text}|"
