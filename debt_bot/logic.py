@@ -356,13 +356,14 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
-    reason_width = 14
+    reason_width = 10
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
-    lines = [header]
-    full_width = len(header)
+    separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
+    lines = [header, separator]
+    reason_indent = " " * (date_width + 1 + amount_width)
 
     for row in shown:
-        first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
+        first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, len(header))
         amount_text = format_row_amount_cell(row, amount_width)
         reason_text = format_row_text_cell(first_reason, reason_width, is_paid=bool(row["is_paid"]))
         lines.append(
@@ -372,11 +373,7 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
         )
         for extra_reason_line in extra_reason_lines:
             extra_reason_text = format_row_text_cell(extra_reason_line, reason_width, is_paid=bool(row["is_paid"]))
-            lines.append(
-                f"{'':<{date_width}}|"
-                f"{'':<{amount_width}}|"
-                f"{extra_reason_text}"
-            )
+            lines.append(f"{reason_indent}|{extra_reason_text}")
 
     return "```text\n" + "\n".join(lines) + "\n```"
 
@@ -385,21 +382,27 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
-    name_width = min(8, max(4, max(len(str(row["name"])) for row in shown)))
-    reason_width = 14
+    name_width = min(6, max(4, max(len(str(row["name"])) for row in shown)))
+    reason_width = 7
     header = (
         f"{'Date':<{date_width}}|"
         f"{'Amount':<{amount_width}}|"
         f"{'Name':<{name_width}}|"
         f"{'Reason':<{reason_width}}"
     )
-    lines = [header]
-    full_width = len(header)
+    separator = (
+        f"{'-' * date_width}+"
+        f"{'-' * amount_width}+"
+        f"{'-' * name_width}+"
+        f"{'-' * reason_width}"
+    )
+    lines = [header, separator]
+    reason_indent = " " * (date_width + 1 + amount_width + 1 + name_width)
 
     for row in shown:
         amount_text = format_row_amount_cell(row, amount_width)
         name_text = clip_text(str(row["name"]), name_width)
-        first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, full_width)
+        first_reason, extra_reason_lines = split_reason_lines(str(row["reason"]), reason_width, len(header))
         paid_row = bool(row["is_paid"])
         name_cell = format_row_text_cell(name_text, name_width, is_paid=paid_row)
         reason_cell = format_row_text_cell(first_reason, reason_width, is_paid=paid_row)
@@ -411,12 +414,7 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
         )
         for extra_reason_line in extra_reason_lines:
             extra_reason_text = format_row_text_cell(extra_reason_line, reason_width, is_paid=paid_row)
-            lines.append(
-                f"{'':<{date_width}}|"
-                f"{'':<{amount_width}}|"
-                f"{'':<{name_width}}|"
-                f"{extra_reason_text}"
-            )
+            lines.append(f"{reason_indent}|{extra_reason_text}")
 
     return "```text\n" + "\n".join(lines) + "\n```"
 
