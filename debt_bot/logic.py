@@ -338,8 +338,8 @@ def format_row_amount_cell(row: DebtRow, width: int) -> str:
     amount_text = format_row_amount(row)
     padded_amount = f"{amount_text:<{width}}"
     if bool(row["is_paid"]):
-        padding = " " * max(width - len(amount_text), 0)
-        return strikethrough_visible_text(amount_text) + padding
+        padding = " " * max(width - len(amount_text) - 1, 0)
+        return strikethrough_visible_text(amount_text) + padding + " "
     return padded_amount
 
 
@@ -347,7 +347,8 @@ def format_row_text_cell(text: str, width: int, *, is_paid: bool) -> str:
     visible_text = text[:width]
     padding = " " * max(width - len(visible_text), 0)
     if is_paid:
-        return strikethrough_visible_text(visible_text) + padding
+        paid_padding = " " * max(width - len(visible_text) - 1, 0)
+        return strikethrough_visible_text(visible_text) + paid_padding + " "
     return visible_text + padding
 
 
@@ -355,6 +356,8 @@ def build_boxed_list(rows: list[DebtRow]) -> str:
     shown = rows
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
+    if any(bool(row["is_paid"]) for row in shown):
+        amount_width += 1
     reason_width = 14
     header = f"{'Date':<{date_width}}|{'Amount':<{amount_width}}|{'Reason':<{reason_width}}"
     separator = f"{'-' * date_width}+{'-' * amount_width}+{'-' * reason_width}"
@@ -386,6 +389,9 @@ def build_boxed_all_list(rows: list[DebtRow]) -> str:
     date_width = max(len("Date"), max(len(str(row["entry_code"])) for row in shown))
     amount_width = max(len("Amount"), max(len(format_row_amount(row)) for row in shown))
     name_width = min(8, max(4, max(len(str(row["name"])) for row in shown)))
+    if any(bool(row["is_paid"]) for row in shown):
+        amount_width += 1
+        name_width += 1
     reason_width = 10
     header = (
         f"{'Date':<{date_width}}|"
