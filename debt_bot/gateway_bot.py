@@ -217,14 +217,29 @@ def run_bot(settings: GatewaySettings) -> None:
             return
         await delete_stale_all_lists(channel, {message.id for message in sent_messages})
 
-    async def send_followup_rendered(interaction: discord.Interaction, rendered: RenderedList) -> None:
-        message = await interaction.followup.send(
+    async def send_channel_rendered(
+        channel: Optional[discord.abc.Messageable],
+        rendered: RenderedList,
+    ) -> Optional[discord.Message]:
+        if channel is None or not hasattr(channel, "send"):
+            return None
+
+        message = await channel.send(
             content=rendered.content,
             view=rendered.view,
-            wait=True,
         )
         if rendered.view is not None:
             rendered.view.message = message
+        return message
+
+    async def clear_deferred_response(interaction: discord.Interaction) -> None:
+        try:
+            await interaction.delete_original_response()
+        except discord.HTTPException:
+            try:
+                await interaction.edit_original_response(content="Updated.", view=None)
+            except discord.HTTPException:
+                return
 
     async def render_person_list(guild_id: int, person_name: str, interaction_dt: datetime) -> RenderedList:
         view = ListPagerView(
@@ -356,7 +371,8 @@ def run_bot(settings: GatewaySettings) -> None:
         await delete_previous_person_lists(interaction.channel)
         rendered = await render_person_list(interaction.guild_id, clean_name, to_bot_timezone(interaction.created_at))
         await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-        await send_followup_rendered(interaction, rendered)
+        await send_channel_rendered(interaction.channel, rendered)
+        await clear_deferred_response(interaction)
 
     @utang.autocomplete("name")
     async def utang_name_autocomplete(
@@ -381,11 +397,12 @@ def run_bot(settings: GatewaySettings) -> None:
             await delete_previous_person_lists(interaction.channel)
             rendered = await render_person_list(interaction.guild_id, name, interaction_dt)
             await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-            await send_followup_rendered(interaction, rendered)
+            await send_channel_rendered(interaction.channel, rendered)
+            await clear_deferred_response(interaction)
             return
 
         await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-        await interaction.followup.send("Updated full utang list.", ephemeral=True)
+        await clear_deferred_response(interaction)
 
     @list_command.autocomplete("name")
     async def list_name_autocomplete(
@@ -458,7 +475,8 @@ def run_bot(settings: GatewaySettings) -> None:
         await delete_previous_person_lists(interaction.channel)
         rendered = await render_person_list(interaction.guild_id, display_name, to_bot_timezone(interaction.created_at))
         await refresh_all_list_snapshot(interaction.channel, interaction.guild_id)
-        await send_followup_rendered(interaction, rendered)
+        await send_channel_rendered(interaction.channel, rendered)
+        await clear_deferred_response(interaction)
 
     @bot.tree.command(name="remove", description="Remove one utang entry by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
