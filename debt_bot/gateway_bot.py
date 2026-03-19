@@ -419,7 +419,7 @@ def run_bot(settings: GatewaySettings) -> None:
     ) -> list[app_commands.Choice[str]]:
         return await autocomplete_names(include_paid=True)(interaction, current)
 
-    @bot.tree.command(name="clear", description="Clear all unpaid utang for one person")
+    @bot.tree.command(name="clear", description="Clear all utang for one person")
     @app_commands.describe(name="Name of the person")
     async def clear(
         interaction: discord.Interaction,
@@ -437,7 +437,7 @@ def run_bot(settings: GatewaySettings) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
         cleared = store.clear_debts(interaction.guild_id, display_name)
         await refresh_visible_lists(interaction.channel, interaction.guild_id)
-        message = f"Cleared **{display_name}**." if cleared else f"No unpaid entries for **{display_name}**."
+        message = f"Cleared **{display_name}**." if cleared else f"No entries for **{display_name}**."
         await interaction.edit_original_response(content=message, view=None)
 
     @clear.autocomplete("name")
@@ -445,7 +445,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=False)(interaction, current)
+        return await autocomplete_names(include_paid=True)(interaction, current)
 
     async def handle_entry_command(
         interaction: discord.Interaction,
@@ -473,7 +473,12 @@ def run_bot(settings: GatewaySettings) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
         updated = updater(interaction.guild_id, display_name, entry_code)
         if not updated:
-            await refresh_visible_lists(interaction.channel, interaction.guild_id)
+            await refresh_visible_lists(
+                interaction.channel,
+                interaction.guild_id,
+                person_name=display_name,
+                interaction_dt=to_bot_timezone(interaction.created_at),
+            )
             await interaction.edit_original_response(
                 content=missing_message.format(name=display_name, entry_code=entry_code),
                 view=None,

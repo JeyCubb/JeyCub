@@ -478,7 +478,7 @@ class SQLiteDebtStore:
             cursor = conn.execute(
                 """
                 DELETE FROM debts
-                WHERE guild_id = ? AND name_key = ? AND is_paid = 0
+                WHERE guild_id = ? AND name_key = ?
                 """,
                 (guild_id, make_name_key(name)),
             )
