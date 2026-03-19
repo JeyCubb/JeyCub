@@ -188,7 +188,7 @@ def build_entry_code(entry_dt: datetime, suffix_digit: int) -> str:
 
 def normalize_entry_code(date_text: str) -> str:
     cleaned = normalize_spaces(date_text)
-    match = re.fullmatch(r"(\d{2})[-/](\d{2})[-/](\d{2})-([A-La-l])(\d+)", cleaned)
+    match = re.fullmatch(r"(\d{2})[-/](\d{2})[-/](\d{2})-([A-Xa-x])(\d+)", cleaned)
     if not match:
         raise ValueError("Date must look like 03-14-26-G3.")
 
