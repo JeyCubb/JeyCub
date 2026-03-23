@@ -12,6 +12,7 @@ This bot is back on the simpler Discord gateway setup:
 
 - `/grade`
 - saved subject profiles like `Thermo`
+- C++-style grade setup with mode, target grade, categories, and exam total
 - required exam score lookup from saved subjects
 - `/utang`
 - `/list`
@@ -82,7 +83,7 @@ If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` m
 ## Commands
 
 - `/grade score:<score> total:<total>`
-- `/grade-save subject:<subject> mode:<prelim|term> class_standing:<percent> exam_total:<total> [previous_term_average] [target_equivalence]`
+- `/grade-save subject:<subject> mode:<prelim|term> target_grade:<percent> exam_total:<total> categories:<30|18/20,19/20;70|45/50> [previous_term_average]`
 - `/grade-show subject:<subject>`
 - `/grade-required subject:<subject>`
 - `/utang name:<name> amount:<amount> reason:<reason> [date_time]`
@@ -95,6 +96,8 @@ If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` m
 
 ## Notes
 
+- `categories:` uses the format `weight|score/total,score/total;weight|score/total`
+- Example: `30|18/20,19/20;70|45/50`
 - Positive amount means they owe you.
 - Negative amount means you owe them.
 - `/utang amount:` accepts `11`, `-1`, `11.5`, or `11.50`.

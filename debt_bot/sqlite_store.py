@@ -86,10 +86,10 @@ class SQLiteDebtStore:
                     subject TEXT NOT NULL,
                     subject_key TEXT NOT NULL,
                     mode TEXT NOT NULL,
-                    class_standing REAL NOT NULL,
+                    target_grade REAL NOT NULL DEFAULT 75,
+                    categories_text TEXT NOT NULL DEFAULT '',
                     exam_total REAL NOT NULL,
                     previous_term_average REAL NOT NULL DEFAULT 0,
-                    target_equivalence TEXT NOT NULL DEFAULT '3.00',
                     updated_by INTEGER NOT NULL DEFAULT 0,
                     updated_at TEXT NOT NULL DEFAULT '2000-01-01 00:00:00'
                 )
@@ -101,6 +101,36 @@ class SQLiteDebtStore:
                 ON grade_subjects(guild_id, subject_key)
                 """
             )
+            grade_columns = {
+                str(row["name"]): row
+                for row in conn.execute("PRAGMA table_info(grade_subjects)").fetchall()
+            }
+            if "target_grade" not in grade_columns:
+                conn.execute(
+                    "ALTER TABLE grade_subjects ADD COLUMN target_grade REAL NOT NULL DEFAULT 75"
+                )
+            if "categories_text" not in grade_columns:
+                conn.execute(
+                    "ALTER TABLE grade_subjects ADD COLUMN categories_text TEXT NOT NULL DEFAULT ''"
+                )
+            if "target_equivalence" in grade_columns:
+                conn.execute(
+                    """
+                    UPDATE grade_subjects
+                    SET target_grade = CASE target_equivalence
+                        WHEN '1.00' THEN 99
+                        WHEN '1.25' THEN 96
+                        WHEN '1.50' THEN 93
+                        WHEN '1.75' THEN 90
+                        WHEN '2.00' THEN 87
+                        WHEN '2.25' THEN 84
+                        WHEN '2.50' THEN 81
+                        WHEN '2.75' THEN 78
+                        ELSE 75
+                    END
+                    WHERE target_grade IS NULL OR target_grade = 75
+                    """
+                )
             conn.commit()
 
         self._schema_ready = True
@@ -621,10 +651,10 @@ class SQLiteDebtStore:
         guild_id: int,
         subject: str,
         mode: str,
-        class_standing: float,
+        target_grade: float,
+        categories_text: str,
         exam_total: float,
         previous_term_average: float,
-        target_equivalence: str,
         updated_by: int,
     ) -> None:
         self.ensure_schema()
@@ -638,10 +668,10 @@ class SQLiteDebtStore:
                     subject,
                     subject_key,
                     mode,
-                    class_standing,
+                    target_grade,
+                    categories_text,
                     exam_total,
                     previous_term_average,
-                    target_equivalence,
                     updated_by,
                     updated_at
                 )
@@ -649,10 +679,10 @@ class SQLiteDebtStore:
                 ON CONFLICT(guild_id, subject_key) DO UPDATE SET
                     subject = excluded.subject,
                     mode = excluded.mode,
-                    class_standing = excluded.class_standing,
+                    target_grade = excluded.target_grade,
+                    categories_text = excluded.categories_text,
                     exam_total = excluded.exam_total,
                     previous_term_average = excluded.previous_term_average,
-                    target_equivalence = excluded.target_equivalence,
                     updated_by = excluded.updated_by,
                     updated_at = excluded.updated_at
                 """,
@@ -661,10 +691,10 @@ class SQLiteDebtStore:
                     display_subject,
                     subject_key,
                     normalize_spaces(mode),
-                    class_standing,
+                    target_grade,
+                    normalize_spaces(categories_text),
                     exam_total,
                     previous_term_average,
-                    normalize_spaces(target_equivalence),
                     updated_by,
                     self._format_created_at(datetime.now(timezone.utc)),
                 ),
@@ -676,8 +706,8 @@ class SQLiteDebtStore:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT subject, mode, class_standing, exam_total, previous_term_average,
-                       target_equivalence, updated_by, updated_at
+                SELECT subject, mode, target_grade, categories_text, exam_total,
+                       previous_term_average, updated_by, updated_at
                 FROM grade_subjects
                 WHERE guild_id = ? AND subject_key = ?
                 LIMIT 1

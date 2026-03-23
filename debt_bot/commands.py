@@ -24,7 +24,7 @@ def build_command_definitions() -> list[dict]:
         },
         {
             "name": "grade-save",
-            "description": "Save a subject profile for later grade calculations",
+            "description": "Save a C++-style subject profile for later grade calculations",
             "options": [
                 {
                     "type": STRING_OPTION,
@@ -41,8 +41,8 @@ def build_command_definitions() -> list[dict]:
                 },
                 {
                     "type": NUMBER_OPTION,
-                    "name": "class_standing",
-                    "description": "Current class standing average percent",
+                    "name": "target_grade",
+                    "description": "Target final grade percent, like 90",
                     "required": True,
                 },
                 {
@@ -52,22 +52,22 @@ def build_command_definitions() -> list[dict]:
                     "required": True,
                 },
                 {
+                    "type": STRING_OPTION,
+                    "name": "categories",
+                    "description": "Categories like 30|18/20,19/20;70|45/50",
+                    "required": True,
+                },
+                {
                     "type": NUMBER_OPTION,
                     "name": "previous_term_average",
                     "description": "Previous term average percent for term mode",
-                    "required": False,
-                },
-                {
-                    "type": STRING_OPTION,
-                    "name": "target_equivalence",
-                    "description": "Target equivalence, like 1.75 or 3.00",
                     "required": False,
                 },
             ],
         },
         {
             "name": "grade-show",
-            "description": "Show a saved subject profile",
+            "description": "Show a saved subject profile and category breakdown",
             "options": [
                 {
                     "type": STRING_OPTION,

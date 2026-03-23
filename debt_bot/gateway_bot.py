@@ -12,9 +12,11 @@ from debt_bot.config import GatewaySettings
 from debt_bot.grade_logic import (
     calculate_percentage,
     compute_final_grade,
+    compute_class_standing_from_categories,
     normalize_mode,
+    parse_categories_input,
     percent_to_equivalence,
-    required_exam_percentage,
+    required_exam_percentage_for_target,
 )
 from debt_bot.logic import (
     BUTTON_TIMEOUT_SECONDS,
@@ -425,19 +427,19 @@ def run_bot(settings: GatewaySettings) -> None:
     @app_commands.describe(
         subject="Subject name, like Thermo",
         mode="Use prelim or term",
-        class_standing="Current class standing average percent",
+        target_grade="Target final grade percent, like 90",
         exam_total="Final exam total score, like 50 or 100",
+        categories="Categories like 30|18/20,19/20;70|45/50",
         previous_term_average="Previous term average percent for term mode",
-        target_equivalence="Target equivalence, like 1.75 or 3.00",
     )
     async def grade_save(
         interaction: discord.Interaction,
         subject: str,
         mode: str,
-        class_standing: float,
+        target_grade: float,
         exam_total: float,
+        categories: str,
         previous_term_average: Optional[float] = None,
-        target_equivalence: str = "3.00",
     ) -> None:
         if interaction.guild_id is None:
             await interaction.response.send_message("This command only works in a server.", ephemeral=True)
@@ -445,12 +447,16 @@ def run_bot(settings: GatewaySettings) -> None:
 
         try:
             normalized_mode = normalize_mode(mode)
+            parsed_categories = parse_categories_input(categories)
         except ValueError as exc:
             await interaction.response.send_message(str(exc), ephemeral=True)
             return
 
         if exam_total <= 0:
             await interaction.response.send_message("Exam total must be greater than 0.", ephemeral=True)
+            return
+        if target_grade <= 0:
+            await interaction.response.send_message("Target grade must be greater than 0.", ephemeral=True)
             return
 
         previous_value = previous_term_average or 0.0
@@ -461,23 +467,25 @@ def run_bot(settings: GatewaySettings) -> None:
             )
             return
 
+        class_standing, total_weight, _ = compute_class_standing_from_categories(parsed_categories)
         store.save_grade_subject(
             guild_id=interaction.guild_id,
             subject=subject,
             mode=normalized_mode,
-            class_standing=class_standing,
+            target_grade=target_grade,
+            categories_text=categories,
             exam_total=exam_total,
             previous_term_average=previous_value,
-            target_equivalence=target_equivalence,
             updated_by=interaction.user.id,
         )
         await interaction.response.send_message(
             f"Saved **{normalize_name(subject)}**.\n"
             f"Mode: {normalized_mode}\n"
+            f"Target Grade: {target_grade:.2f}%\n"
             f"Class Standing: {class_standing:.2f}%\n"
+            f"Total Category Weight: {total_weight:.2f}%\n"
             f"Previous Term Average: {previous_value:.2f}%\n"
-            f"Exam Total: {exam_total:.2f}\n"
-            f"Target Equivalence: {target_equivalence}"
+            f"Exam Total: {exam_total:.2f}"
         )
 
     @grade_save.autocomplete("subject")
@@ -505,14 +513,26 @@ def run_bot(settings: GatewaySettings) -> None:
             )
             return
 
-        await interaction.response.send_message(
-            f"Subject: **{saved['subject']}**\n"
-            f"Mode: {saved['mode']}\n"
-            f"Class Standing: {float(saved['class_standing']):.2f}%\n"
-            f"Previous Term Average: {float(saved['previous_term_average']):.2f}%\n"
-            f"Exam Total: {float(saved['exam_total']):.2f}\n"
-            f"Target Equivalence: {saved['target_equivalence']}"
+        parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        class_standing, total_weight, category_averages = compute_class_standing_from_categories(parsed_categories)
+        lines = [
+            f"Subject: **{saved['subject']}**",
+            f"Mode: {saved['mode']}",
+            f"Target Grade: {float(saved['target_grade']):.2f}%",
+            f"Previous Term Average: {float(saved['previous_term_average']):.2f}%",
+            "",
+        ]
+        for index, (category, average) in enumerate(zip(parsed_categories, category_averages), start=1):
+            lines.append(f"Category {index}: weight {category.weight:.2f}%, average {average:.2f}%")
+        lines.extend(
+            [
+                "",
+                f"Total Category Weight: {total_weight:.2f}%",
+                f"Class Standing: {class_standing:.2f}%",
+                f"Exam Total: {float(saved['exam_total']):.2f}",
+            ]
         )
+        await interaction.response.send_message("\n".join(lines))
 
     @grade_show.autocomplete("subject")
     async def grade_show_subject_autocomplete(
@@ -539,10 +559,12 @@ def run_bot(settings: GatewaySettings) -> None:
             )
             return
 
-        needed_percent = required_exam_percentage(
+        parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        class_standing, total_weight, category_averages = compute_class_standing_from_categories(parsed_categories)
+        needed_percent = required_exam_percentage_for_target(
             mode=str(saved["mode"]),
-            target_equivalence=str(saved["target_equivalence"]),
-            class_standing=float(saved["class_standing"]),
+            target_grade=float(saved["target_grade"]),
+            class_standing=class_standing,
             previous_term_average=float(saved["previous_term_average"]),
         )
         exam_total = float(saved["exam_total"])
@@ -551,29 +573,31 @@ def run_bot(settings: GatewaySettings) -> None:
         if needed_percent <= 0:
             message = (
                 f"Subject: **{saved['subject']}**\n"
-                f"You already meet the target equivalence `{saved['target_equivalence']}` even with 0 on the exam."
+                f"You already meet the target grade `{float(saved['target_grade']):.2f}%` even with 0 on the exam."
             )
         elif needed_percent > 100:
             message = (
                 f"Subject: **{saved['subject']}**\n"
-                f"It is not possible to reach `{saved['target_equivalence']}` even with a perfect exam score."
+                f"It is not possible to reach `{float(saved['target_grade']):.2f}%` even with a perfect exam score."
             )
         else:
             final_percent = compute_final_grade(
                 mode=str(saved["mode"]),
-                class_standing=float(saved["class_standing"]),
+                class_standing=class_standing,
                 exam_percent=needed_percent,
                 previous_term_average=float(saved["previous_term_average"]),
             )
             message = (
                 f"Subject: **{saved['subject']}**\n"
                 f"Mode: {saved['mode']}\n"
-                f"Target Equivalence: {saved['target_equivalence']}\n"
-                f"Class Standing: {float(saved['class_standing']):.2f}%\n"
+                f"Target Grade: {float(saved['target_grade']):.2f}%\n"
                 f"Previous Term Average: {float(saved['previous_term_average']):.2f}%\n"
+                f"Class Standing: {class_standing:.2f}%\n"
+                f"Total Category Weight: {total_weight:.2f}%\n"
                 f"Required Exam Percentage: {needed_percent:.2f}%\n"
                 f"Required Exam Score: {needed_score:.2f} / {exam_total:.2f}\n"
-                f"Projected Final Grade: {final_percent:.2f}%"
+                f"Projected Final Grade: {final_percent:.2f}%\n"
+                f"Projected Equivalence: {percent_to_equivalence(final_percent)}"
             )
 
         await interaction.response.send_message(message)

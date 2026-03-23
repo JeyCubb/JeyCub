@@ -26,9 +26,11 @@ from debt_bot.logic import (
 from debt_bot.grade_logic import (
     calculate_percentage,
     compute_final_grade,
+    compute_class_standing_from_categories,
     normalize_mode,
+    parse_categories_input,
     percent_to_equivalence,
-    required_exam_percentage,
+    required_exam_percentage_for_target,
 )
 from debt_bot.store import DebtStore
 
@@ -291,36 +293,43 @@ class InteractionService:
         options = flatten_options(payload.get("data", {}).get("options") or [])
         subject = str(options.get("subject", ""))
         mode = str(options.get("mode", ""))
-        class_standing = float(options.get("class_standing") or 0)
+        target_grade = float(options.get("target_grade") or 0)
         exam_total = float(options.get("exam_total") or 0)
+        categories = str(options.get("categories") or "")
         previous_term_average = float(options.get("previous_term_average") or 0)
-        target_equivalence = str(options.get("target_equivalence") or "3.00")
 
         try:
             normalized_mode = normalize_mode(mode)
+            parsed_categories = parse_categories_input(categories)
         except ValueError as exc:
             return JSONResponse(build_message_response(str(exc), ephemeral=True))
 
         if exam_total <= 0:
             return JSONResponse(build_message_response("Exam total must be greater than 0.", ephemeral=True))
+        if target_grade <= 0:
+            return JSONResponse(build_message_response("Target grade must be greater than 0.", ephemeral=True))
         if normalized_mode == "term" and previous_term_average <= 0:
             return JSONResponse(
                 build_message_response("Previous term average is required for term mode.", ephemeral=True)
             )
 
+        class_standing, total_weight, _ = compute_class_standing_from_categories(parsed_categories)
         self.store.save_grade_subject(
             guild_id,
             subject,
             normalized_mode,
-            class_standing,
+            target_grade,
+            categories,
             exam_total,
             previous_term_average,
-            target_equivalence,
             user_id,
         )
         return JSONResponse(
             build_message_response(
-                f"Saved **{normalize_name(subject)}** with target `{target_equivalence}`."
+                f"Saved **{normalize_name(subject)}**.\n"
+                f"Target Grade: {target_grade:.2f}%\n"
+                f"Class Standing: {class_standing:.2f}%\n"
+                f"Total Category Weight: {total_weight:.2f}%"
             )
         )
 
@@ -338,14 +347,26 @@ class InteractionService:
                 ephemeral=True,
             )
 
-        return build_message_response(
-            f"Subject: **{saved['subject']}**\n"
-            f"Mode: {saved['mode']}\n"
-            f"Class Standing: {float(saved['class_standing']):.2f}%\n"
-            f"Previous Term Average: {float(saved['previous_term_average']):.2f}%\n"
-            f"Exam Total: {float(saved['exam_total']):.2f}\n"
-            f"Target Equivalence: {saved['target_equivalence']}"
+        parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        class_standing, total_weight, category_averages = compute_class_standing_from_categories(parsed_categories)
+        lines = [
+            f"Subject: **{saved['subject']}**",
+            f"Mode: {saved['mode']}",
+            f"Target Grade: {float(saved['target_grade']):.2f}%",
+            f"Previous Term Average: {float(saved['previous_term_average']):.2f}%",
+            "",
+        ]
+        for index, (category, average) in enumerate(zip(parsed_categories, category_averages), start=1):
+            lines.append(f"Category {index}: weight {category.weight:.2f}%, average {average:.2f}%")
+        lines.extend(
+            [
+                "",
+                f"Total Category Weight: {total_weight:.2f}%",
+                f"Class Standing: {class_standing:.2f}%",
+                f"Exam Total: {float(saved['exam_total']):.2f}",
+            ]
         )
+        return build_message_response("\n".join(lines))
 
     def _handle_grade_required(self, payload: dict[str, Any]) -> dict[str, Any]:
         guild_id = get_guild_id(payload)
@@ -361,10 +382,12 @@ class InteractionService:
                 ephemeral=True,
             )
 
-        needed_percent = required_exam_percentage(
+        parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        class_standing, total_weight, _ = compute_class_standing_from_categories(parsed_categories)
+        needed_percent = required_exam_percentage_for_target(
             mode=str(saved["mode"]),
-            target_equivalence=str(saved["target_equivalence"]),
-            class_standing=float(saved["class_standing"]),
+            target_grade=float(saved["target_grade"]),
+            class_standing=class_standing,
             previous_term_average=float(saved["previous_term_average"]),
         )
         exam_total = float(saved["exam_total"])
@@ -373,27 +396,30 @@ class InteractionService:
         if needed_percent <= 0:
             return build_message_response(
                 f"Subject: **{saved['subject']}**\n"
-                f"You already meet the target equivalence `{saved['target_equivalence']}` even with 0 on the exam."
+                f"You already meet the target grade `{float(saved['target_grade']):.2f}%` even with 0 on the exam."
             )
         if needed_percent > 100:
             return build_message_response(
                 f"Subject: **{saved['subject']}**\n"
-                f"It is not possible to reach `{saved['target_equivalence']}` even with a perfect exam score."
+                f"It is not possible to reach `{float(saved['target_grade']):.2f}%` even with a perfect exam score."
             )
 
         final_percent = compute_final_grade(
             mode=str(saved["mode"]),
-            class_standing=float(saved["class_standing"]),
+            class_standing=class_standing,
             exam_percent=needed_percent,
             previous_term_average=float(saved["previous_term_average"]),
         )
         return build_message_response(
             f"Subject: **{saved['subject']}**\n"
             f"Mode: {saved['mode']}\n"
-            f"Target Equivalence: {saved['target_equivalence']}\n"
+            f"Target Grade: {float(saved['target_grade']):.2f}%\n"
             f"Required Exam Percentage: {needed_percent:.2f}%\n"
             f"Required Exam Score: {needed_score:.2f} / {exam_total:.2f}\n"
-            f"Projected Final Grade: {final_percent:.2f}%"
+            f"Class Standing: {class_standing:.2f}%\n"
+            f"Total Category Weight: {total_weight:.2f}%\n"
+            f"Projected Final Grade: {final_percent:.2f}%\n"
+            f"Projected Equivalence: {percent_to_equivalence(final_percent)}"
         )
 
     async def _handle_list(self, payload: dict[str, Any], discord_api: DiscordApi) -> Response:
