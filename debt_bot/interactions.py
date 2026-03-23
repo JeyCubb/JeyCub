@@ -23,7 +23,13 @@ from debt_bot.logic import (
     snowflake_to_datetime,
     to_bot_timezone,
 )
-from debt_bot.grade_logic import calculate_percentage, percent_to_equivalence
+from debt_bot.grade_logic import (
+    calculate_percentage,
+    compute_final_grade,
+    normalize_mode,
+    percent_to_equivalence,
+    required_exam_percentage,
+)
 from debt_bot.store import DebtStore
 
 
@@ -152,6 +158,12 @@ class InteractionService:
             return JSONResponse(build_message_response("Pong!"))
         if command_name == "grade":
             return await self._handle_grade(payload)
+        if command_name == "grade-save":
+            return await self._handle_grade_save(payload)
+        if command_name == "grade-show":
+            return self._handle_grade_show(payload)
+        if command_name == "grade-required":
+            return self._handle_grade_required(payload)
         if command_name == "list":
             return await self._handle_list(payload, discord_api)
         if command_name == "clear":
@@ -269,6 +281,120 @@ class InteractionService:
             f"Equivalence: {equivalence}"
         )
         return JSONResponse(build_message_response(content))
+
+    async def _handle_grade_save(self, payload: dict[str, Any]) -> Response:
+        guild_id = get_guild_id(payload)
+        user_id = get_user_id(payload)
+        if guild_id is None or user_id is None:
+            return JSONResponse(build_message_response("This command only works in a server.", ephemeral=True))
+
+        options = flatten_options(payload.get("data", {}).get("options") or [])
+        subject = str(options.get("subject", ""))
+        mode = str(options.get("mode", ""))
+        class_standing = float(options.get("class_standing") or 0)
+        exam_total = float(options.get("exam_total") or 0)
+        previous_term_average = float(options.get("previous_term_average") or 0)
+        target_equivalence = str(options.get("target_equivalence") or "3.00")
+
+        try:
+            normalized_mode = normalize_mode(mode)
+        except ValueError as exc:
+            return JSONResponse(build_message_response(str(exc), ephemeral=True))
+
+        if exam_total <= 0:
+            return JSONResponse(build_message_response("Exam total must be greater than 0.", ephemeral=True))
+        if normalized_mode == "term" and previous_term_average <= 0:
+            return JSONResponse(
+                build_message_response("Previous term average is required for term mode.", ephemeral=True)
+            )
+
+        self.store.save_grade_subject(
+            guild_id,
+            subject,
+            normalized_mode,
+            class_standing,
+            exam_total,
+            previous_term_average,
+            target_equivalence,
+            user_id,
+        )
+        return JSONResponse(
+            build_message_response(
+                f"Saved **{normalize_name(subject)}** with target `{target_equivalence}`."
+            )
+        )
+
+    def _handle_grade_show(self, payload: dict[str, Any]) -> dict[str, Any]:
+        guild_id = get_guild_id(payload)
+        if guild_id is None:
+            return build_message_response("This command only works in a server.", ephemeral=True)
+
+        options = flatten_options(payload.get("data", {}).get("options") or [])
+        subject = str(options.get("subject", ""))
+        saved = self.store.get_grade_subject(guild_id, subject)
+        if saved is None:
+            return build_message_response(
+                f"No saved grade profile found for **{normalize_name(subject)}**.",
+                ephemeral=True,
+            )
+
+        return build_message_response(
+            f"Subject: **{saved['subject']}**\n"
+            f"Mode: {saved['mode']}\n"
+            f"Class Standing: {float(saved['class_standing']):.2f}%\n"
+            f"Previous Term Average: {float(saved['previous_term_average']):.2f}%\n"
+            f"Exam Total: {float(saved['exam_total']):.2f}\n"
+            f"Target Equivalence: {saved['target_equivalence']}"
+        )
+
+    def _handle_grade_required(self, payload: dict[str, Any]) -> dict[str, Any]:
+        guild_id = get_guild_id(payload)
+        if guild_id is None:
+            return build_message_response("This command only works in a server.", ephemeral=True)
+
+        options = flatten_options(payload.get("data", {}).get("options") or [])
+        subject = str(options.get("subject", ""))
+        saved = self.store.get_grade_subject(guild_id, subject)
+        if saved is None:
+            return build_message_response(
+                f"No saved grade profile found for **{normalize_name(subject)}**.",
+                ephemeral=True,
+            )
+
+        needed_percent = required_exam_percentage(
+            mode=str(saved["mode"]),
+            target_equivalence=str(saved["target_equivalence"]),
+            class_standing=float(saved["class_standing"]),
+            previous_term_average=float(saved["previous_term_average"]),
+        )
+        exam_total = float(saved["exam_total"])
+        needed_score = (needed_percent / 100) * exam_total
+
+        if needed_percent <= 0:
+            return build_message_response(
+                f"Subject: **{saved['subject']}**\n"
+                f"You already meet the target equivalence `{saved['target_equivalence']}` even with 0 on the exam."
+            )
+        if needed_percent > 100:
+            return build_message_response(
+                f"Subject: **{saved['subject']}**\n"
+                f"It is not possible to reach `{saved['target_equivalence']}` even with a perfect exam score."
+            )
+
+        final_percent = compute_final_grade(
+            mode=str(saved["mode"]),
+            class_standing=float(saved["class_standing"]),
+            exam_percent=needed_percent,
+            previous_term_average=float(saved["previous_term_average"]),
+        )
+        return build_message_response(
+            f"Subject: **{saved['subject']}**\n"
+            f"Mode: {saved['mode']}\n"
+            f"Target Equivalence: {saved['target_equivalence']}\n"
+            f"Required Exam Percentage: {needed_percent:.2f}%\n"
+            f"Required Exam Score: {needed_score:.2f} / {exam_total:.2f}\n"
+            f"Projected Final Grade: {final_percent:.2f}%"
+        )
 
     async def _handle_list(self, payload: dict[str, Any], discord_api: DiscordApi) -> Response:
         guild_id = get_guild_id(payload)
@@ -389,6 +515,8 @@ class InteractionService:
         choices: list[str] = []
         if focused_name == "name" and command_name in {"utang", "list", "clear", "remove", "paid", "unpaid"}:
             choices = self.store.suggest_names(guild_id, current_value)
+        elif focused_name == "subject" and command_name in {"grade-save", "grade-show", "grade-required"}:
+            choices = self.store.suggest_subjects(guild_id, current_value)
         elif focused_name == "date" and command_name in {"remove", "paid"}:
             choices = self.store.suggest_dates(guild_id, option_values.get("name"), current_value)
         elif focused_name == "date" and command_name == "unpaid":

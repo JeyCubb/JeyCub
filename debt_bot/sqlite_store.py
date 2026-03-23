@@ -78,6 +78,29 @@ class SQLiteDebtStore:
                 ON debts(guild_id, name_key, entry_code)
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS grade_subjects (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    guild_id INTEGER NOT NULL,
+                    subject TEXT NOT NULL,
+                    subject_key TEXT NOT NULL,
+                    mode TEXT NOT NULL,
+                    class_standing REAL NOT NULL,
+                    exam_total REAL NOT NULL,
+                    previous_term_average REAL NOT NULL DEFAULT 0,
+                    target_equivalence TEXT NOT NULL DEFAULT '3.00',
+                    updated_by INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT '2000-01-01 00:00:00'
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_grade_subjects_guild_subject_key
+                ON grade_subjects(guild_id, subject_key)
+                """
+            )
             conn.commit()
 
         self._schema_ready = True
@@ -592,3 +615,102 @@ class SQLiteDebtStore:
                 ),
             )
             conn.commit()
+
+    def save_grade_subject(
+        self,
+        guild_id: int,
+        subject: str,
+        mode: str,
+        class_standing: float,
+        exam_total: float,
+        previous_term_average: float,
+        target_equivalence: str,
+        updated_by: int,
+    ) -> None:
+        self.ensure_schema()
+        display_subject = normalize_spaces(subject)
+        subject_key = make_name_key(display_subject)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO grade_subjects (
+                    guild_id,
+                    subject,
+                    subject_key,
+                    mode,
+                    class_standing,
+                    exam_total,
+                    previous_term_average,
+                    target_equivalence,
+                    updated_by,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(guild_id, subject_key) DO UPDATE SET
+                    subject = excluded.subject,
+                    mode = excluded.mode,
+                    class_standing = excluded.class_standing,
+                    exam_total = excluded.exam_total,
+                    previous_term_average = excluded.previous_term_average,
+                    target_equivalence = excluded.target_equivalence,
+                    updated_by = excluded.updated_by,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    guild_id,
+                    display_subject,
+                    subject_key,
+                    normalize_spaces(mode),
+                    class_standing,
+                    exam_total,
+                    previous_term_average,
+                    normalize_spaces(target_equivalence),
+                    updated_by,
+                    self._format_created_at(datetime.now(timezone.utc)),
+                ),
+            )
+            conn.commit()
+
+    def get_grade_subject(self, guild_id: int, subject: str) -> Optional[dict[str, Any]]:
+        self.ensure_schema()
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT subject, mode, class_standing, exam_total, previous_term_average,
+                       target_equivalence, updated_by, updated_at
+                FROM grade_subjects
+                WHERE guild_id = ? AND subject_key = ?
+                LIMIT 1
+                """,
+                (guild_id, make_name_key(subject)),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def suggest_subjects(self, guild_id: int, current: str) -> list[str]:
+        self.ensure_schema()
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT subject
+                FROM grade_subjects
+                WHERE guild_id = ?
+                ORDER BY lower(subject)
+                """,
+                (guild_id,),
+            ).fetchall()
+
+        subjects = [str(row["subject"]) for row in rows]
+        if not current.strip():
+            return subjects[:MAX_AUTOCOMPLETE_CHOICES]
+
+        key = make_name_key(current)
+        prefix_matches = [subject for subject in subjects if make_name_key(subject).startswith(key)]
+        if prefix_matches:
+            return prefix_matches[:MAX_AUTOCOMPLETE_CHOICES]
+
+        return get_close_matches(
+            normalize_name(current),
+            subjects,
+            n=MAX_AUTOCOMPLETE_CHOICES,
+            cutoff=0.75,
+        )

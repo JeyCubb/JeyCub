@@ -5,10 +5,6 @@ NUMBER_OPTION = 10
 def build_command_definitions() -> list[dict]:
     return [
         {
-            "name": "ping",
-            "description": "Check whether the bot is online",
-        },
-        {
             "name": "grade",
             "description": "Calculate a grade percentage and equivalence",
             "options": [
@@ -24,6 +20,75 @@ def build_command_definitions() -> list[dict]:
                     "description": "Total possible points",
                     "required": True,
                 },
+            ],
+        },
+        {
+            "name": "grade-save",
+            "description": "Save a subject profile for later grade calculations",
+            "options": [
+                {
+                    "type": STRING_OPTION,
+                    "name": "subject",
+                    "description": "Subject name, like Thermo",
+                    "required": True,
+                    "autocomplete": True,
+                },
+                {
+                    "type": STRING_OPTION,
+                    "name": "mode",
+                    "description": "Use prelim or term",
+                    "required": True,
+                },
+                {
+                    "type": NUMBER_OPTION,
+                    "name": "class_standing",
+                    "description": "Current class standing average percent",
+                    "required": True,
+                },
+                {
+                    "type": NUMBER_OPTION,
+                    "name": "exam_total",
+                    "description": "Final exam total score, like 50 or 100",
+                    "required": True,
+                },
+                {
+                    "type": NUMBER_OPTION,
+                    "name": "previous_term_average",
+                    "description": "Previous term average percent for term mode",
+                    "required": False,
+                },
+                {
+                    "type": STRING_OPTION,
+                    "name": "target_equivalence",
+                    "description": "Target equivalence, like 1.75 or 3.00",
+                    "required": False,
+                },
+            ],
+        },
+        {
+            "name": "grade-show",
+            "description": "Show a saved subject profile",
+            "options": [
+                {
+                    "type": STRING_OPTION,
+                    "name": "subject",
+                    "description": "Saved subject name",
+                    "required": True,
+                    "autocomplete": True,
+                }
+            ],
+        },
+        {
+            "name": "grade-required",
+            "description": "Show the required exam score for a saved subject",
+            "options": [
+                {
+                    "type": STRING_OPTION,
+                    "name": "subject",
+                    "description": "Saved subject name",
+                    "required": True,
+                    "autocomplete": True,
+                }
             ],
         },
         {

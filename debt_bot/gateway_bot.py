@@ -9,7 +9,13 @@ from discord import app_commands
 from discord.ext import commands
 
 from debt_bot.config import GatewaySettings
-from debt_bot.grade_logic import calculate_percentage, percent_to_equivalence
+from debt_bot.grade_logic import (
+    calculate_percentage,
+    compute_final_grade,
+    normalize_mode,
+    percent_to_equivalence,
+    required_exam_percentage,
+)
 from debt_bot.logic import (
     BUTTON_TIMEOUT_SECONDS,
     build_all_list_content,
@@ -296,6 +302,17 @@ def run_bot(settings: GatewaySettings) -> None:
 
         return inner
 
+    async def autocomplete_subjects(
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        if interaction.guild_id is None:
+            return []
+        return [
+            app_commands.Choice(name=choice, value=choice)
+            for choice in store.suggest_subjects(interaction.guild_id, current)
+        ]
+
     @bot.event
     async def on_ready() -> None:
         nonlocal commands_synced
@@ -381,10 +398,6 @@ def run_bot(settings: GatewaySettings) -> None:
         )
         await clear_deferred_response(interaction)
 
-    @bot.tree.command(name="ping", description="Check whether the bot is online")
-    async def ping(interaction: discord.Interaction) -> None:
-        await interaction.response.send_message("Pong!")
-
     @bot.tree.command(name="grade", description="Calculate a grade percentage and equivalence")
     @app_commands.describe(
         score="Points earned",
@@ -407,6 +420,170 @@ def run_bot(settings: GatewaySettings) -> None:
             f"Grade: {percent:.2f}%\n"
             f"Equivalence: {equivalence}"
         )
+
+    @bot.tree.command(name="grade-save", description="Save a subject profile for later grade calculations")
+    @app_commands.describe(
+        subject="Subject name, like Thermo",
+        mode="Use prelim or term",
+        class_standing="Current class standing average percent",
+        exam_total="Final exam total score, like 50 or 100",
+        previous_term_average="Previous term average percent for term mode",
+        target_equivalence="Target equivalence, like 1.75 or 3.00",
+    )
+    async def grade_save(
+        interaction: discord.Interaction,
+        subject: str,
+        mode: str,
+        class_standing: float,
+        exam_total: float,
+        previous_term_average: Optional[float] = None,
+        target_equivalence: str = "3.00",
+    ) -> None:
+        if interaction.guild_id is None:
+            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+            return
+
+        try:
+            normalized_mode = normalize_mode(mode)
+        except ValueError as exc:
+            await interaction.response.send_message(str(exc), ephemeral=True)
+            return
+
+        if exam_total <= 0:
+            await interaction.response.send_message("Exam total must be greater than 0.", ephemeral=True)
+            return
+
+        previous_value = previous_term_average or 0.0
+        if normalized_mode == "term" and previous_value <= 0:
+            await interaction.response.send_message(
+                "Previous term average is required for term mode.",
+                ephemeral=True,
+            )
+            return
+
+        store.save_grade_subject(
+            guild_id=interaction.guild_id,
+            subject=subject,
+            mode=normalized_mode,
+            class_standing=class_standing,
+            exam_total=exam_total,
+            previous_term_average=previous_value,
+            target_equivalence=target_equivalence,
+            updated_by=interaction.user.id,
+        )
+        await interaction.response.send_message(
+            f"Saved **{normalize_name(subject)}**.\n"
+            f"Mode: {normalized_mode}\n"
+            f"Class Standing: {class_standing:.2f}%\n"
+            f"Previous Term Average: {previous_value:.2f}%\n"
+            f"Exam Total: {exam_total:.2f}\n"
+            f"Target Equivalence: {target_equivalence}"
+        )
+
+    @grade_save.autocomplete("subject")
+    async def grade_save_subject_autocomplete(
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        return await autocomplete_subjects(interaction, current)
+
+    @bot.tree.command(name="grade-show", description="Show a saved subject profile")
+    @app_commands.describe(subject="Saved subject name")
+    async def grade_show(
+        interaction: discord.Interaction,
+        subject: str,
+    ) -> None:
+        if interaction.guild_id is None:
+            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+            return
+
+        saved = store.get_grade_subject(interaction.guild_id, subject)
+        if saved is None:
+            await interaction.response.send_message(
+                f"No saved grade profile found for **{normalize_name(subject)}**.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Subject: **{saved['subject']}**\n"
+            f"Mode: {saved['mode']}\n"
+            f"Class Standing: {float(saved['class_standing']):.2f}%\n"
+            f"Previous Term Average: {float(saved['previous_term_average']):.2f}%\n"
+            f"Exam Total: {float(saved['exam_total']):.2f}\n"
+            f"Target Equivalence: {saved['target_equivalence']}"
+        )
+
+    @grade_show.autocomplete("subject")
+    async def grade_show_subject_autocomplete(
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        return await autocomplete_subjects(interaction, current)
+
+    @bot.tree.command(name="grade-required", description="Show the required exam score for a saved subject")
+    @app_commands.describe(subject="Saved subject name")
+    async def grade_required(
+        interaction: discord.Interaction,
+        subject: str,
+    ) -> None:
+        if interaction.guild_id is None:
+            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+            return
+
+        saved = store.get_grade_subject(interaction.guild_id, subject)
+        if saved is None:
+            await interaction.response.send_message(
+                f"No saved grade profile found for **{normalize_name(subject)}**.",
+                ephemeral=True,
+            )
+            return
+
+        needed_percent = required_exam_percentage(
+            mode=str(saved["mode"]),
+            target_equivalence=str(saved["target_equivalence"]),
+            class_standing=float(saved["class_standing"]),
+            previous_term_average=float(saved["previous_term_average"]),
+        )
+        exam_total = float(saved["exam_total"])
+        needed_score = (needed_percent / 100) * exam_total
+
+        if needed_percent <= 0:
+            message = (
+                f"Subject: **{saved['subject']}**\n"
+                f"You already meet the target equivalence `{saved['target_equivalence']}` even with 0 on the exam."
+            )
+        elif needed_percent > 100:
+            message = (
+                f"Subject: **{saved['subject']}**\n"
+                f"It is not possible to reach `{saved['target_equivalence']}` even with a perfect exam score."
+            )
+        else:
+            final_percent = compute_final_grade(
+                mode=str(saved["mode"]),
+                class_standing=float(saved["class_standing"]),
+                exam_percent=needed_percent,
+                previous_term_average=float(saved["previous_term_average"]),
+            )
+            message = (
+                f"Subject: **{saved['subject']}**\n"
+                f"Mode: {saved['mode']}\n"
+                f"Target Equivalence: {saved['target_equivalence']}\n"
+                f"Class Standing: {float(saved['class_standing']):.2f}%\n"
+                f"Previous Term Average: {float(saved['previous_term_average']):.2f}%\n"
+                f"Required Exam Percentage: {needed_percent:.2f}%\n"
+                f"Required Exam Score: {needed_score:.2f} / {exam_total:.2f}\n"
+                f"Projected Final Grade: {final_percent:.2f}%"
+            )
+
+        await interaction.response.send_message(message)
+
+    @grade_required.autocomplete("subject")
+    async def grade_required_subject_autocomplete(
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        return await autocomplete_subjects(interaction, current)
 
     @utang.autocomplete("name")
     async def utang_name_autocomplete(

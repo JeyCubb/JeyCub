@@ -10,8 +10,9 @@ This bot is back on the simpler Discord gateway setup:
 
 ## Features
 
-- `/ping`
 - `/grade`
+- saved subject profiles like `Thermo`
+- required exam score lookup from saved subjects
 - `/utang`
 - `/list`
 - `/paid`
@@ -80,8 +81,10 @@ If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` m
 
 ## Commands
 
-- `/ping`
 - `/grade score:<score> total:<total>`
+- `/grade-save subject:<subject> mode:<prelim|term> class_standing:<percent> exam_total:<total> [previous_term_average] [target_equivalence]`
+- `/grade-show subject:<subject>`
+- `/grade-required subject:<subject>`
 - `/utang name:<name> amount:<amount> reason:<reason> [date_time]`
 - `/list`
 - `/list name:<name>`
