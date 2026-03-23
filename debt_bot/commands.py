@@ -1,8 +1,31 @@
 STRING_OPTION = 3
+NUMBER_OPTION = 10
 
 
 def build_command_definitions() -> list[dict]:
     return [
+        {
+            "name": "ping",
+            "description": "Check whether the bot is online",
+        },
+        {
+            "name": "grade",
+            "description": "Calculate a grade percentage and equivalence",
+            "options": [
+                {
+                    "type": NUMBER_OPTION,
+                    "name": "score",
+                    "description": "Points earned",
+                    "required": True,
+                },
+                {
+                    "type": NUMBER_OPTION,
+                    "name": "total",
+                    "description": "Total possible points",
+                    "required": True,
+                },
+            ],
+        },
         {
             "name": "utang",
             "description": "Add an utang entry",

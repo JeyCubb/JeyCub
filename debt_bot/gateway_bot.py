@@ -9,6 +9,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from debt_bot.config import GatewaySettings
+from debt_bot.grade_logic import calculate_percentage, percent_to_equivalence
 from debt_bot.logic import (
     BUTTON_TIMEOUT_SECONDS,
     build_all_list_content,
@@ -379,6 +380,33 @@ def run_bot(settings: GatewaySettings) -> None:
             interaction_dt=to_bot_timezone(interaction.created_at),
         )
         await clear_deferred_response(interaction)
+
+    @bot.tree.command(name="ping", description="Check whether the bot is online")
+    async def ping(interaction: discord.Interaction) -> None:
+        await interaction.response.send_message("Pong!")
+
+    @bot.tree.command(name="grade", description="Calculate a grade percentage and equivalence")
+    @app_commands.describe(
+        score="Points earned",
+        total="Total possible points",
+    )
+    async def grade(
+        interaction: discord.Interaction,
+        score: float,
+        total: float,
+    ) -> None:
+        try:
+            percent = calculate_percentage(score, total)
+        except ValueError as exc:
+            await interaction.response.send_message(str(exc), ephemeral=True)
+            return
+
+        equivalence = percent_to_equivalence(percent)
+        await interaction.response.send_message(
+            f"Score: {score:.2f}/{total:.2f}\n"
+            f"Grade: {percent:.2f}%\n"
+            f"Equivalence: {equivalence}"
+        )
 
     @utang.autocomplete("name")
     async def utang_name_autocomplete(

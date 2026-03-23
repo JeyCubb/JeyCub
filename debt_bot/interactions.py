@@ -23,6 +23,7 @@ from debt_bot.logic import (
     snowflake_to_datetime,
     to_bot_timezone,
 )
+from debt_bot.grade_logic import calculate_percentage, percent_to_equivalence
 from debt_bot.store import DebtStore
 
 
@@ -147,6 +148,10 @@ class InteractionService:
 
         if command_name == "utang":
             return await self._handle_utang(payload, discord_api)
+        if command_name == "ping":
+            return JSONResponse(build_message_response("Pong!"))
+        if command_name == "grade":
+            return await self._handle_grade(payload)
         if command_name == "list":
             return await self._handle_list(payload, discord_api)
         if command_name == "clear":
@@ -241,6 +246,29 @@ class InteractionService:
             {"content": content, "components": components},
         )
         return Response(status_code=202)
+
+    async def _handle_grade(self, payload: dict[str, Any]) -> Response:
+        options = flatten_options(payload.get("data", {}).get("options") or [])
+
+        score = options.get("score")
+        total = options.get("total")
+        if score is None or total is None:
+            return JSONResponse(build_message_response("Score and total are required.", ephemeral=True))
+
+        try:
+            score_value = float(score)
+            total_value = float(total)
+            percent = calculate_percentage(score_value, total_value)
+        except ValueError as exc:
+            return JSONResponse(build_message_response(str(exc), ephemeral=True))
+
+        equivalence = percent_to_equivalence(percent)
+        content = (
+            f"Score: {score_value:.2f}/{total_value:.2f}\n"
+            f"Grade: {percent:.2f}%\n"
+            f"Equivalence: {equivalence}"
+        )
+        return JSONResponse(build_message_response(content))
 
     async def _handle_list(self, payload: dict[str, Any], discord_api: DiscordApi) -> Response:
         guild_id = get_guild_id(payload)

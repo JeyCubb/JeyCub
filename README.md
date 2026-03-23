@@ -10,6 +10,8 @@ This bot is back on the simpler Discord gateway setup:
 
 ## Features
 
+- `/ping`
+- `/grade`
 - `/utang`
 - `/list`
 - `/paid`
@@ -78,6 +80,8 @@ If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` m
 
 ## Commands
 
+- `/ping`
+- `/grade score:<score> total:<total>`
 - `/utang name:<name> amount:<amount> reason:<reason> [date_time]`
 - `/list`
 - `/list name:<name>`
