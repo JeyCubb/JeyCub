@@ -225,12 +225,12 @@ def run_bot(settings: GatewaySettings) -> None:
             rendered.view.message = message
         return message
 
-    async def clear_deferred_response(interaction: discord.Interaction) -> None:
+    async def finish_deferred_response(interaction: discord.Interaction, content: str) -> None:
         try:
-            await interaction.delete_original_response()
+            await interaction.edit_original_response(content=content, view=None)
         except discord.HTTPException:
             try:
-                await interaction.edit_original_response(content="\u200b", view=None)
+                await interaction.followup.send(content, ephemeral=True)
             except discord.HTTPException:
                 return
 
@@ -382,7 +382,7 @@ def run_bot(settings: GatewaySettings) -> None:
                 await interaction.response.send_message(str(exc), ephemeral=True)
                 return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         store.add_debt(
             guild_id=interaction.guild_id,
             name=clean_name,
@@ -398,7 +398,7 @@ def run_bot(settings: GatewaySettings) -> None:
             person_name=clean_name,
             interaction_dt=to_bot_timezone(interaction.created_at),
         )
-        await clear_deferred_response(interaction)
+        await finish_deferred_response(interaction, f"Added utang entry for **{clean_name}**.")
 
     @bot.tree.command(name="grade", description="Calculate a grade percentage and equivalence")
     @app_commands.describe(
@@ -626,7 +626,7 @@ def run_bot(settings: GatewaySettings) -> None:
             await interaction.response.send_message("This command only works in a server.", ephemeral=True)
             return
 
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer(ephemeral=True, thinking=True)
         interaction_dt = to_bot_timezone(interaction.created_at)
         if name and normalize_spaces(name):
             await refresh_visible_lists(
@@ -635,11 +635,14 @@ def run_bot(settings: GatewaySettings) -> None:
                 person_name=name,
                 interaction_dt=interaction_dt,
             )
-            await clear_deferred_response(interaction)
+            await finish_deferred_response(
+                interaction,
+                f"Posted utang list for **{normalize_name(name)}**.",
+            )
             return
 
         await refresh_visible_lists(interaction.channel, interaction.guild_id)
-        await clear_deferred_response(interaction)
+        await finish_deferred_response(interaction, "Posted all utang entries.")
 
     @list_command.autocomplete("name")
     async def list_name_autocomplete(
@@ -720,7 +723,7 @@ def run_bot(settings: GatewaySettings) -> None:
             person_name=display_name,
             interaction_dt=to_bot_timezone(interaction.created_at),
         )
-        await clear_deferred_response(interaction)
+        await finish_deferred_response(interaction, f"Updated utang list for **{display_name}**.")
 
     @bot.tree.command(name="remove", description="Remove one utang entry by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
