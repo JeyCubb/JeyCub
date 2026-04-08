@@ -78,8 +78,18 @@ On startup, the bot syncs slash commands automatically. If `DISCORD_GUILD_ID` is
 This version is meant to be easier on free bot hosting:
 
 1. Put your real token in `.env`
-2. Keep the startup command pointing at `bot.py`
-3. Restart the server
+2. For low-storage hosting, install only the gateway bot dependencies:
+
+```bash
+python -m pip install --user -r requirements.gateway.txt && python bot.py
+```
+
+3. After the first successful boot, change the startup command back to:
+
+```bash
+python bot.py
+```
+
 4. Do not set an `Interactions Endpoint URL` in Discord
 
 If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` manually. The repo ignores `*.db`, so GitHub clone alone will not carry your saved debt data.
