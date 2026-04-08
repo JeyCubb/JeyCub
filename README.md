@@ -47,10 +47,12 @@ BOT_TIMEZONE=Asia/Manila
 
 ## Local setup
 
-1. Install dependencies:
+This bot can run inside its own local Python environment so it stays separate from other Python projects on your PC.
+
+1. Create the bot-only virtual environment and install dependencies:
 
 ```bash
-python -m pip install -r requirements.txt
+.\scripts\setup-local.ps1
 ```
 
 2. Copy `.env.example` to `.env` and fill in your token.
@@ -58,8 +60,10 @@ python -m pip install -r requirements.txt
 3. Run:
 
 ```bash
-python bot.py
+.\scripts\run-local.ps1
 ```
+
+The bot will then use `.\.venv\` instead of your global Python packages.
 
 4. Invite the bot to your server with permission to:
    - read messages
