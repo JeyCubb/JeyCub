@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 from debt_bot.config import GatewaySettings
+from debt_bot.discord_store import DiscordChannelStoreManager, GuildStoreError
 from debt_bot.grade_logic import (
     calculate_percentage,
     compute_final_grade,
@@ -31,7 +32,6 @@ from debt_bot.logic import (
     parse_user_entry_datetime,
     to_bot_timezone,
 )
-from debt_bot.sqlite_store import SQLiteDebtStore
 
 
 @dataclass
@@ -58,7 +58,7 @@ class PagerButton(discord.ui.Button["ListPagerView"]):
             return
 
         view.page_index += self.delta
-        rendered = view.render(interaction_dt)
+        rendered = await view.render(interaction_dt)
         await interaction.response.edit_message(content=rendered.content, view=rendered.view)
         if interaction.message:
             view.message = interaction.message
@@ -68,7 +68,7 @@ class ListPagerView(discord.ui.View):
     def __init__(
         self,
         *,
-        store: SQLiteDebtStore,
+        data_manager: DiscordChannelStoreManager,
         actor_id_getter: Callable[[], int],
         guild_id: int,
         mode: str,
@@ -77,7 +77,7 @@ class ListPagerView(discord.ui.View):
         page_index: int = 0,
     ) -> None:
         super().__init__(timeout=BUTTON_TIMEOUT_SECONDS)
-        self.store = store
+        self.data_manager = data_manager
         self.actor_id_getter = actor_id_getter
         self.guild_id = guild_id
         self.mode = mode
@@ -87,21 +87,21 @@ class ListPagerView(discord.ui.View):
         self.last_content = ""
         self.message: Optional[discord.Message] = None
 
-    def render(self, interaction_dt: datetime) -> RenderedList:
+    async def render(self, interaction_dt: datetime) -> RenderedList:
         if self.mode == "person":
             if not self.person_name:
                 self.clear_items()
                 self.last_content = "No utang."
                 return RenderedList(self.last_content, None)
 
-            self.store.apply_due_interest(
-                guild_id=self.guild_id,
+            await self.data_manager.apply_due_interest(
+                self.guild_id,
                 name=self.person_name,
                 as_of_dt=interaction_dt,
                 created_by=self.actor_id_getter(),
             )
-            rows = self.store.list_debts(
-                guild_id=self.guild_id,
+            rows = self.data_manager.list_debts(
+                self.guild_id,
                 name=self.person_name,
                 include_paid=True,
             )
@@ -116,7 +116,7 @@ class ListPagerView(discord.ui.View):
             self.last_content = build_person_list_content(self.person_name, rows, self.page_index)
             return RenderedList(self.last_content, self if self.children else None)
 
-        rows = self.store.list_debts(guild_id=self.guild_id, include_paid=True)
+        rows = self.data_manager.list_debts(self.guild_id, include_paid=True)
         if not rows:
             self.clear_items()
             self.last_content = "No unpaid utang."
@@ -146,18 +146,71 @@ class ListPagerView(discord.ui.View):
 
 
 def run_bot(settings: GatewaySettings) -> None:
-    store = SQLiteDebtStore(settings.database_path, settings.seed_database_path)
-    store.ensure_schema()
-
     intents = discord.Intents.default()
     intents.messages = True
 
     bot = commands.Bot(command_prefix="!", intents=intents)
+    data_manager = DiscordChannelStoreManager(bot, settings.data_channel_name)
     commands_synced = False
 
     def actor_id() -> int:
         user = bot.user
         return int(user.id) if user else 0
+
+    async def send_interaction_message(
+        interaction: discord.Interaction,
+        content: str,
+        *,
+        ephemeral: bool = True,
+    ) -> None:
+        if interaction.response.is_done():
+            try:
+                await interaction.followup.send(content, ephemeral=ephemeral)
+            except discord.HTTPException:
+                return
+            return
+
+        try:
+            await interaction.response.send_message(content, ephemeral=ephemeral)
+        except discord.HTTPException:
+            return
+
+    async def finish_deferred_response(interaction: discord.Interaction, content: str) -> None:
+        try:
+            await interaction.edit_original_response(content=content, view=None)
+        except discord.HTTPException:
+            try:
+                await interaction.followup.send(content, ephemeral=True)
+            except discord.HTTPException:
+                return
+
+    async def send_store_error(interaction: discord.Interaction, exc: GuildStoreError) -> None:
+        if interaction.response.is_done():
+            await finish_deferred_response(interaction, str(exc))
+            return
+        await send_interaction_message(interaction, str(exc), ephemeral=True)
+
+    async def ensure_guild_ready(interaction: discord.Interaction) -> bool:
+        if interaction.guild is None:
+            await send_interaction_message(interaction, "This command only works in a server.", ephemeral=True)
+            return False
+
+        try:
+            await data_manager.ensure_guild_loaded(interaction.guild)
+        except GuildStoreError as exc:
+            await send_store_error(interaction, exc)
+            return False
+        return True
+
+    async def ensure_guild_ready_for_autocomplete(interaction: discord.Interaction) -> bool:
+        if interaction.guild is None:
+            return False
+
+        try:
+            await data_manager.ensure_guild_loaded(interaction.guild)
+        except GuildStoreError:
+            return False
+        return True
 
     async def delete_matching_bot_messages(
         channel: Optional[discord.abc.Messageable],
@@ -187,28 +240,26 @@ def run_bot(settings: GatewaySettings) -> None:
     async def delete_previous_list_messages(channel: Optional[discord.abc.Messageable]) -> None:
         await delete_matching_bot_messages(channel, is_list_message_content)
 
-    async def refresh_visible_lists(
-        channel: Optional[discord.abc.Messageable],
-        guild_id: int,
-        *,
-        person_name: Optional[str] = None,
-        interaction_dt: Optional[datetime] = None,
-    ) -> None:
-        if interaction_dt is None:
-            interaction_dt = to_bot_timezone(datetime.now(timezone.utc))
+    async def render_person_list(guild_id: int, person_name: str, interaction_dt: datetime) -> RenderedList:
+        view = ListPagerView(
+            data_manager=data_manager,
+            actor_id_getter=actor_id,
+            guild_id=guild_id,
+            mode="person",
+            issued_at=interaction_dt,
+            person_name=normalize_name(person_name),
+        )
+        return await view.render(interaction_dt)
 
-        rendered_all: Optional[RenderedList] = None
-        rendered_person: Optional[RenderedList] = None
-        if interaction_dt is not None:
-            rendered_all = render_all_list(guild_id, interaction_dt)
-        if person_name and interaction_dt is not None:
-            rendered_person = await render_person_list(guild_id, person_name, interaction_dt)
-
-        await delete_previous_list_messages(channel)
-        if rendered_all is not None:
-            await send_channel_rendered(channel, rendered_all)
-        if rendered_person is not None:
-            await send_channel_rendered(channel, rendered_person)
+    async def render_all_list(guild_id: int, interaction_dt: datetime) -> RenderedList:
+        view = ListPagerView(
+            data_manager=data_manager,
+            actor_id_getter=actor_id,
+            guild_id=guild_id,
+            mode="all",
+            issued_at=interaction_dt,
+        )
+        return await view.render(interaction_dt)
 
     async def send_channel_rendered(
         channel: Optional[discord.abc.Messageable],
@@ -225,49 +276,42 @@ def run_bot(settings: GatewaySettings) -> None:
             rendered.view.message = message
         return message
 
-    async def finish_deferred_response(interaction: discord.Interaction, content: str) -> None:
-        try:
-            await interaction.edit_original_response(content=content, view=None)
-        except discord.HTTPException:
-            try:
-                await interaction.followup.send(content, ephemeral=True)
-            except discord.HTTPException:
-                return
+    async def refresh_visible_lists(
+        channel: Optional[discord.abc.Messageable],
+        guild_id: int,
+        *,
+        person_name: Optional[str] = None,
+        interaction_dt: Optional[datetime] = None,
+    ) -> None:
+        if interaction_dt is None:
+            interaction_dt = to_bot_timezone(datetime.now(timezone.utc))
 
-    async def render_person_list(guild_id: int, person_name: str, interaction_dt: datetime) -> RenderedList:
-        view = ListPagerView(
-            store=store,
-            actor_id_getter=actor_id,
-            guild_id=guild_id,
-            mode="person",
-            issued_at=interaction_dt,
-            person_name=normalize_name(person_name),
-        )
-        return view.render(interaction_dt)
+        rendered_all = await render_all_list(guild_id, interaction_dt)
+        rendered_person: Optional[RenderedList] = None
+        if person_name:
+            rendered_person = await render_person_list(guild_id, person_name, interaction_dt)
 
-    def render_all_list(guild_id: int, interaction_dt: datetime) -> RenderedList:
-        view = ListPagerView(
-            store=store,
-            actor_id_getter=actor_id,
-            guild_id=guild_id,
-            mode="all",
-            issued_at=interaction_dt,
-        )
-        return view.render(interaction_dt)
+        await delete_previous_list_messages(channel)
+        await send_channel_rendered(channel, rendered_all)
+        if rendered_person is not None:
+            await send_channel_rendered(channel, rendered_person)
 
-    def autocomplete_names(
+    def build_name_autocomplete(
         *,
         include_paid: bool,
-    ) -> Callable[[discord.Interaction, str], list[app_commands.Choice[str]]]:
+    ) -> Callable[[discord.Interaction, str], Awaitable[list[app_commands.Choice[str]]]]:
         async def inner(
             interaction: discord.Interaction,
             current: str,
         ) -> list[app_commands.Choice[str]]:
             if interaction.guild_id is None:
                 return []
+            if not await ensure_guild_ready_for_autocomplete(interaction):
+                return []
+
             return [
                 app_commands.Choice(name=choice, value=choice)
-                for choice in store.suggest_names(
+                for choice in data_manager.suggest_names(
                     interaction.guild_id,
                     current,
                     include_paid=include_paid,
@@ -276,15 +320,17 @@ def run_bot(settings: GatewaySettings) -> None:
 
         return inner
 
-    def autocomplete_dates(
+    def build_date_autocomplete(
         *,
         include_paid: bool,
-    ) -> Callable[[discord.Interaction, str], list[app_commands.Choice[str]]]:
+    ) -> Callable[[discord.Interaction, str], Awaitable[list[app_commands.Choice[str]]]]:
         async def inner(
             interaction: discord.Interaction,
             current: str,
         ) -> list[app_commands.Choice[str]]:
             if interaction.guild_id is None:
+                return []
+            if not await ensure_guild_ready_for_autocomplete(interaction):
                 return []
 
             person_name = ""
@@ -294,10 +340,10 @@ def run_bot(settings: GatewaySettings) -> None:
 
             return [
                 app_commands.Choice(name=choice, value=choice)
-                for choice in store.suggest_dates(
+                for choice in data_manager.suggest_dates(
                     interaction.guild_id,
-                    person_name,
                     current,
+                    name=person_name,
                     include_paid=include_paid,
                 )
             ]
@@ -310,9 +356,12 @@ def run_bot(settings: GatewaySettings) -> None:
     ) -> list[app_commands.Choice[str]]:
         if interaction.guild_id is None:
             return []
+        if not await ensure_guild_ready_for_autocomplete(interaction):
+            return []
+
         return [
             app_commands.Choice(name=choice, value=choice)
-            for choice in store.suggest_subjects(interaction.guild_id, current)
+            for choice in data_manager.suggest_subjects(interaction.guild_id, current)
         ]
 
     @bot.event
@@ -348,27 +397,30 @@ def run_bot(settings: GatewaySettings) -> None:
         reason: str,
         date_time: Optional[str] = None,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if interaction.guild is None:
+            await send_interaction_message(interaction, "This command only works in a server.", ephemeral=True)
+            return
+        if not await ensure_guild_ready(interaction):
             return
 
         clean_name = normalize_name(name)
         clean_reason = normalize_spaces(reason)
         if not clean_name:
-            await interaction.response.send_message("Name cannot be empty.", ephemeral=True)
+            await send_interaction_message(interaction, "Name cannot be empty.", ephemeral=True)
             return
         if not clean_reason:
-            await interaction.response.send_message("Reason cannot be empty.", ephemeral=True)
+            await send_interaction_message(interaction, "Reason cannot be empty.", ephemeral=True)
             return
 
         try:
             amount_value, amount_scale = parse_amount_input(amount)
         except ValueError as exc:
-            await interaction.response.send_message(str(exc), ephemeral=True)
+            await send_interaction_message(interaction, str(exc), ephemeral=True)
             return
 
         if amount_value == 0:
-            await interaction.response.send_message(
+            await send_interaction_message(
+                interaction,
                 "Amount cannot be 0. Use positive or negative values.",
                 ephemeral=True,
             )
@@ -379,25 +431,30 @@ def run_bot(settings: GatewaySettings) -> None:
             try:
                 entry_dt = parse_user_entry_datetime(date_time)
             except ValueError as exc:
-                await interaction.response.send_message(str(exc), ephemeral=True)
+                await send_interaction_message(interaction, str(exc), ephemeral=True)
                 return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
-        store.add_debt(
-            guild_id=interaction.guild_id,
-            name=clean_name,
-            amount=amount_value,
-            amount_scale=amount_scale,
-            entry_dt=entry_dt,
-            reason=clean_reason,
-            created_by=interaction.user.id,
-        )
-        await refresh_visible_lists(
-            interaction.channel,
-            interaction.guild_id,
-            person_name=clean_name,
-            interaction_dt=to_bot_timezone(interaction.created_at),
-        )
+        try:
+            await data_manager.add_debt(
+                interaction.guild,
+                name=clean_name,
+                amount=amount_value,
+                amount_scale=amount_scale,
+                entry_dt=entry_dt,
+                reason=clean_reason,
+                created_by=interaction.user.id,
+            )
+            await refresh_visible_lists(
+                interaction.channel,
+                interaction.guild_id,
+                person_name=clean_name,
+                interaction_dt=to_bot_timezone(interaction.created_at),
+            )
+        except GuildStoreError as exc:
+            await finish_deferred_response(interaction, str(exc))
+            return
+
         await finish_deferred_response(interaction, f"Added utang entry for **{clean_name}**.")
 
     @bot.tree.command(name="grade", description="Calculate a grade percentage and equivalence")
@@ -413,14 +470,16 @@ def run_bot(settings: GatewaySettings) -> None:
         try:
             percent = calculate_percentage(score, total)
         except ValueError as exc:
-            await interaction.response.send_message(str(exc), ephemeral=True)
+            await send_interaction_message(interaction, str(exc), ephemeral=True)
             return
 
         equivalence = percent_to_equivalence(percent)
-        await interaction.response.send_message(
+        await send_interaction_message(
+            interaction,
             f"Score: {score:.2f}/{total:.2f}\n"
             f"Grade: {percent:.2f}%\n"
-            f"Equivalence: {equivalence}"
+            f"Equivalence: {equivalence}",
+            ephemeral=False,
         )
 
     @bot.tree.command(name="grade-save", description="Save a subject profile for later grade calculations")
@@ -441,51 +500,61 @@ def run_bot(settings: GatewaySettings) -> None:
         categories: str,
         previous_term_average: Optional[float] = None,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if interaction.guild is None:
+            await send_interaction_message(interaction, "This command only works in a server.", ephemeral=True)
+            return
+        if not await ensure_guild_ready(interaction):
             return
 
         try:
             normalized_mode = normalize_mode(mode)
             parsed_categories = parse_categories_input(categories)
         except ValueError as exc:
-            await interaction.response.send_message(str(exc), ephemeral=True)
+            await send_interaction_message(interaction, str(exc), ephemeral=True)
             return
 
         if exam_total <= 0:
-            await interaction.response.send_message("Exam total must be greater than 0.", ephemeral=True)
+            await send_interaction_message(interaction, "Exam total must be greater than 0.", ephemeral=True)
             return
         if target_grade <= 0:
-            await interaction.response.send_message("Target grade must be greater than 0.", ephemeral=True)
+            await send_interaction_message(interaction, "Target grade must be greater than 0.", ephemeral=True)
             return
 
         previous_value = previous_term_average or 0.0
         if normalized_mode == "term" and previous_value <= 0:
-            await interaction.response.send_message(
+            await send_interaction_message(
+                interaction,
                 "Previous term average is required for term mode.",
                 ephemeral=True,
             )
             return
 
         class_standing, total_weight, _ = compute_class_standing_from_categories(parsed_categories)
-        store.save_grade_subject(
-            guild_id=interaction.guild_id,
-            subject=subject,
-            mode=normalized_mode,
-            target_grade=target_grade,
-            categories_text=categories,
-            exam_total=exam_total,
-            previous_term_average=previous_value,
-            updated_by=interaction.user.id,
-        )
-        await interaction.response.send_message(
+        try:
+            await data_manager.save_grade_subject(
+                interaction.guild,
+                subject=subject,
+                mode=normalized_mode,
+                target_grade=target_grade,
+                categories_text=categories,
+                exam_total=exam_total,
+                previous_term_average=previous_value,
+                updated_by=interaction.user.id,
+            )
+        except GuildStoreError as exc:
+            await send_store_error(interaction, exc)
+            return
+
+        await send_interaction_message(
+            interaction,
             f"Saved **{normalize_name(subject)}**.\n"
             f"Mode: {normalized_mode}\n"
             f"Target Grade: {target_grade:.2f}%\n"
             f"Class Standing: {class_standing:.2f}%\n"
             f"Total Category Weight: {total_weight:.2f}%\n"
             f"Previous Term Average: {previous_value:.2f}%\n"
-            f"Exam Total: {exam_total:.2f}"
+            f"Exam Total: {exam_total:.2f}",
+            ephemeral=False,
         )
 
     @grade_save.autocomplete("subject")
@@ -501,19 +570,24 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         subject: str,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if not await ensure_guild_ready(interaction):
             return
 
-        saved = store.get_grade_subject(interaction.guild_id, subject)
+        saved = data_manager.get_grade_subject(interaction.guild_id, subject)
         if saved is None:
-            await interaction.response.send_message(
+            await send_interaction_message(
+                interaction,
                 f"No saved grade profile found for **{normalize_name(subject)}**.",
                 ephemeral=True,
             )
             return
 
-        parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        try:
+            parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        except ValueError as exc:
+            await send_interaction_message(interaction, str(exc), ephemeral=True)
+            return
+
         class_standing, total_weight, category_averages = compute_class_standing_from_categories(parsed_categories)
         lines = [
             f"Subject: **{saved['subject']}**",
@@ -532,7 +606,7 @@ def run_bot(settings: GatewaySettings) -> None:
                 f"Exam Total: {float(saved['exam_total']):.2f}",
             ]
         )
-        await interaction.response.send_message("\n".join(lines))
+        await send_interaction_message(interaction, "\n".join(lines), ephemeral=False)
 
     @grade_show.autocomplete("subject")
     async def grade_show_subject_autocomplete(
@@ -547,20 +621,25 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         subject: str,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if not await ensure_guild_ready(interaction):
             return
 
-        saved = store.get_grade_subject(interaction.guild_id, subject)
+        saved = data_manager.get_grade_subject(interaction.guild_id, subject)
         if saved is None:
-            await interaction.response.send_message(
+            await send_interaction_message(
+                interaction,
                 f"No saved grade profile found for **{normalize_name(subject)}**.",
                 ephemeral=True,
             )
             return
 
-        parsed_categories = parse_categories_input(str(saved["categories_text"]))
-        class_standing, total_weight, category_averages = compute_class_standing_from_categories(parsed_categories)
+        try:
+            parsed_categories = parse_categories_input(str(saved["categories_text"]))
+        except ValueError as exc:
+            await send_interaction_message(interaction, str(exc), ephemeral=True)
+            return
+
+        class_standing, total_weight, _ = compute_class_standing_from_categories(parsed_categories)
         needed_percent = required_exam_percentage_for_target(
             mode=str(saved["mode"]),
             target_grade=float(saved["target_grade"]),
@@ -600,7 +679,7 @@ def run_bot(settings: GatewaySettings) -> None:
                 f"Projected Equivalence: {percent_to_equivalence(final_percent)}"
             )
 
-        await interaction.response.send_message(message)
+        await send_interaction_message(interaction, message, ephemeral=False)
 
     @grade_required.autocomplete("subject")
     async def grade_required_subject_autocomplete(
@@ -614,7 +693,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=True)(interaction, current)
+        return await build_name_autocomplete(include_paid=True)(interaction, current)
 
     @bot.tree.command(name="list", description="Show one person's utang list, or everyone if left blank")
     @app_commands.describe(name="Name to show")
@@ -622,26 +701,30 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         name: Optional[str] = None,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if not await ensure_guild_ready(interaction):
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
         interaction_dt = to_bot_timezone(interaction.created_at)
-        if name and normalize_spaces(name):
-            await refresh_visible_lists(
-                interaction.channel,
-                interaction.guild_id,
-                person_name=name,
-                interaction_dt=interaction_dt,
-            )
-            await finish_deferred_response(
-                interaction,
-                f"Posted utang list for **{normalize_name(name)}**.",
-            )
+        try:
+            if name and normalize_spaces(name):
+                await refresh_visible_lists(
+                    interaction.channel,
+                    interaction.guild_id,
+                    person_name=name,
+                    interaction_dt=interaction_dt,
+                )
+                await finish_deferred_response(
+                    interaction,
+                    f"Posted utang list for **{normalize_name(name)}**.",
+                )
+                return
+
+            await refresh_visible_lists(interaction.channel, interaction.guild_id, interaction_dt=interaction_dt)
+        except GuildStoreError as exc:
+            await finish_deferred_response(interaction, str(exc))
             return
 
-        await refresh_visible_lists(interaction.channel, interaction.guild_id)
         await finish_deferred_response(interaction, "Posted all utang entries.")
 
     @list_command.autocomplete("name")
@@ -649,7 +732,7 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=True)(interaction, current)
+        return await build_name_autocomplete(include_paid=True)(interaction, current)
 
     @bot.tree.command(name="clear", description="Clear all utang for one person")
     @app_commands.describe(name="Name of the person")
@@ -657,18 +740,25 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         name: str,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if interaction.guild is None:
+            await send_interaction_message(interaction, "This command only works in a server.", ephemeral=True)
+            return
+        if not await ensure_guild_ready(interaction):
             return
 
         display_name = normalize_name(name)
         if not display_name:
-            await interaction.response.send_message("Name cannot be empty.", ephemeral=True)
+            await send_interaction_message(interaction, "Name cannot be empty.", ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
-        cleared = store.clear_debts(interaction.guild_id, display_name)
-        await refresh_visible_lists(interaction.channel, interaction.guild_id)
+        try:
+            cleared = await data_manager.clear_debts(interaction.guild, name=display_name)
+            await refresh_visible_lists(interaction.channel, interaction.guild_id)
+        except GuildStoreError as exc:
+            await finish_deferred_response(interaction, str(exc))
+            return
+
         message = f"Cleared **{display_name}**." if cleared else f"No entries for **{display_name}**."
         await interaction.edit_original_response(content=message, view=None)
 
@@ -677,52 +767,59 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=True)(interaction, current)
+        return await build_name_autocomplete(include_paid=True)(interaction, current)
 
     async def handle_entry_command(
         interaction: discord.Interaction,
         *,
         name: str,
         date: str,
-        updater: Callable[[int, str, str], bool],
+        updater: Callable[[discord.Guild, str, str], Awaitable[bool]],
         missing_message: str,
     ) -> None:
-        if interaction.guild_id is None:
-            await interaction.response.send_message("This command only works in a server.", ephemeral=True)
+        if interaction.guild is None:
+            await send_interaction_message(interaction, "This command only works in a server.", ephemeral=True)
+            return
+        if not await ensure_guild_ready(interaction):
             return
 
         display_name = normalize_name(name)
         if not display_name:
-            await interaction.response.send_message("Name cannot be empty.", ephemeral=True)
+            await send_interaction_message(interaction, "Name cannot be empty.", ephemeral=True)
             return
 
         try:
             entry_code = normalize_entry_code(date)
         except ValueError:
-            await interaction.response.send_message("Date must look like `03-14-26-G3`.", ephemeral=True)
+            await send_interaction_message(interaction, "Date must look like `03-14-26-G3`.", ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
-        updated = updater(interaction.guild_id, display_name, entry_code)
-        if not updated:
+        try:
+            updated = await updater(interaction.guild, display_name, entry_code)
+            if not updated:
+                await refresh_visible_lists(
+                    interaction.channel,
+                    interaction.guild_id,
+                    person_name=display_name,
+                    interaction_dt=to_bot_timezone(interaction.created_at),
+                )
+                await interaction.edit_original_response(
+                    content=missing_message.format(name=display_name, entry_code=entry_code),
+                    view=None,
+                )
+                return
+
             await refresh_visible_lists(
                 interaction.channel,
                 interaction.guild_id,
                 person_name=display_name,
                 interaction_dt=to_bot_timezone(interaction.created_at),
             )
-            await interaction.edit_original_response(
-                content=missing_message.format(name=display_name, entry_code=entry_code),
-                view=None,
-            )
+        except GuildStoreError as exc:
+            await finish_deferred_response(interaction, str(exc))
             return
 
-        await refresh_visible_lists(
-            interaction.channel,
-            interaction.guild_id,
-            person_name=display_name,
-            interaction_dt=to_bot_timezone(interaction.created_at),
-        )
         await finish_deferred_response(interaction, f"Updated utang list for **{display_name}**.")
 
     @bot.tree.command(name="remove", description="Remove one utang entry by date code")
@@ -736,7 +833,11 @@ def run_bot(settings: GatewaySettings) -> None:
             interaction,
             name=name,
             date=date,
-            updater=store.remove_debt_by_code,
+            updater=lambda guild, display_name, entry_code: data_manager.remove_debt_by_code(
+                guild,
+                name=display_name,
+                entry_code=entry_code,
+            ),
             missing_message="No entry found for **{name}** on `{entry_code}`.",
         )
 
@@ -745,14 +846,14 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=True)(interaction, current)
+        return await build_name_autocomplete(include_paid=True)(interaction, current)
 
     @remove.autocomplete("date")
     async def remove_date_autocomplete(
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_dates(include_paid=True)(interaction, current)
+        return await build_date_autocomplete(include_paid=True)(interaction, current)
 
     @bot.tree.command(name="paid", description="Mark one utang entry as paid by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
@@ -765,7 +866,11 @@ def run_bot(settings: GatewaySettings) -> None:
             interaction,
             name=name,
             date=date,
-            updater=store.mark_paid_by_code,
+            updater=lambda guild, display_name, entry_code: data_manager.mark_paid_by_code(
+                guild,
+                name=display_name,
+                entry_code=entry_code,
+            ),
             missing_message="No unpaid entry found for **{name}** on `{entry_code}`.",
         )
 
@@ -774,14 +879,14 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=False)(interaction, current)
+        return await build_name_autocomplete(include_paid=False)(interaction, current)
 
     @paid.autocomplete("date")
     async def paid_date_autocomplete(
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_dates(include_paid=False)(interaction, current)
+        return await build_date_autocomplete(include_paid=False)(interaction, current)
 
     @bot.tree.command(name="unpaid", description="Undo a paid mark by date code")
     @app_commands.describe(name="Name of the person", date="Date from /list, like 03-14-26-G3")
@@ -794,7 +899,11 @@ def run_bot(settings: GatewaySettings) -> None:
             interaction,
             name=name,
             date=date,
-            updater=store.mark_unpaid_by_code,
+            updater=lambda guild, display_name, entry_code: data_manager.mark_unpaid_by_code(
+                guild,
+                name=display_name,
+                entry_code=entry_code,
+            ),
             missing_message="No paid entry found for **{name}** on `{entry_code}`.",
         )
 
@@ -803,13 +912,13 @@ def run_bot(settings: GatewaySettings) -> None:
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_names(include_paid=True)(interaction, current)
+        return await build_name_autocomplete(include_paid=True)(interaction, current)
 
     @unpaid.autocomplete("date")
     async def unpaid_date_autocomplete(
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return await autocomplete_dates(include_paid=True)(interaction, current)
+        return await build_date_autocomplete(include_paid=True)(interaction, current)
 
     bot.run(settings.bot_token)

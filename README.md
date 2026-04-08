@@ -5,7 +5,7 @@ This bot is back on the simpler Discord gateway setup:
 - no public webhook URL
 - no custom domain
 - no `Interactions Endpoint URL`
-- local SQLite storage again
+- Discord-channel-backed storage instead of local SQLite
 - slash commands still work through `discord.py`
 
 ## Features
@@ -27,23 +27,26 @@ This bot is back on the simpler Discord gateway setup:
 - 30-day `1% interest 30 days after` entries
 - name and date autocomplete
 - previous bot list messages get cleared before the next list is shown
-- existing `debts.db` data can keep working
+- data survives restarts by replaying a hidden Discord channel
 
 ## Environment variables
 
 ```bash
 DISCORD_TOKEN=your_bot_token_here
-DEBT_DB_PATH=debts.db
-DEBT_DB_SEED_PATH=seed_debts.db
 DISCORD_GUILD_ID=your_server_id_here
+BOT_DATA_CHANNEL_NAME=bot-data
 BOT_TIMEZONE=Asia/Manila
 ```
 
 `DISCORD_GUILD_ID` is optional but recommended while you are iterating so slash-command updates appear right away in one server.
 
-`DEBT_DB_PATH` defaults to `debts.db`.
+`BOT_DATA_CHANNEL_NAME` defaults to `bot-data`.
 
-`DEBT_DB_SEED_PATH` defaults to `seed_debts.db`. If the main database file does not exist yet and the seed file is present, the bot copies the seed file first.
+If the bot can manage channels, it will create a hidden `#bot-data` channel automatically. If it cannot, create that channel yourself and give the bot:
+
+- View Channel
+- Send Messages
+- Read Message History
 
 ## Local setup
 
@@ -84,7 +87,7 @@ This version is meant to be easier on free bot hosting:
 python -m pip install --user -r requirements.gateway.txt && python bot.py
 ```
 
-The gateway startup now reads `.env` itself, so Wispbyte no longer needs `python-dotenv` for the bot path.
+The gateway startup reads `.env` itself and stores debt/grade data back into Discord, so Wispbyte no longer needs a local database for the bot path.
 
 3. After the first successful boot, change the startup command back to:
 
@@ -93,8 +96,6 @@ python bot.py
 ```
 
 4. Do not set an `Interactions Endpoint URL` in Discord
-
-If you want your old records on Wispbyte, upload `debts.db` or `seed_debts.db` manually. The repo ignores `*.db`, so GitHub clone alone will not carry your saved debt data.
 
 If even this minimal setup still fails with `No space left on device`, the remaining problem is the host node itself, not the bot code.
 
@@ -116,6 +117,7 @@ If even this minimal setup still fails with `No space left on device`, the remai
 
 - `categories:` uses the format `weight|score/total,score/total;weight|score/total`
 - Example: `30|18/20,19/20;70|45/50`
+- the bot writes machine-readable events into a hidden Discord channel and rebuilds state from that history on startup
 - Positive amount means they owe you.
 - Negative amount means you owe them.
 - `/utang amount:` accepts `11`, `-1`, `11.5`, or `11.50`.

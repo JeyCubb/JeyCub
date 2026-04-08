@@ -18,9 +18,8 @@ class Settings:
 @dataclass(frozen=True)
 class GatewaySettings:
     bot_token: str
-    database_path: str
-    seed_database_path: Optional[str]
     guild_id: Optional[int]
+    data_channel_name: str
 
 
 def _get_env(*names: str, default: Optional[str] = None) -> Optional[str]:
@@ -88,7 +87,6 @@ def get_gateway_settings() -> GatewaySettings:
 
     return GatewaySettings(
         bot_token=bot_token,
-        database_path=_get_env("DEBT_DB_PATH", default="debts.db") or "debts.db",
-        seed_database_path=_get_env("DEBT_DB_SEED_PATH", default="seed_debts.db"),
         guild_id=guild_id,
+        data_channel_name=_get_env("BOT_DATA_CHANNEL_NAME", default="bot-data") or "bot-data",
     )
