@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Utang Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.7);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-black text-xl">
+          ₱
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
+            Utang Tracker
+            <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Web</span>
+          </h1>
+          <p class="text-xs text-slate-400">Keep track of loans, debts & payments</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-open-settings" class="p-2 sm:px-3 sm:py-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 text-xs font-medium transition flex items-center gap-1.5" title="Settings">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span class="hidden sm:inline">Settings</span>
+        </button>
+
+        <button id="btn-open-add" class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>Add Utang</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col gap-6">
+
+    <!-- OVERVIEW STATS -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 shadow-sm relative overflow-hidden group">
+        <div class="absolute right-3 top-3 text-rose-500/10 group-hover:text-rose-500/20 transition">
+          <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 14h-2v-2h2zm0-4h-2V7h2z"/></svg>
+        </div>
+        <p class="text-xs uppercase font-semibold tracking-wider text-rose-400">Total Unpaid Balance</p>
+        <p id="stat-total-unpaid" class="text-2xl sm:text-3xl font-extrabold text-white mt-1 mono">₱0.00</p>
+        <p id="stat-unpaid-count" class="text-[11px] text-slate-400 mt-1">0 pending debts</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 shadow-sm relative overflow-hidden group">
+        <div class="absolute right-3 top-3 text-emerald-500/10 group-hover:text-emerald-500/20 transition">
+          <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm-1 15l-5-5 1.41-1.41L11 14.17l7.59-7.59L20 8z"/></svg>
+        </div>
+        <p class="text-xs uppercase font-semibold tracking-wider text-emerald-400">Total Settled / Paid</p>
+        <p id="stat-total-paid" class="text-2xl sm:text-3xl font-extrabold text-slate-200 mt-1 mono">₱0.00</p>
+        <p id="stat-paid-count" class="text-[11px] text-slate-400 mt-1">0 settled debts</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 shadow-sm relative overflow-hidden group">
+        <div class="absolute right-3 top-3 text-indigo-500/10 group-hover:text-indigo-500/20 transition">
+          <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </div>
+        <p class="text-xs uppercase font-semibold tracking-wider text-indigo-400">Active Debtors</p>
+        <p id="stat-debtor-count" class="text-2xl sm:text-3xl font-extrabold text-white mt-1 mono">0</p>
+        <p id="stat-people-summary" class="text-[11px] text-slate-400 mt-1">with outstanding balances</p>
+      </div>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+      <!-- Search Input -->
+      <div class="relative flex-1">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="search-input" placeholder="Search by name, reason, or date code..." class="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+        <button data-filter="unpaid" class="filter-btn px-3 py-1.5 rounded-md font-medium text-white bg-indigo-600 transition">Unpaid</button>
+        <button data-filter="all" class="filter-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white transition">All</button>
+        <button data-filter="paid" class="filter-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white transition">Paid</button>
+      </div>
+
+      <!-- View Grouping Toggle -->
+      <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+        <button id="view-grouped" class="px-2.5 py-1.5 rounded-md text-white bg-slate-800 font-medium transition" title="Group by Person">By Person</button>
+        <button id="view-list" class="px-2.5 py-1.5 rounded-md text-slate-400 hover:text-white font-medium transition" title="Timeline View">Timeline</button>
+      </div>
+    </div>
+
+    <!-- DEBT LIST CONTAINER -->
+    <div id="debts-container" class="space-y-4">
+      <!-- Injected via JavaScript -->
+    </div>
+
+  </main>
+
+  <!-- ADD / EDIT UTANG MODAL -->
+  <div id="modal-add" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 id="modal-add-title" class="font-bold text-base text-white flex items-center gap-2">
+          <span>➕</span> Add Utang Entry
+        </h3>
+        <button id="btn-close-add" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="form-add-utang" class="p-5 space-y-4">
+        <input type="hidden" id="edit-id" value="">
+
+        <!-- Name -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Person Name *</label>
+          <input type="text" id="input-name" required placeholder="e.g. Juan, Maria, Carlo" list="names-datalist" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          <datalist id="names-datalist"></datalist>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Amount (₱ Peso) *</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400 mono">₱</span>
+            <input type="number" step="0.01" id="input-amount" required placeholder="0.00" class="w-full pl-8 pr-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Supports negative values if it's a credit or deduction.</p>
+        </div>
+
+        <!-- Reason -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Reason / Description *</label>
+          <input type="text" id="input-reason" required placeholder="e.g. Lunch at Jollibee, Gas, Steam Game" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+        </div>
+
+        <!-- Date / Time -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Date & Time (Optional)</label>
+          <input type="datetime-local" id="input-datetime" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Defaults to current date/time if left blank.</p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" id="btn-cancel-add" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition">Save Utang</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="modal-settings" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-base text-white flex items-center gap-2">
+          <span>⚙️</span> Settings & Discord Integration
+        </h3>
+        <button id="btn-close-settings" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-5 text-xs">
+
+        <!-- Discord Webhook -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.893.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+              Discord Webhook Alerts
+            </span>
+            <span class="text-[10px] text-slate-500">Optional</span>
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            Send automatic Discord notifications when utang is added or paid (uses the same incoming webhook as your laptop monitor).
+          </p>
+          <input type="url" id="setting-webhook-url" placeholder="https://discord.com/api/webhooks/..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-600 mono text-[11px] focus:outline-none focus:border-indigo-500">
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-slate-400">Notify on actions:</span>
+            <button id="btn-test-webhook" type="button" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition">Send Test Alert</button>
+          </div>
+        </div>
+
+        <!-- 30-Day Interest Setting -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div>
+            <p class="font-semibold text-slate-200">1% Monthly Interest Rule</p>
+            <p class="text-slate-400 mt-0.5">Automatically calculate 1% interest if an utang is overdue past 30 days.</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="setting-interest-enabled" checked class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+          </label>
+        </div>
+
+        <!-- Data Backup & Restore -->
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+          <p class="font-semibold text-slate-200">Backup & Restore Data</p>
+          <p class="text-slate-400">Save your records to a local JSON file or import a backup.</p>
+          <div class="flex items-center gap-2 pt-1">
+            <button id="btn-export-data" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition flex items-center gap-1.5">
+              <span>📥</span> Export JSON
+            </button>
+            <label class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition cursor-pointer flex items-center gap-1.5">
+              <span>📤</span> Import JSON
+              <input type="file" id="input-import-file" accept=".json" class="hidden">
+            </label>
+            <button id="btn-clear-all" class="ml-auto px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium transition">
+              Wipe All
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button id="btn-save-settings" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-auto py-6 border-t border-slate-800/60 text-center text-xs text-slate-500">
+    <p>Utang Tracker &bull; Manila Timezone (GMT+8) &bull; 1% Interest after 30 days</p>
+  </footer>
+
+  <!-- CORE SCRIPT -->
+  <script>
+    // State & Constants
+    const STORAGE_KEY = 'utang_tracker_data_v1';
+    const SETTINGS_KEY = 'utang_tracker_settings_v1';
+    const INTEREST_RATE = 0.01; // 1%
+    const INTEREST_DAYS = 30;
+
+    let debts = [];
+    let settings = {
+      discordWebhookUrl: '',
+      interestEnabled: true,
+      lastView: 'grouped', // 'grouped' | 'list'
+      filter: 'unpaid'     // 'all' | 'unpaid' | 'paid'
+    };
+    let currentSearch = '';
+
+    // Load Initial Data
+    function loadStorage() {
+      try {
+        const storedDebts = localStorage.getItem(STORAGE_KEY);
+        if (storedDebts) debts = JSON.parse(storedDebts);
+      } catch (e) {
+        console.error('Failed to load debts:', e);
+        debts = [];
+      }
+
+      try {
+        const storedSettings = localStorage.getItem(SETTINGS_KEY);
+        if (storedSettings) settings = { ...settings, ...JSON.parse(storedSettings) };
+      } catch (e) {
+        console.error('Failed to load settings:', e);
+      }
+    }
+
+    function saveStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(debts));
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+    }
+
+    // Helper: Manila Date Format
+    function getManilaDateCode(dateObj, index = 1) {
+      const d = new Date(dateObj);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const yy = String(d.getFullYear()).slice(-2);
+      return `${mm}-${dd}-${yy}-G${index}`;
+    }
+
+    function formatCurrency(num) {
+      const val = Number(num) || 0;
+      return '₱' + val.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calculateDaysPassed(dateString) {
+      const past = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now - past);
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // Notification via Discord Webhook
+    async function sendDiscordNotification(title, description, color = 0x6366f1, fields = []) {
+      if (!settings.discordWebhookUrl) return;
+
+      const payload = {
+        embeds: [{
+          title: title,
+          description: description,
+          color: color,
+          fields: fields,
+          footer: { text: "Utang Tracker Web App • Manila GMT+8" },
+          timestamp: new Date().toISOString()
+        }]
+      };
+
+      try {
+        await fetch(settings.discordWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.warn('Discord webhook failed to send:', err);
+      }
+    }
+
+    // Render Stats
+    function updateStats() {
+      let totalUnpaid = 0;
+      let totalPaid = 0;
+      let unpaidCount = 0;
+      let paidCount = 0;
+      const debtors = new Set();
+
+      debts.forEach(d => {
+        let amt = Number(d.amount) || 0;
+        if (!d.isPaid) {
+          if (settings.interestEnabled && calculateDaysPassed(d.date) >= INTEREST_DAYS) {
+            amt += amt * INTEREST_RATE;
+          }
+          totalUnpaid += amt;
+          unpaidCount++;
+          debtors.add(d.name.trim().toLowerCase());
+        } else {
+          totalPaid += amt;
+          paidCount++;
+        }
+      });
+
+      document.getElementById('stat-total-unpaid').textContent = formatCurrency(totalUnpaid);
+      document.getElementById('stat-unpaid-count').textContent = `${unpaidCount} pending debts`;
+
+      document.getElementById('stat-total-paid').textContent = formatCurrency(totalPaid);
+      document.getElementById('stat-paid-count').textContent = `${paidCount} settled debts`;
+
+      document.getElementById('stat-debtor-count').textContent = debtors.size;
+      document.getElementById('stat-people-summary').textContent = `${debtors.size} people with balance`;
+
+      // Update name datalist
+      const allNames = Array.from(new Set(debts.map(d => d.name.trim()))).sort();
+      const datalist = document.getElementById('names-datalist');
+      datalist.innerHTML = allNames.map(n => `<option value="${n}">`).join('');
+    }
+
+    // Render Debt List
+    function render() {
+      updateStats();
+      const container = document.getElementById('debts-container');
+      container.innerHTML = '';
+
+      // Filtered items
+      let filtered = debts.filter(d => {
+        if (settings.filter === 'unpaid' && d.isPaid) return false;
+        if (settings.filter === 'paid' && !d.isPaid) return false;
+
+        if (currentSearch) {
+          const q = currentSearch.toLowerCase();
+          const matchName = d.name.toLowerCase().includes(q);
+          const matchReason = d.reason.toLowerCase().includes(q);
+          const matchCode = (d.dateCode || '').toLowerCase().includes(q);
+          if (!matchName && !matchReason && !matchCode) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-16 text-center bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
+            <div class="w-12 h-12 mx-auto rounded-full bg-slate-800/80 flex items-center justify-center text-2xl mb-3 text-slate-400">✨</div>
+            <p class="text-sm font-semibold text-slate-300">No debts found</p>
+            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">There are no records matching your current filter. Click "Add Utang" to record a new one!</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (settings.lastView === 'grouped') {
+        renderGroupedView(filtered, container);
+      } else {
+        renderTimelineView(filtered, container);
+      }
+    }
+
+    // Grouped By Person View
+    function renderGroupedView(items, container) {
+      const groups = {};
+      items.forEach(d => {
+        const key = d.name.trim();
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(d);
+      });
+
+      Object.keys(groups).sort().forEach(person => {
+        const personDebts = groups[person];
+        const unpaidSum = personDebts
+          .filter(d => !d.isPaid)
+          .reduce((acc, d) => {
+            let a = Number(d.amount) || 0;
+            if (settings.interestEnabled && calculateDaysPassed(d.date) >= INTEREST_DAYS) a += a * INTEREST_RATE;
+            return acc + a;
+          }, 0);
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm";
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-3.5 border-b border-slate-800/80 flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700/60 flex items-center justify-center font-bold text-white text-sm">
+                ${person.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h4 class="font-bold text-base text-white">${person}</h4>
+                <p class="text-xs text-slate-400">${personDebts.length} entries (${personDebts.filter(d=>!d.isPaid).length} unpaid)</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Balance Due</p>
+              <p class="text-lg sm:text-xl font-extrabold ${unpaidSum > 0 ? 'text-rose-400' : 'text-emerald-400'} mono">${formatCurrency(unpaidSum)}</p>
+            </div>
+          </div>
+
+          <div class="divide-y divide-slate-800/50 mt-1">
+            ${personDebts.map(d => renderDebtRow(d)).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Timeline View
+    function renderTimelineView(items, container) {
+      // Latest first
+      const sorted = [...items].sort((a,b) => new Date(b.date) - new Date(a.date));
+      const box = document.createElement('div');
+      box.className = "bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 divide-y divide-slate-800/60 shadow-sm";
+      box.innerHTML = sorted.map(d => renderDebtRow(d, true)).join('');
+      container.appendChild(box);
+    }
+
+    function renderDebtRow(d, showName = false) {
+      const daysOld = calculateDaysPassed(d.date);
+      const isPast30Days = daysOld >= INTEREST_DAYS;
+      const hasInterest = settings.interestEnabled && !d.isPaid && isPast30Days;
+      const baseAmt = Number(d.amount) || 0;
+      const finalAmt = hasInterest ? baseAmt + (baseAmt * INTEREST_RATE) : baseAmt;
+
+      const dateStr = new Date(d.date).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+
+      return `
+        <div class="py-3 flex items-center justify-between gap-3 text-xs flex-wrap sm:flex-nowrap">
+          <div class="flex-1 min-w-[200px]">
+            <div class="flex items-center gap-2">
+              ${showName ? `<span class="font-bold text-white text-sm">${d.name}</span> &bull;` : ''}
+              <span class="font-semibold text-slate-200 text-sm ${d.isPaid ? 'line-through text-slate-500' : ''}">${d.reason}</span>
+              ${d.isPaid 
+                ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">PAID</span>` 
+                : `<span class="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-semibold">UNPAID</span>`}
+              ${hasInterest 
+                ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-medium" title="1% interest applied">+1% int</span>`
+                : ''}
+            </div>
+            <div class="flex items-center gap-2 text-slate-400 mt-1 text-[11px]">
+              <span class="mono bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-slate-400">${d.dateCode || 'N/A'}</span>
+              <span>${dateStr}</span>
+              <span>&bull;</span>
+              <span>${daysOld}d ago</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <span class="font-bold text-base mono ${d.isPaid ? 'line-through text-slate-500' : 'text-white'}">${formatCurrency(finalAmt)}</span>
+              ${hasInterest ? `<div class="text-[10px] text-amber-400">Orig: ${formatCurrency(baseAmt)}</div>` : ''}
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button onclick="togglePaid('${d.id}')" class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition ${d.isPaid ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500'}">
+                ${d.isPaid ? 'Mark Unpaid' : 'Mark Paid'}
+              </button>
+              <button onclick="deleteDebt('${d.id}')" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition" title="Delete">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Action Handlers
+    window.togglePaid = function(id) {
+      const item = debts.find(d => d.id === id);
+      if (!item) return;
+
+      item.isPaid = !item.isPaid;
+      item.paidAt = item.isPaid ? new Date().toISOString() : null;
+      saveStorage();
+      render();
+
+      // Discord alert
+      if (item.isPaid) {
+        sendDiscordNotification(
+          "✅ Utang Settled / Paid",
+          `**${item.name}** has paid **${formatCurrency(item.amount)}** for *${item.reason}*.`,
+          0x10b981,
+          [
+            { name: "Date Code", value: item.dateCode || "N/A", inline: true },
+            { name: "Amount", value: formatCurrency(item.amount), inline: true }
+          ]
+        );
+      }
+    };
+
+    window.deleteDebt = function(id) {
+      const item = debts.find(d => d.id === id);
+      if (!item) return;
+      if (!confirm(`Are you sure you want to delete "${item.reason}" for ${item.name}?`)) return;
+
+      debts = debts.filter(d => d.id !== id);
+      saveStorage();
+      render();
+    };
+
+    // Form Submit (Add Utang)
+    document.getElementById('form-add-utang').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('input-name').value.trim();
+      const amount = parseFloat(document.getElementById('input-amount').value);
+      const reason = document.getElementById('input-reason').value.trim();
+      const dtInput = document.getElementById('input-datetime').value;
+      const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
+
+      if (!name || isNaN(amount) || !reason) return;
+
+      // Generate date code
+      const personExisting = debts.filter(d => d.name.toLowerCase() === name.toLowerCase());
+      const dateCode = getManilaDateCode(date, personExisting.length + 1);
+
+      const newEntry = {
+        id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: name,
+        amount: amount,
+        reason: reason,
+        date: date,
+        dateCode: dateCode,
+        isPaid: false,
+        createdAt: new Date().toISOString()
+      };
+
+      debts.unshift(newEntry);
+      saveStorage();
+      render();
+
+      // Send Discord Webhook Alert
+      sendDiscordNotification(
+        "💸 New Utang Added",
+        `**${name}** owes **${formatCurrency(amount)}** for *${reason}*.`,
+        0xef4444,
+        [
+          { name: "Date Code", value: dateCode, inline: true },
+          { name: "Amount", value: formatCurrency(amount), inline: true },
+          { name: "Reason", value: reason, inline: false }
+        ]
+      );
+
+      // Close modal
+      document.getElementById('modal-add').classList.add('hidden');
+      document.getElementById('form-add-utang').reset();
+    });
+
+    // Modals Controls
+    document.getElementById('btn-open-add').addEventListener('click', () => {
+      document.getElementById('form-add-utang').reset();
+      document.getElementById('modal-add').classList.remove('hidden');
+      document.getElementById('input-name').focus();
+    });
+    document.getElementById('btn-close-add').addEventListener('click', () => {
+      document.getElementById('modal-add').classList.add('hidden');
+    });
+    document.getElementById('btn-cancel-add').addEventListener('click', () => {
+      document.getElementById('modal-add').classList.add('hidden');
+    });
+
+    document.getElementById('btn-open-settings').addEventListener('click', () => {
+      document.getElementById('setting-webhook-url').value = settings.discordWebhookUrl || '';
+      document.getElementById('setting-interest-enabled').checked = settings.interestEnabled;
+      document.getElementById('modal-settings').classList.remove('hidden');
+    });
+    document.getElementById('btn-close-settings').addEventListener('click', () => {
+      document.getElementById('modal-settings').classList.add('hidden');
+    });
+    document.getElementById('btn-save-settings').addEventListener('click', () => {
+      settings.discordWebhookUrl = document.getElementById('setting-webhook-url').value.trim();
+      settings.interestEnabled = document.getElementById('setting-interest-enabled').checked;
+      saveStorage();
+      render();
+      document.getElementById('modal-settings').classList.add('hidden');
+    });
+
+    // Test Webhook Button
+    document.getElementById('btn-test-webhook').addEventListener('click', async () => {
+      const url = document.getElementById('setting-webhook-url').value.trim();
+      if (!url) {
+        alert('Please enter a Discord Webhook URL first.');
+        return;
+      }
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: "🔔 Test Notification from Utang Tracker",
+              description: "Your Discord webhook is configured and working perfectly!",
+              color: 0x6366f1,
+              timestamp: new Date().toISOString()
+            }]
+          })
+        });
+        alert('Test notification sent to Discord!');
+      } catch (e) {
+        alert('Failed to send webhook: ' + e.message);
+      }
+    });
+
+    // Filters & Search
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.className = 'filter-btn px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-white transition';
+        });
+        btn.className = 'filter-btn px-3 py-1.5 rounded-md font-medium text-white bg-indigo-600 transition';
+        settings.filter = btn.getAttribute('data-filter');
+        saveStorage();
+        render();
+      });
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      currentSearch = e.target.value.trim();
+      render();
+    });
+
+    document.getElementById('view-grouped').addEventListener('click', () => {
+      settings.lastView = 'grouped';
+      document.getElementById('view-grouped').className = "px-2.5 py-1.5 rounded-md text-white bg-slate-800 font-medium transition";
+      document.getElementById('view-list').className = "px-2.5 py-1.5 rounded-md text-slate-400 hover:text-white font-medium transition";
+      saveStorage();
+      render();
+    });
+
+    document.getElementById('view-list').addEventListener('click', () => {
+      settings.lastView = 'list';
+      document.getElementById('view-list').className = "px-2.5 py-1.5 rounded-md text-white bg-slate-800 font-medium transition";
+      document.getElementById('view-grouped').className = "px-2.5 py-1.5 rounded-md text-slate-400 hover:text-white font-medium transition";
+      saveStorage();
+      render();
+    });
+
+    // Export / Import
+    document.getElementById('btn-export-data').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(debts, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `utang_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    document.getElementById('input-import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            debts = imported;
+            saveStorage();
+            render();
+            alert(`Successfully imported ${imported.length} debt records!`);
+          } else {
+            alert('Invalid backup file format.');
+          }
+        } catch (err) {
+          alert('Failed to parse JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById('btn-clear-all').addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete ALL records? This cannot be undone.')) {
+        debts = [];
+        saveStorage();
+        render();
+      }
+    });
+
+    // Seed Demo Data if empty on first load
+    function checkFirstRun() {
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        debts = [
+          {
+            id: 'demo_1',
+            name: 'Juan',
+            amount: 250.00,
+            reason: 'Lunch & Milk Tea',
+            date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+            dateCode: '10-15-26-G1',
+            isPaid: false,
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'demo_2',
+            name: 'Maria',
+            amount: 1500.00,
+            reason: 'Concert Ticket Downpayment',
+            date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            dateCode: '11-09-26-G1',
+            isPaid: false,
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'demo_3',
+            name: 'Juan',
+            amount: 100.00,
+            reason: 'Grab ride split',
+            date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            dateCode: '11-14-26-G2',
+            isPaid: true,
+            createdAt: new Date().toISOString()
+          }
+        ];
+        saveStorage();
+      }
+    }
+
+    // Init
+    loadStorage();
+    checkFirstRun();
+    render();
+  </script>
+</body>
+</html>
