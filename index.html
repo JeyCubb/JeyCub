@@ -34,6 +34,10 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
+  <!-- Firebase Realtime Database SDKs for Cross-Device Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
   <style>
     /* Design System & Design Tokens */
     :root {
@@ -1950,6 +1954,12 @@
     let currentDebtSearch = '';
     let currentExpenseSearch = '';
 
+    // Firebase Cloud Sync State
+    let firebaseDb = null;
+    let isCloudUpdating = false;
+    let cloudSyncTimeout = null;
+    const clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
     // ==========================================================================
     // THEME CONTROLLER & SYSTEM DEVICE PREFERENCE LISTENER
     // ==========================================================================
@@ -2044,16 +2054,42 @@
       }
     }
 
-    function saveStorage() {
+    function saveStorage(syncToCloud = true) {
       try {
         localStorage.setItem('jeycub_initialized', 'true');
         localStorage.setItem(STORAGE_KEY, JSON.stringify(debts));
         localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         localStorage.setItem(WALLETS_KEY, JSON.stringify(wallets));
+        localStorage.setItem('jeycub_last_updated', Date.now().toString());
       } catch (e) {
         console.error('Failed to save to localStorage:', e);
       }
+
+      if (syncToCloud && firebaseDb && !isCloudUpdating) {
+        saveToCloud();
+      }
+    }
+
+    function saveToCloud() {
+      clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = setTimeout(() => {
+        if (!firebaseDb) return;
+        try {
+          const payload = {
+            expenses: expenses || [],
+            wallets: wallets || {},
+            settings: settings || {},
+            lastUpdated: Date.now(),
+            lastSender: clientId
+          };
+          firebaseDb.ref('jeycub_finance/data').set(payload).catch(err => {
+            console.warn('Firebase set error:', err);
+          });
+        } catch (e) {
+          console.warn('Firebase save error:', e);
+        }
+      }, 300);
     }
 
     function getManilaDateCode(dateObj, index = 1) {
@@ -2684,6 +2720,62 @@
       });
     }
 
+    // ==========================================================================
+    // FIREBASE REALTIME CLOUD SYNC (Single Data Across All Devices)
+    // ==========================================================================
+    function initFirebase() {
+      if (typeof firebase === 'undefined') return;
+      try {
+        const config = {
+          databaseURL: "https://jeycub-stardew-farm-calendar-default-rtdb.firebaseio.com/"
+        };
+        if (!firebase.apps.length) {
+          firebase.initializeApp(config);
+        }
+        firebaseDb = firebase.database();
+
+        firebaseDb.ref('jeycub_finance/data').on('value', snapshot => {
+          const remote = snapshot.val();
+          if (!remote) {
+            // Seed cloud if local already has data
+            if (expenses.length > 0 || Object.values(wallets).some(v => Number(v) > 0)) {
+              saveToCloud();
+            }
+            return;
+          }
+
+          // Ignore echoes from own client
+          if (remote.lastSender === clientId) {
+            return;
+          }
+
+          isCloudUpdating = true;
+          try {
+            if (Array.isArray(remote.expenses)) {
+              expenses = remote.expenses;
+            }
+            if (remote.wallets && typeof remote.wallets === 'object') {
+              wallets = { ...wallets, ...remote.wallets };
+            }
+            if (remote.settings && typeof remote.settings === 'object') {
+              settings = { ...settings, ...remote.settings };
+            }
+
+            saveStorage(false);
+            render();
+          } catch (err) {
+            console.error('Error applying cloud sync:', err);
+          } finally {
+            isCloudUpdating = false;
+          }
+        }, err => {
+          console.warn('Firebase sync listener error:', err);
+        });
+      } catch (err) {
+        console.warn('Firebase init error:', err);
+      }
+    }
+
     // First Run Initialization (Never resets or overwrites existing user data)
     function checkFirstRun() {
       if (localStorage.getItem('jeycub_initialized') === 'true' || localStorage.getItem(EXPENSES_KEY) !== null) {
@@ -2702,6 +2794,7 @@
       checkFirstRun();
       initBrandNavPopup();
       render();
+      initFirebase();
     });
   </script>
 </body>
