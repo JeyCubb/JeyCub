@@ -818,100 +818,70 @@
       padding: 0.12rem 0.5rem;
     }
 
-    /* Expense Item Row */
+    /* Expense Item Row: Double Regular Text Line (Compact) */
     .expense-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.65rem;
-      padding: 0.4rem 0.55rem;
+      flex-direction: column;
+      gap: 0.15rem;
+      padding: 0.35rem 0.55rem;
       border-radius: var(--radius-sm);
       background: var(--bg-input);
-      border: 1px solid transparent;
-      transition: var(--transition);
-      flex-wrap: wrap;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.18s ease;
+      touch-action: manipulation;
     }
     .expense-row:hover {
       border-color: var(--border-color-hover);
       background: var(--bg-card-hover);
     }
-    .expense-left {
+    .expense-row:active, .expense-row.is-pressing {
+      background: rgba(249, 115, 22, 0.14) !important;
+      border-color: var(--accent-primary) !important;
+      transform: scale(0.99);
+    }
+
+    .expense-line-1 {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      flex: 1;
-      min-width: 220px;
+      justify-content: space-between;
+      gap: 0.5rem;
     }
-    .expense-cat-icon {
-      width: 38px;
-      height: 38px;
-      min-width: 38px;
-      border-radius: 10px;
-      background: rgba(249, 115, 22, 0.12);
-      border: 1px solid rgba(249, 115, 22, 0.25);
-      color: var(--accent-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.95rem;
-    }
-    .expense-desc-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-    .expense-title {
-      font-size: 0.88rem;
+    .expense-item-name {
+      font-size: 0.85rem;
       font-weight: 700;
       color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex-wrap: wrap;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
     }
-    .expense-meta {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-    }
-    .wallet-source-tag {
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 0.1rem 0.45rem;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border-color);
-      background: var(--bg-card);
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .expense-right {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      text-align: right;
-    }
-    .expense-amount-val {
-      font-size: 1.05rem;
+    .expense-item-amount {
+      font-size: 0.88rem;
       font-weight: 800;
       color: var(--color-error);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .btn-icon-danger {
-      background: transparent;
-      border: none;
+
+    .expense-line-2 {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.85rem;
-      padding: 0.35rem 0.5rem;
-      border-radius: var(--radius-sm);
-      transition: var(--transition);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .btn-icon-danger:hover {
-      color: var(--color-error);
-      background: var(--color-error-bg);
+    .wallet-source-mini {
+      color: var(--accent-primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
     /* Grouped Person Card for Utang Feature */
@@ -1836,9 +1806,14 @@
           <input type="datetime-local" id="expense-input-datetime" class="form-input" />
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
-          <button type="submit" class="btn-primary">Save Expense</button>
+        <div class="modal-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+          <button type="button" id="btn-delete-expense" class="btn-modal-cancel" style="display: none; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.28); font-weight: 700;">
+            <i class="fa-solid fa-trash-can"></i> Delete
+          </button>
+          <div style="display: flex; align-items: center; gap: 0.45rem; margin-left: auto;">
+            <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
+            <button type="submit" id="btn-submit-expense" class="btn-primary">Save Expense</button>
+          </div>
         </div>
       </form>
     </div>
@@ -2192,31 +2167,14 @@
       if (elUtangCollectibles) elUtangCollectibles.textContent = formatCurrency(totalUtangExpense);
     }
 
+    let currentEditExpenseId = null;
+
     function renderExpensesTimeline() {
       const container = document.getElementById('expenses-timeline-container');
       if (!container) return;
       container.innerHTML = '';
 
-      let filtered = expenses.filter(exp => {
-        if (currentExpenseSearch) {
-          const q = currentExpenseSearch.toLowerCase();
-          const matchTitle = (exp.title || '').toLowerCase().includes(q);
-          const matchCat = (exp.category || '').toLowerCase().includes(q);
-          const matchWallet = (exp.wallet || '').toLowerCase().includes(q);
-          if (!matchTitle && !matchCat && !matchWallet) return false;
-        }
-
-        const expDate = new Date(exp.date);
-        const now = new Date();
-
-        if (settings.expenseFilter === 'today') {
-          return expDate.toDateString() === now.toDateString();
-        } else if (settings.expenseFilter === 'month') {
-          return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
-        }
-
-        return true;
-      });
+      let filtered = [...expenses];
 
       if (filtered.length === 0) {
         container.innerHTML = `
@@ -2263,12 +2221,56 @@
             </span>
             <span class="timeline-day-total mono">Spent: -${formatCurrency(dayTotal)}</span>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
             ${groupItems.map(item => renderExpenseRow(item)).join('')}
           </div>
         `;
 
         container.appendChild(groupEl);
+      });
+
+      // Bind hold & tap listeners to rows
+      container.querySelectorAll('.expense-row').forEach(row => {
+        const id = row.getAttribute('data-id');
+        let pressTimer = null;
+        let isLongPress = false;
+
+        const startPress = () => {
+          isLongPress = false;
+          row.classList.add('is-pressing');
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(() => {
+            isLongPress = true;
+            row.classList.remove('is-pressing');
+            if (navigator.vibrate) navigator.vibrate(40);
+            openExpenseModalForEdit(id);
+          }, 400);
+        };
+
+        const cancelPress = () => {
+          clearTimeout(pressTimer);
+          row.classList.remove('is-pressing');
+        };
+
+        row.addEventListener('touchstart', startPress, { passive: true });
+        row.addEventListener('touchend', (e) => {
+          cancelPress();
+          if (isLongPress) {
+            e.preventDefault();
+          }
+        });
+        row.addEventListener('touchcancel', cancelPress);
+        row.addEventListener('touchmove', cancelPress);
+
+        row.addEventListener('mousedown', startPress);
+        row.addEventListener('mouseup', cancelPress);
+        row.addEventListener('mouseleave', cancelPress);
+
+        row.addEventListener('click', (e) => {
+          if (!isLongPress) {
+            openExpenseModalForEdit(id);
+          }
+        });
       });
     }
 
@@ -2276,41 +2278,28 @@
       const timeStr = new Date(item.date).toLocaleTimeString('en-US', {
         hour: '2-digit', minute: '2-digit'
       });
-      const catIcon = getCategoryIcon(item.category);
       const walletNames = {
         cash: 'Cash',
         maribank: 'MariBank',
         bdo: 'BDO',
         gcash: 'GCash',
         utang: 'Utang',
-        none: 'Unassigned'
+        none: 'None'
       };
       const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
 
       return `
-        <div class="expense-row">
-          <div class="expense-left">
-            <div class="expense-cat-icon">
-              <i class="${catIcon}"></i>
-            </div>
-            <div class="expense-desc-wrap">
-              <div class="expense-title">
-                <span>${item.title}</span>
-                <span class="wallet-source-tag">${walletLabel}</span>
-              </div>
-              <div class="expense-meta">
-                <span>${item.category || 'General'}</span>
-                <span>&bull;</span>
-                <span><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${timeStr}</span>
-              </div>
-            </div>
+        <div class="expense-row" data-id="${item.id}" title="Tap or hold to edit/delete">
+          <div class="expense-line-1">
+            <span class="expense-item-name">${item.title}</span>
+            <span class="expense-item-amount mono">-${formatCurrency(item.amount)}</span>
           </div>
-
-          <div class="expense-right">
-            <span class="expense-amount-val mono">-${formatCurrency(item.amount)}</span>
-            <button onclick="deleteExpense('${item.id}')" class="btn-icon-danger" title="Delete expense">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
+          <div class="expense-line-2">
+            <span>${item.category || 'General'}</span>
+            <span>&bull;</span>
+            <span class="wallet-source-mini">${walletLabel}</span>
+            <span>&bull;</span>
+            <span>${timeStr}</span>
           </div>
         </div>
       `;
@@ -2342,11 +2331,38 @@
       }
     };
 
+    window.openExpenseModalForEdit = function(id) {
+      const item = expenses.find(e => e.id === id);
+      if (!item) return;
+
+      currentEditExpenseId = id;
+      document.getElementById('modal-expense-title').textContent = 'Edit Expense';
+      document.getElementById('expense-input-title').value = item.title || '';
+      document.getElementById('expense-input-amount').value = Number(item.amount) || '';
+      document.getElementById('expense-input-wallet').value = item.wallet || 'none';
+      document.getElementById('expense-input-category').value = item.category || 'Food & Drinks';
+
+      const d = new Date(item.date || item.createdAt);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      document.getElementById('expense-input-datetime').value = d.toISOString().slice(0, 16);
+
+      const btnDelete = document.getElementById('btn-delete-expense');
+      if (btnDelete) btnDelete.style.display = 'inline-flex';
+
+      const btnSubmit = document.getElementById('btn-submit-expense');
+      if (btnSubmit) btnSubmit.textContent = 'Save Changes';
+
+      document.getElementById('modal-expense').classList.add('is-active');
+    };
+
     window.deleteExpense = function(id) {
       const item = expenses.find(e => e.id === id);
       if (!item) return;
       if (!confirm(`Delete expense "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
 
+      if (item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
+        wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
+      }
       expenses = expenses.filter(e => e.id !== id);
       saveStorage();
       render();
@@ -2356,16 +2372,26 @@
     // MODALS CONTROLS & SUBMITS
     // ==========================================================================
     window.openExpenseModal = function() {
+      currentEditExpenseId = null;
       document.getElementById('form-add-expense').reset();
+      document.getElementById('modal-expense-title').textContent = 'Record Expense';
+
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       document.getElementById('expense-input-datetime').value = now.toISOString().slice(0, 16);
+
+      const btnDelete = document.getElementById('btn-delete-expense');
+      if (btnDelete) btnDelete.style.display = 'none';
+
+      const btnSubmit = document.getElementById('btn-submit-expense');
+      if (btnSubmit) btnSubmit.textContent = 'Save Expense';
 
       document.getElementById('modal-expense').classList.add('is-active');
       document.getElementById('expense-input-title').focus();
     };
 
     function closeExpenseModal() {
+      currentEditExpenseId = null;
       document.getElementById('modal-expense').classList.remove('is-active');
     }
 
@@ -2384,7 +2410,7 @@
       document.getElementById('modal-settings').classList.remove('is-active');
     }
 
-    // Expense Form Submit
+    // Expense Form Submit (Add or Edit)
     document.getElementById('form-add-expense').addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('expense-input-title').value.trim();
@@ -2399,38 +2425,79 @@
         return;
       }
 
-      const newExpense = {
-        id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        title: title,
-        amount: amount,
-        wallet: wallet,
-        category: category,
-        date: date,
-        createdAt: new Date().toISOString()
-      };
+      if (currentEditExpenseId) {
+        const item = expenses.find(e => e.id === currentEditExpenseId);
+        if (item) {
+          const oldWallet = item.wallet;
+          const oldAmount = Number(item.amount) || 0;
 
-      // Auto-deduct from selected wallet if specified
-      if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
-        wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+          // Revert old wallet deduction
+          if (oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
+            wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
+          }
+          // Apply new wallet deduction
+          if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+            wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+          }
+
+          item.title = title;
+          item.amount = amount;
+          item.wallet = wallet;
+          item.category = category;
+          item.date = date;
+        }
+      } else {
+        const newExpense = {
+          id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          title: title,
+          amount: amount,
+          wallet: wallet,
+          category: category,
+          date: date,
+          createdAt: new Date().toISOString()
+        };
+
+        if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+          wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+        }
+
+        expenses.unshift(newExpense);
+
+        sendDiscordNotification(
+          "💸 Expense Recorded",
+          `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
+          0xef4444,
+          [
+            { name: "Item", value: title, inline: true },
+            { name: "Amount", value: formatCurrency(amount), inline: true },
+            { name: "Account", value: wallet.toUpperCase(), inline: true }
+          ]
+        );
       }
 
-      expenses.unshift(newExpense);
       saveStorage();
       render();
-
-      sendDiscordNotification(
-        "💸 Expense Recorded",
-        `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
-        0xef4444,
-        [
-          { name: "Item", value: title, inline: true },
-          { name: "Amount", value: formatCurrency(amount), inline: true },
-          { name: "Account", value: wallet.toUpperCase(), inline: true }
-        ]
-      );
-
       closeExpenseModal();
     });
+
+    const btnDeleteExp = document.getElementById('btn-delete-expense');
+    if (btnDeleteExp) {
+      btnDeleteExp.addEventListener('click', () => {
+        if (!currentEditExpenseId) return;
+        const item = expenses.find(e => e.id === currentEditExpenseId);
+        if (!item) return;
+
+        if (confirm(`Delete expense "${item.title}" for ${formatCurrency(item.amount)}?`)) {
+          if (item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
+            wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
+          }
+          expenses = expenses.filter(e => e.id !== currentEditExpenseId);
+          saveStorage();
+          render();
+          closeExpenseModal();
+        }
+      });
+    }
 
     // Modal Triggers
     const btnOpenExpBottom = document.getElementById('btn-open-expense-bottom');
