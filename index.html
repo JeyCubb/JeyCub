@@ -2231,6 +2231,11 @@
     // ==========================================================================
     // RENDER FUNCTIONS & STATS
     // ==========================================================================
+    function render() {
+      updateOverviewStats();
+      renderExpensesTimeline();
+    }
+
     function updateOverviewStats() {
       // 1. Wallets & Overall Liquid
       const cash = Number(wallets.cash) || 0;
