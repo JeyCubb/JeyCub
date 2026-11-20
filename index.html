@@ -6,8 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <!-- App Version: v=2.0.0 -->
-  <title>JeyCub Utang Tracker</title>
+  <title>JeyCub Finance & Expense Tracker</title>
   
   <!-- Anti-Flash Instant Theme Detection Script -->
   <script>
@@ -36,9 +35,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
-    /* ==========================================================================
-       Design System & Design Tokens (Unified JeyCub Coppery Orange & Minimal White Theme)
-       ========================================================================== */
+    /* Design System & Design Tokens */
     :root {
       --bg-main: #0e0d0c;
       --bg-header: rgba(26, 22, 19, 0.95);
@@ -63,6 +60,8 @@
       --color-error-bg: rgba(239, 68, 68, 0.15);
       --color-warning: #f59e0b;
       --color-warning-bg: rgba(245, 158, 11, 0.15);
+      --color-info: #0ea5e9;
+      --color-info-bg: rgba(14, 165, 233, 0.15);
 
       --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
       --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.5);
@@ -99,13 +98,14 @@
       --color-error-bg: rgba(225, 29, 72, 0.1);
       --color-warning: #d97706;
       --color-warning-bg: rgba(217, 119, 6, 0.1);
+      --color-info: #0284c7;
+      --color-info-bg: rgba(2, 132, 199, 0.1);
 
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-      --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.06);
-      --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.08);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.07);
+      --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.1);
     }
 
-    /* Base Reset */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -123,14 +123,13 @@
       line-height: 1.5;
       transition: background-color 0.22s ease, color 0.22s ease;
       overflow-x: hidden;
-      padding-bottom: 5.5rem; /* Space for fixed bottom dock */
+      padding-bottom: 5.5rem;
     }
 
     .mono {
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -146,10 +145,9 @@
       background: var(--border-color-hover);
     }
 
-    /* App Container */
     .app-layout {
       width: 100%;
-      max-width: 960px;
+      max-width: 980px;
       margin: 0 auto;
       padding: 1.25rem 1rem;
       display: flex;
@@ -225,6 +223,7 @@
       display: flex;
       align-items: center;
       gap: 0.55rem;
+      flex-wrap: wrap;
     }
 
     /* Buttons */
@@ -253,6 +252,27 @@
       transform: translateY(0);
     }
 
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 0.55rem 0.95rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-color-hover);
+      transform: translateY(-1px);
+    }
+
     .control-single-btn {
       background: var(--bg-input);
       border: 1px solid var(--border-color);
@@ -274,13 +294,288 @@
       color: var(--text-primary);
     }
 
+    /* Overall Hero Money & Overview */
+    .hero-overview-card {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(26, 22, 19, 0.95) 100%);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.4rem 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+      flex-wrap: wrap;
+    }
+    [data-theme="light"] .hero-overview-card {
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, #ffffff 100%);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+    }
+
+    .hero-main-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .hero-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .hero-value {
+      font-size: 2.35rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .hero-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 0.15rem;
+    }
+
+    .hero-quick-breakdown {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .hero-sub-pill {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.6rem 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .hero-sub-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+    .hero-sub-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    /* Account Wallets & Balances Grid */
+    .wallets-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.15rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: var(--transition);
+    }
+    .wallets-section:hover {
+      border-color: var(--border-color-hover);
+    }
+
+    .wallets-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .wallets-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .wallets-total-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 0.25rem 0.75rem;
+    }
+    .wallets-total-val {
+      color: var(--accent-primary);
+      font-weight: 800;
+    }
+
+    .wallets-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .wallets-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 480px) {
+      .wallets-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .wallet-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .wallet-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-color-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .wallet-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .wallet-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .wallet-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .wallet-card[data-wallet="cash"] .wallet-dot { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+    .wallet-card[data-wallet="maribank"] .wallet-dot { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.4); }
+    .wallet-card[data-wallet="bdo"] .wallet-dot { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+    .wallet-card[data-wallet="gcash"] .wallet-dot { background: #0ea5e9; box-shadow: 0 0 8px rgba(14, 165, 233, 0.4); }
+
+    .wallet-edit-btn {
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      opacity: 0.6;
+      transition: var(--transition);
+    }
+    .wallet-card:hover .wallet-edit-btn {
+      opacity: 1;
+      color: var(--accent-primary);
+    }
+
+    .wallet-amount {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .wallet-label-hint {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* Main Navigation Tabs: Expenses vs Utang Tracker */
+    .feature-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.25rem;
+    }
+    .feature-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .feature-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.6rem 1.1rem;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      transition: var(--transition);
+      position: relative;
+    }
+    .feature-tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(249, 115, 22, 0.05);
+    }
+    .feature-tab-btn.active {
+      color: var(--accent-primary);
+      background: rgba(249, 115, 22, 0.1);
+    }
+    .feature-tab-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: -0.3rem;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-primary);
+      border-radius: var(--radius-full);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .feature-tab-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      background: var(--bg-input);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+    .feature-tab-btn.active .feature-tab-badge {
+      background: var(--accent-primary);
+      color: #ffffff;
+      border-color: var(--accent-primary);
+    }
+
     /* Stats Overview Grid */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 0.85rem;
     }
-
     @media (max-width: 680px) {
       .stats-grid {
         grid-template-columns: 1fr;
@@ -316,7 +611,6 @@
       font-size: 1.25rem;
       opacity: 0.9;
     }
-
     .stat-card.stat-unpaid .stat-icon-watermark {
       background: var(--color-error-bg);
       color: var(--color-error);
@@ -350,7 +644,6 @@
       color: var(--text-primary);
       letter-spacing: -0.02em;
     }
-
     .stat-subtext {
       font-size: 0.75rem;
       color: var(--text-muted);
@@ -403,7 +696,6 @@
       color: var(--text-muted);
     }
 
-    /* Segmented Controls (Filter & View Toggles) */
     .segmented-control {
       display: flex;
       align-items: center;
@@ -436,14 +728,148 @@
       box-shadow: 0 2px 8px var(--accent-glow);
     }
 
-    /* Debt Records Container */
-    .debts-list {
+    /* Timeline & List Containers */
+    .timeline-container, .debts-list {
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
 
-    /* Grouped Person Card */
+    /* Timeline Day Group */
+    .timeline-day-group {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.15rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .timeline-day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+    .timeline-day-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .timeline-day-total {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--color-error);
+      background: var(--color-error-bg);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: var(--radius-full);
+      padding: 0.2rem 0.65rem;
+    }
+
+    /* Expense Item Row */
+    .expense-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      border: 1px solid transparent;
+      transition: var(--transition);
+      flex-wrap: wrap;
+    }
+    .expense-row:hover {
+      border-color: var(--border-color-hover);
+      background: var(--bg-card-hover);
+    }
+    .expense-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      min-width: 220px;
+    }
+    .expense-cat-icon {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      border-radius: 10px;
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.25);
+      color: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+    }
+    .expense-desc-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .expense-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .expense-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+    .wallet-source-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.1rem 0.45rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .expense-right {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-align: right;
+    }
+    .expense-amount-val {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--color-error);
+    }
+    .btn-icon-danger {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+    .btn-icon-danger:hover {
+      color: var(--color-error);
+      background: var(--color-error-bg);
+    }
+
+    /* Grouped Person Card for Utang Feature */
     .person-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -509,31 +935,38 @@
       color: var(--text-muted);
     }
     .person-balance-val {
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       font-weight: 800;
     }
-    .person-balance-val.has-debt { color: var(--color-error); }
-    .person-balance-val.is-clean { color: var(--color-success); }
+    .person-balance-val.has-debt {
+      color: var(--color-error);
+    }
+    .person-balance-val.is-clean {
+      color: var(--color-success);
+    }
 
-    /* Debt Rows */
     .debt-rows-list {
       display: flex;
       flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.85rem;
     }
 
     .debt-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
-      padding: 0.85rem 0;
-      border-bottom: 1px solid var(--border-color);
-      flex-wrap: wrap;
+      gap: 0.85rem;
+      padding: 0.75rem 0.95rem;
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      border: 1px solid transparent;
       transition: var(--transition);
+      flex-wrap: wrap;
     }
-    .debt-row:last-child {
-      border-bottom: none;
-      padding-bottom: 0.2rem;
+    .debt-row:hover {
+      border-color: var(--border-color-hover);
+      background: var(--bg-card-hover);
     }
 
     .debt-main-info {
@@ -606,7 +1039,6 @@
       align-items: center;
       gap: 1rem;
     }
-
     .debt-amount-wrap {
       text-align: right;
     }
@@ -659,59 +1091,43 @@
       border-color: var(--border-color-hover);
     }
 
-    .btn-icon-danger {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      border-radius: var(--radius-sm);
-      padding: 0.35rem 0.55rem;
-      cursor: pointer;
-      transition: var(--transition);
-      font-size: 0.85rem;
-    }
-    .btn-icon-danger:hover {
-      color: var(--color-error);
-      background: var(--color-error-bg);
-      border-color: rgba(239, 68, 68, 0.25);
-    }
-
-    /* Empty State */
+    /* Empty States */
     .empty-state {
       background: var(--bg-card);
       border: 1px dashed var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 3.5rem 1.5rem;
+      padding: 3rem 1.5rem;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
     }
     .empty-state-icon {
-      width: 52px;
-      height: 52px;
+      width: 56px;
+      height: 56px;
       border-radius: 16px;
-      background: rgba(249, 115, 22, 0.12);
-      border: 1px solid rgba(249, 115, 22, 0.28);
+      background: rgba(249, 115, 22, 0.1);
       color: var(--accent-primary);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
-      margin: 0 auto 1rem auto;
+      font-size: 1.6rem;
     }
     .empty-state-title {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: var(--text-primary);
     }
     .empty-state-desc {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      max-width: 360px;
-      margin: 0.35rem auto 0 auto;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      max-width: 340px;
+      line-height: 1.45;
     }
 
-    /* ==========================================================================
-       FIXED BOTTOM PANEL DOCK (.bottom-panel / .app-header)
-       Matching TIP Grade Calculator, Terms Reviewer & Schedule Creator
-       ========================================================================== */
+    /* Bottom Dock Bar */
     .bottom-panel {
       position: fixed !important;
       bottom: 0 !important;
@@ -729,7 +1145,7 @@
     }
 
     .bottom-panel-inner {
-      max-width: 960px;
+      max-width: 980px;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -737,131 +1153,80 @@
       gap: 0.75rem;
     }
 
-    /* Website Switcher Brand Button & Pop-Up Menu */
     .brand-nav-wrapper {
       position: relative;
     }
-
     .brand-nav-btn {
       width: 44px;
       height: 44px;
       min-width: 44px;
       min-height: 44px;
       border-radius: 13px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(249, 115, 22, 0.15);
-      border: 1.5px solid var(--accent-primary);
-      color: var(--accent-primary);
-      cursor: pointer;
-      transition: var(--transition);
-      box-shadow: 0 0 12px var(--accent-glow);
-    }
-    .brand-nav-btn:hover,
-    .brand-nav-btn.active {
-      background: var(--accent-primary);
-      color: #ffffff;
-      transform: translateY(-2px);
-    }
-
-    [data-theme="light"] .brand-nav-btn {
-      background: #ffffff !important;
-      border: 1.5px solid var(--border-color) !important;
-      color: var(--accent-primary) !important;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-    }
-    [data-theme="light"] .brand-nav-btn.brand-nav-trigger {
-      border-color: rgba(234, 88, 12, 0.35) !important;
-    }
-
-    .brand-nav-btn .brand-emoji {
-      font-size: 1.5rem;
-      line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    .brand-nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .brand-nav-trigger.active {
+      background: var(--accent-primary) !important;
+      color: #ffffff !important;
+      border-color: var(--accent-primary) !important;
     }
 
     .brand-nav-popup {
       position: absolute;
       bottom: calc(100% + 12px);
       left: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-      padding: 9px;
       background: var(--bg-card);
-      border: 1.5px solid var(--border-color);
-      border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px var(--accent-glow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      z-index: 1100;
-      width: max-content;
-      box-sizing: border-box;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      box-shadow: var(--shadow-lg);
       opacity: 0;
       visibility: hidden;
-      transform: translateY(6px) scale(0.92);
-      transform-origin: bottom left;
-      transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                  visibility 0.18s;
-      pointer-events: none;
+      transform: translateY(10px) scale(0.95);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1100;
     }
-
     .brand-nav-popup.is-open {
       opacity: 1;
       visibility: visible;
       transform: translateY(0) scale(1);
-      pointer-events: auto;
     }
 
-    /* Doubled pop up size (58px matching latest review request) */
-    .brand-nav-popup .brand-nav-btn {
-      width: 58px !important;
-      height: 58px !important;
-      min-width: 58px !important;
-      min-height: 58px !important;
-      border-radius: 14px !important;
-      text-decoration: none;
-    }
-    .brand-nav-popup .brand-nav-btn:hover {
-      transform: translateY(-2px) scale(1.08) !important;
-    }
-    .brand-nav-popup .brand-emoji {
-      font-size: 2.1rem !important;
-    }
-
-    [data-theme="light"] .brand-nav-popup {
-      background: #ffffff !important;
-      border-color: var(--border-color) !important;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12) !important;
-    }
-
-    /* Bottom Dock Center Action */
     .dock-center-action {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-
-    /* Bottom Dock Controls */
     .dock-right-controls {
       display: flex;
       align-items: center;
-      gap: 0.55rem;
+      gap: 0.5rem;
     }
-
     .dock-btn {
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
-      background: var(--bg-card);
+      background: var(--bg-input);
       border: 1px solid var(--border-color);
       color: var(--text-secondary);
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
@@ -869,93 +1234,77 @@
       transition: var(--transition);
     }
     .dock-btn:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-color-hover);
       color: var(--text-primary);
+      border-color: var(--border-color-hover);
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
     }
 
-    [data-theme="light"] .dock-btn {
-      background: #ffffff;
-      border-color: var(--border-color);
-      color: var(--text-primary);
-    }
-    [data-theme="light"] .dock-btn:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-color-hover);
-    }
-
-    /* ==========================================================================
-       MODALS & DIALOGS (Matching Grade Calculator & Terms Reviewer)
-       ========================================================================== */
+    /* Modal Overlay & Dialogs */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      z-index: 2000;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      z-index: 2000;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.2s ease, visibility 0.2s ease;
+      transition: all 0.22s ease;
     }
     .modal-overlay.is-active {
       opacity: 1;
       visibility: visible;
     }
-
     .modal-dialog {
       background: var(--bg-card);
-      border: 1.5px solid var(--border-color);
-      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 480px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      max-width: 500px;
+      box-shadow: var(--shadow-lg);
       overflow: hidden;
-      transform: translateY(12px) scale(0.97);
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(16px) scale(0.97);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
     }
     .modal-overlay.is-active .modal-dialog {
       transform: translateY(0) scale(1);
     }
-
     .modal-header {
-      padding: 1.15rem 1.35rem;
+      padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
     }
-
     .modal-title-wrap {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
-
     .modal-avatar-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 11px;
-      background: rgba(249, 115, 22, 0.12);
-      border: 1px solid rgba(249, 115, 22, 0.3);
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: rgba(249, 115, 22, 0.15);
       color: var(--accent-primary);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1rem;
     }
-
     .modal-title {
       font-size: 1.05rem;
       font-weight: 700;
       color: var(--text-primary);
     }
-
     .modal-close-btn {
       background: transparent;
       border: none;
@@ -971,12 +1320,12 @@
       color: var(--text-primary);
       background: var(--bg-input);
     }
-
     .modal-body {
       padding: 1.35rem;
       display: flex;
       flex-direction: column;
       gap: 1.1rem;
+      overflow-y: auto;
     }
 
     .form-group {
@@ -984,7 +1333,6 @@
       flex-direction: column;
       gap: 0.35rem;
     }
-
     .form-label {
       font-size: 0.72rem;
       font-weight: 700;
@@ -992,8 +1340,7 @@
       letter-spacing: 0.05em;
       color: var(--text-secondary);
     }
-
-    .form-input {
+    .form-input, .form-select {
       background: var(--bg-input);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
@@ -1004,16 +1351,14 @@
       transition: var(--transition);
       width: 100%;
     }
-    .form-input:focus {
+    .form-input:focus, .form-select:focus {
       border-color: var(--accent-primary);
       box-shadow: 0 0 0 2px var(--accent-glow);
     }
-
     .form-hint {
       font-size: 0.72rem;
       color: var(--text-muted);
     }
-
     .modal-actions {
       display: flex;
       align-items: center;
@@ -1021,7 +1366,6 @@
       gap: 0.65rem;
       padding-top: 0.5rem;
     }
-
     .btn-modal-cancel {
       background: var(--bg-input);
       border: 1px solid var(--border-color);
@@ -1039,7 +1383,6 @@
       border-color: var(--border-color-hover);
     }
 
-    /* Settings section cards */
     .settings-section-card {
       background: var(--bg-input);
       border: 1px solid var(--border-color);
@@ -1049,13 +1392,11 @@
       flex-direction: column;
       gap: 0.65rem;
     }
-
     .settings-section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-
     .settings-section-title {
       font-size: 0.85rem;
       font-weight: 700;
@@ -1064,14 +1405,11 @@
       align-items: center;
       gap: 0.45rem;
     }
-
     .settings-section-desc {
       font-size: 0.75rem;
       color: var(--text-secondary);
       line-height: 1.45;
     }
-
-    /* Switch toggle */
     .switch-label {
       position: relative;
       display: inline-block;
@@ -1120,20 +1458,24 @@
         <div class="brand-logo-icon">₱</div>
         <div>
           <h1 class="brand-name">
-            Utang Tracker
-            <span class="brand-badge">Web</span>
+            JeyCub Finance
+            <span class="brand-badge">Expense & Tracker</span>
           </h1>
-          <p class="brand-subtitle">Keep track of loans, debts & payments</p>
+          <p class="brand-subtitle">Expenses timeline, liquid money & utang ledger</p>
         </div>
       </div>
 
       <div class="header-actions">
-        <button id="btn-open-settings-top" class="control-single-btn" title="Settings & Webhooks">
+        <button id="btn-open-settings-top" class="control-single-btn" title="Settings & Balances">
           <i class="fa-solid fa-gear"></i>
-          <span style="display: none; @media(min-width: 600px){display:inline;}">Settings</span>
+          <span>Settings</span>
         </button>
-        <button id="btn-open-add-top" class="btn-primary" title="Record New Utang">
-          <i class="fa-solid fa-plus"></i>
+        <button id="btn-open-expense-top" class="btn-primary" title="Record New Expense">
+          <i class="fa-solid fa-receipt"></i>
+          <span>Add Expense</span>
+        </button>
+        <button id="btn-open-add-top" class="btn-secondary" title="Record Utang Loan">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
           <span>Add Utang</span>
         </button>
       </div>
@@ -1142,85 +1484,217 @@
 
   <!-- Main Content Layout -->
   <main class="app-layout">
-    <!-- 1. Stats Overview Cards -->
-    <div class="stats-grid">
-      <!-- Unpaid Card -->
-      <div class="stat-card stat-unpaid">
-        <div class="stat-icon-watermark">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <p class="stat-label">Total Unpaid Balance</p>
-        <p id="stat-total-unpaid" class="stat-value mono">₱0.00</p>
-        <p id="stat-unpaid-count" class="stat-subtext">0 pending debts</p>
+
+    <!-- 1. Hero Net Worth & Liquid Overview -->
+    <div class="hero-overview-card">
+      <div class="hero-main-stat">
+        <span class="hero-label">
+          <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
+        </span>
+        <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
+        <span class="hero-subtitle">Cash + MariBank + BDO + GCash combined</span>
       </div>
 
-      <!-- Paid Card -->
-      <div class="stat-card stat-paid">
-        <div class="stat-icon-watermark">
-          <i class="fa-solid fa-circle-check"></i>
+      <div class="hero-quick-breakdown">
+        <div class="hero-sub-pill">
+          <span class="hero-sub-label"><i class="fa-solid fa-arrow-trend-down" style="color: var(--color-error);"></i> Total Expenses</span>
+          <span id="stat-total-expenses" class="hero-sub-val mono" style="color: var(--color-error);">₱0.00</span>
         </div>
-        <p class="stat-label">Total Settled / Paid</p>
-        <p id="stat-total-paid" class="stat-value mono">₱0.00</p>
-        <p id="stat-paid-count" class="stat-subtext">0 settled debts</p>
-      </div>
-
-      <!-- Active Debtors Card -->
-      <div class="stat-card stat-debtors">
-        <div class="stat-icon-watermark">
-          <i class="fa-solid fa-users"></i>
+        <div class="hero-sub-pill">
+          <span class="hero-sub-label"><i class="fa-solid fa-triangle-exclamation" style="color: var(--color-warning);"></i> Utang Collectibles</span>
+          <span id="stat-utang-collectibles" class="hero-sub-val mono" style="color: var(--color-warning);">₱0.00</span>
         </div>
-        <p class="stat-label">Active Debtors</p>
-        <p id="stat-debtor-count" class="stat-value mono">0</p>
-        <p id="stat-people-summary" class="stat-subtext">with outstanding balances</p>
       </div>
     </div>
 
-    <!-- 2. Search & Filter Segmented Controls Bar -->
-    <div class="filter-bar">
-      <!-- Search Input -->
-      <div class="search-box">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="search-input" class="search-input" placeholder="Search by name, reason, or date code..." />
+    <!-- 2. Account Balances: Cash, MariBank, BDO, GCash -->
+    <section class="wallets-section" aria-label="Available Funds by Account">
+      <div class="wallets-header">
+        <div class="wallets-title">
+          <i class="fa-solid fa-wallet" style="color: var(--accent-primary);"></i>
+          <span>Amount Left in Accounts</span>
+        </div>
+        <div class="wallets-total-badge">
+          <span>Overall Total:</span>
+          <span id="wallet-total-sum" class="wallets-total-val mono">₱0.00</span>
+        </div>
       </div>
 
-      <!-- Filter Tabs (Unpaid / All / Paid) -->
-      <div class="segmented-control" role="tablist" aria-label="Filter status">
-        <button type="button" data-filter="unpaid" class="segment-btn active">Unpaid</button>
-        <button type="button" data-filter="all" class="segment-btn">All</button>
-        <button type="button" data-filter="paid" class="segment-btn">Paid</button>
-      </div>
+      <div class="wallets-grid">
+        <!-- Cash -->
+        <div class="wallet-card" data-wallet="cash" onclick="editWalletBalance('cash')" title="Click to update Cash balance">
+          <div class="wallet-top">
+            <span class="wallet-brand">
+              <span class="wallet-dot"></span>
+              <i class="fa-solid fa-money-bill-wave"></i> Cash
+            </span>
+            <i class="fa-solid fa-pen-to-square wallet-edit-btn"></i>
+          </div>
+          <div class="wallet-amount mono" id="wallet-val-cash">₱0.00</div>
+          <div class="wallet-label-hint">Physical Cash Left</div>
+        </div>
 
-      <!-- View Mode Toggle (By Person / Timeline) -->
-      <div class="segmented-control" role="tablist" aria-label="View layout">
-        <button type="button" id="view-grouped" class="segment-btn active" title="Group entries by Person">
-          <i class="fa-solid fa-user-group" style="margin-right: 3px;"></i> By Person
+        <!-- MariBank -->
+        <div class="wallet-card" data-wallet="maribank" onclick="editWalletBalance('maribank')" title="Click to update MariBank balance">
+          <div class="wallet-top">
+            <span class="wallet-brand">
+              <span class="wallet-dot"></span>
+              <i class="fa-solid fa-building-columns"></i> MariBank
+            </span>
+            <i class="fa-solid fa-pen-to-square wallet-edit-btn"></i>
+          </div>
+          <div class="wallet-amount mono" id="wallet-val-maribank">₱0.00</div>
+          <div class="wallet-label-hint">Digital Bank Left</div>
+        </div>
+
+        <!-- BDO -->
+        <div class="wallet-card" data-wallet="bdo" onclick="editWalletBalance('bdo')" title="Click to update BDO balance">
+          <div class="wallet-top">
+            <span class="wallet-brand">
+              <span class="wallet-dot"></span>
+              <i class="fa-solid fa-credit-card"></i> BDO
+            </span>
+            <i class="fa-solid fa-pen-to-square wallet-edit-btn"></i>
+          </div>
+          <div class="wallet-amount mono" id="wallet-val-bdo">₱0.00</div>
+          <div class="wallet-label-hint">BDO Savings Left</div>
+        </div>
+
+        <!-- GCash -->
+        <div class="wallet-card" data-wallet="gcash" onclick="editWalletBalance('gcash')" title="Click to update GCash balance">
+          <div class="wallet-top">
+            <span class="wallet-brand">
+              <span class="wallet-dot"></span>
+              <i class="fa-solid fa-mobile-screen-button"></i> GCash
+            </span>
+            <i class="fa-solid fa-pen-to-square wallet-edit-btn"></i>
+          </div>
+          <div class="wallet-amount mono" id="wallet-val-gcash">₱0.00</div>
+          <div class="wallet-label-hint">GCash Wallet Left</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Primary Feature Switcher Tabs (Expenses Timeline vs Utang Ledger) -->
+    <div class="feature-nav-bar">
+      <div class="feature-tabs" role="tablist">
+        <button type="button" class="feature-tab-btn active" id="tab-btn-expenses">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Expenses Timeline</span>
+          <span class="feature-tab-badge" id="badge-expenses-count">0</span>
         </button>
-        <button type="button" id="view-list" class="segment-btn" title="Sort all entries by Date Timeline">
-          <i class="fa-solid fa-clock-rotate-left" style="margin-right: 3px;"></i> Timeline
+        <button type="button" class="feature-tab-btn" id="tab-btn-debts">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+          <span>Utang Ledger Feature</span>
+          <span class="feature-tab-badge" id="badge-debts-count">0</span>
+        </button>
+      </div>
+
+      <!-- Quick Action on Tab Bar -->
+      <div id="tab-quick-action">
+        <button type="button" id="btn-tab-add" class="btn-primary" style="padding: 0.45rem 0.95rem; font-size: 0.78rem;">
+          <i class="fa-solid fa-plus"></i>
+          <span id="tab-add-label">New Expense</span>
         </button>
       </div>
     </div>
 
-    <!-- 3. Debts List Container -->
-    <div id="debts-container" class="debts-list">
-      <!-- Injected dynamically via JS -->
+    <!-- VIEW 1: EXPENSES TIMELINE -->
+    <div id="view-expenses-section">
+      <!-- Expense Filter & Search Bar -->
+      <div class="filter-bar" style="margin-bottom: 1.25rem;">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="expense-search-input" class="search-input" placeholder="Search expenses by title, category, or note..." />
+        </div>
+        <div class="segmented-control">
+          <button type="button" class="segment-btn active" data-expense-filter="all">All</button>
+          <button type="button" class="segment-btn" data-expense-filter="today">Today</button>
+          <button type="button" class="segment-btn" data-expense-filter="month">This Month</button>
+        </div>
+      </div>
+
+      <!-- Timeline Container -->
+      <div id="expenses-timeline-container" class="timeline-container">
+        <!-- Dynamic via JS -->
+      </div>
     </div>
+
+    <!-- VIEW 2: UTANG TRACKER FEATURE -->
+    <div id="view-debts-section" style="display: none;">
+      <!-- Utang Stats Overview Cards -->
+      <div class="stats-grid" style="margin-bottom: 1.25rem;">
+        <div class="stat-card stat-unpaid">
+          <div class="stat-icon-watermark">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <p class="stat-label">Total Unpaid Balance</p>
+          <p id="stat-total-unpaid" class="stat-value mono">₱0.00</p>
+          <p id="stat-unpaid-count" class="stat-subtext">0 pending debts</p>
+        </div>
+
+        <div class="stat-card stat-paid">
+          <div class="stat-icon-watermark">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <p class="stat-label">Total Settled / Paid</p>
+          <p id="stat-total-paid" class="stat-value mono">₱0.00</p>
+          <p id="stat-paid-count" class="stat-subtext">0 settled debts</p>
+        </div>
+
+        <div class="stat-card stat-debtors">
+          <div class="stat-icon-watermark">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <p class="stat-label">Active Debtors</p>
+          <p id="stat-debtor-count" class="stat-value mono">0</p>
+          <p id="stat-people-summary" class="stat-subtext">with outstanding balances</p>
+        </div>
+      </div>
+
+      <!-- Filter Bar for Utang -->
+      <div class="filter-bar" style="margin-bottom: 1.25rem;">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="search-input" class="search-input" placeholder="Search utang by debtor name or reason..." />
+        </div>
+        <div class="segmented-control" role="tablist">
+          <button type="button" data-filter="unpaid" class="segment-btn active">Unpaid</button>
+          <button type="button" data-filter="all" class="segment-btn">All</button>
+          <button type="button" data-filter="paid" class="segment-btn">Paid</button>
+        </div>
+        <div class="segmented-control">
+          <button type="button" id="view-grouped" class="segment-btn active" title="Group entries by Person">
+            <i class="fa-solid fa-user-group" style="margin-right: 3px;"></i> By Person
+          </button>
+          <button type="button" id="view-list" class="segment-btn" title="Sort all entries by Date Timeline">
+            <i class="fa-solid fa-clock-rotate-left" style="margin-right: 3px;"></i> Timeline
+          </button>
+        </div>
+      </div>
+
+      <!-- Debts List Container -->
+      <div id="debts-container" class="debts-list">
+        <!-- Injected dynamically via JS -->
+      </div>
+    </div>
+
   </main>
 
   <!-- ==========================================================================
-       FIXED BOTTOM PANEL DOCK (With Website Switcher & Theme Toggle)
+       FIXED BOTTOM PANEL DOCK (Cross-App Website Switcher & Actions)
        ========================================================================== -->
   <div class="bottom-panel">
     <div class="bottom-panel-inner">
       <!-- Left: Cross-App Website Switcher Trigger & Pop-up -->
       <div class="brand-nav-wrapper">
         <button type="button" class="brand-nav-btn brand-nav-trigger" id="brand-nav-trigger"
-                aria-haspopup="true" aria-expanded="false" title="Current: Utang Tracker (Click to switch app)"
-                aria-label="Current: Utang Tracker. Click to switch website">
+                aria-haspopup="true" aria-expanded="false" title="Current: JeyCub Finance (Click to switch app)"
+                aria-label="Current: JeyCub Finance. Click to switch website">
           <span class="brand-emoji">₱</span>
         </button>
 
-        <!-- Pop Up Navigation Menu (Compact Website Buttons, matching Grade Calc & Reviewer) -->
+        <!-- Pop Up Navigation Menu -->
         <div class="brand-nav-popup" id="brand-nav-popup" role="menu" aria-label="Switch Website" aria-hidden="true">
           <!-- 1. TIP Grade Calculator -->
           <a href="https://jeycubb.github.io/TIP-Grade-Calculator/#calc" target="_self" class="brand-nav-btn"
@@ -1279,11 +1753,11 @@
         </div>
       </div>
 
-      <!-- Center: Quick Add Button -->
+      <!-- Center: Add Expense Button -->
       <div class="dock-center-action">
-        <button id="btn-open-add-bottom" class="btn-primary" style="padding: 0.5rem 1.15rem;">
+        <button id="btn-open-expense-bottom" class="btn-primary" style="padding: 0.5rem 1.15rem;">
           <i class="fa-solid fa-plus"></i>
-          <span>Add Utang</span>
+          <span>Add Expense</span>
         </button>
       </div>
 
@@ -1300,16 +1774,89 @@
   </div>
 
   <!-- ==========================================================================
-       ADD / EDIT UTANG MODAL
+       MODAL 1: ADD EXPENSE
+       ========================================================================== -->
+  <div id="modal-expense" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-expense-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-avatar-icon">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <h3 id="modal-expense-title" class="modal-title">Record Expense</h3>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-expense" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <form id="form-add-expense" class="modal-body">
+        <!-- Title / Description -->
+        <div class="form-group">
+          <label class="form-label" for="expense-input-title">Expense Title / Item *</label>
+          <input type="text" id="expense-input-title" class="form-input" required placeholder="e.g. Lunch at Jollibee, Jeepney Fare, Groceries" />
+        </div>
+
+        <!-- Amount -->
+        <div class="form-group">
+          <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
+          <div style="position: relative;">
+            <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
+            <input type="number" step="0.01" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00" />
+          </div>
+        </div>
+
+        <!-- Paid From (Account / Wallet) -->
+        <div class="form-group">
+          <label class="form-label" for="expense-input-wallet">Deduct From Account *</label>
+          <select id="expense-input-wallet" class="form-select">
+            <option value="cash">💵 Cash</option>
+            <option value="maribank">🏛️ MariBank</option>
+            <option value="bdo">💳 BDO</option>
+            <option value="gcash">📱 GCash</option>
+            <option value="none">None / Don't Deduct</option>
+          </select>
+          <span class="form-hint">Selecting an account automatically deducts this expense from that account's balance.</span>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group">
+          <label class="form-label" for="expense-input-category">Category</label>
+          <select id="expense-input-category" class="form-select">
+            <option value="Food & Drinks">🍔 Food & Drinks</option>
+            <option value="Transportation">🚗 Transportation / Fare</option>
+            <option value="Shopping">🛍️ Shopping & Supplies</option>
+            <option value="Bills & Utilities">💡 Bills & Utilities</option>
+            <option value="School / Academics">📚 School & Books</option>
+            <option value="Entertainment">🎮 Entertainment & Hobbies</option>
+            <option value="Personal">👤 Personal Care</option>
+            <option value="Other">✨ Other</option>
+          </select>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="form-group">
+          <label class="form-label" for="expense-input-datetime">Date & Time</label>
+          <input type="datetime-local" id="expense-input-datetime" class="form-input" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
+          <button type="submit" class="btn-primary">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: ADD / EDIT UTANG
        ========================================================================== -->
   <div id="modal-add" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-add-title">
     <div class="modal-dialog">
       <div class="modal-header">
         <div class="modal-title-wrap">
           <div class="modal-avatar-icon">
-            <i class="fa-solid fa-plus"></i>
+            <i class="fa-solid fa-hand-holding-dollar"></i>
           </div>
-          <h3 id="modal-add-title" class="modal-title">Add Utang Entry</h3>
+          <h3 id="modal-add-title" class="modal-title">Add Utang Record</h3>
         </div>
         <button type="button" class="modal-close-btn" id="btn-close-add" aria-label="Close dialog">&times;</button>
       </div>
@@ -1331,7 +1878,7 @@
             <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
             <input type="number" step="0.01" id="input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00" />
           </div>
-          <span class="form-hint">Supports negative values for returns, credits, or deductions.</span>
+          <span class="form-hint">Supports negative values for deductions or returns.</span>
         </div>
 
         <!-- Reason -->
@@ -1344,7 +1891,6 @@
         <div class="form-group">
           <label class="form-label" for="input-datetime">Date & Time (Optional)</label>
           <input type="datetime-local" id="input-datetime" class="form-input" />
-          <span class="form-hint">Defaults to current Manila date & time if left blank.</span>
         </div>
 
         <div class="modal-actions">
@@ -1356,7 +1902,7 @@
   </div>
 
   <!-- ==========================================================================
-       SETTINGS & DISCORD INTEGRATION MODAL
+       MODAL 3: SETTINGS & BALANCES
        ========================================================================== -->
   <div id="modal-settings" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title">
     <div class="modal-dialog" style="max-width: 520px;">
@@ -1365,22 +1911,50 @@
           <div class="modal-avatar-icon">
             <i class="fa-solid fa-gear"></i>
           </div>
-          <h3 id="modal-settings-title" class="modal-title">Settings & Discord Webhooks</h3>
+          <h3 id="modal-settings-title" class="modal-title">Settings & Account Balances</h3>
         </div>
         <button type="button" class="modal-close-btn" id="btn-close-settings" aria-label="Close dialog">&times;</button>
       </div>
 
       <div class="modal-body">
-        <!-- 1. Discord Webhook -->
+        <!-- 1. Account Balances Management -->
         <div class="settings-section-card">
           <div class="settings-section-header">
             <span class="settings-section-title" style="color: var(--accent-primary);">
-              <i class="fa-brands fa-discord"></i> Discord Webhook Alerts
+              <i class="fa-solid fa-wallet"></i> Manage Available Balances
+            </span>
+          </div>
+          <p class="settings-section-desc">Keep your current remaining funds up-to-date across your accounts:</p>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; padding-top: 0.2rem;">
+            <div>
+              <label class="form-label" for="setting-wallet-cash">Cash (₱)</label>
+              <input type="number" step="0.01" id="setting-wallet-cash" class="form-input mono" placeholder="0.00" />
+            </div>
+            <div>
+              <label class="form-label" for="setting-wallet-maribank">MariBank (₱)</label>
+              <input type="number" step="0.01" id="setting-wallet-maribank" class="form-input mono" placeholder="0.00" />
+            </div>
+            <div>
+              <label class="form-label" for="setting-wallet-bdo">BDO (₱)</label>
+              <input type="number" step="0.01" id="setting-wallet-bdo" class="form-input mono" placeholder="0.00" />
+            </div>
+            <div>
+              <label class="form-label" for="setting-wallet-gcash">GCash (₱)</label>
+              <input type="number" step="0.01" id="setting-wallet-gcash" class="form-input mono" placeholder="0.00" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Discord Webhook -->
+        <div class="settings-section-card">
+          <div class="settings-section-header">
+            <span class="settings-section-title" style="color: var(--accent-primary);">
+              <i class="fa-brands fa-discord"></i> Discord Alerts
             </span>
             <span class="badge-status" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-color);">Optional</span>
           </div>
           <p class="settings-section-desc">
-            Send automatic Discord notifications when utang is added or paid (uses standard incoming webhook format).
+            Send automatic notifications when expenses or debts are added or resolved.
           </p>
           <input type="url" id="setting-webhook-url" class="form-input mono" style="font-size: 0.75rem;" placeholder="https://discord.com/api/webhooks/..." />
           <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.2rem;">
@@ -1391,11 +1965,11 @@
           </div>
         </div>
 
-        <!-- 2. 30-Day Interest Rule -->
+        <!-- 3. 30-Day Interest Rule for Utang -->
         <div class="settings-section-card" style="flex-direction: row; align-items: center; justify-content: space-between;">
           <div>
-            <p class="settings-section-title">1% Monthly Interest Rule</p>
-            <p class="settings-section-desc" style="margin-top: 0.2rem;">Automatically apply 1% interest if an utang is overdue past 30 days.</p>
+            <p class="settings-section-title">1% Monthly Interest for Utang</p>
+            <p class="settings-section-desc" style="margin-top: 0.2rem;">Apply 1% interest if an utang is overdue past 30 days.</p>
           </div>
           <label class="switch-label">
             <input type="checkbox" id="setting-interest-enabled" checked />
@@ -1403,12 +1977,12 @@
           </label>
         </div>
 
-        <!-- 3. Backup & Restore Data -->
+        <!-- 4. Backup & Restore Data -->
         <div class="settings-section-card">
           <p class="settings-section-title">
             <i class="fa-solid fa-database"></i> Backup & Restore Data
           </p>
-          <p class="settings-section-desc">Save your debt ledger to a local JSON file or import an existing backup.</p>
+          <p class="settings-section-desc">Save your entire finance database (expenses, utang, and account balances) to JSON.</p>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding-top: 0.3rem;">
             <button type="button" id="btn-export-data" class="control-single-btn">
               <i class="fa-solid fa-download"></i> Export JSON
@@ -1438,20 +2012,32 @@
   <script>
     // Storage Keys & Constants
     const STORAGE_KEY = 'utang_tracker_data_v1';
+    const EXPENSES_KEY = 'jeycub_expenses_data_v1';
     const SETTINGS_KEY = 'utang_tracker_settings_v1';
+    const WALLETS_KEY = 'utang_tracker_wallets_v1';
     const THEME_KEY = 'jeycub_ut_theme';
     const THEME_EXPLICIT_KEY = 'jeycub_ut_theme_explicit';
     const INTEREST_RATE = 0.01; // 1%
     const INTEREST_DAYS = 30;
 
     let debts = [];
+    let expenses = [];
+    let wallets = {
+      cash: 0,
+      maribank: 0,
+      bdo: 0,
+      gcash: 0
+    };
     let settings = {
       discordWebhookUrl: '',
       interestEnabled: true,
       lastView: 'grouped', // 'grouped' | 'list'
-      filter: 'unpaid'     // 'all' | 'unpaid' | 'paid'
+      filter: 'unpaid',    // 'all' | 'unpaid' | 'paid'
+      activeTab: 'expenses', // 'expenses' | 'debts'
+      expenseFilter: 'all' // 'all' | 'today' | 'month'
     };
-    let currentSearch = '';
+    let currentDebtSearch = '';
+    let currentExpenseSearch = '';
 
     // ==========================================================================
     // THEME CONTROLLER & SYSTEM DEVICE PREFERENCE LISTENER
@@ -1495,7 +2081,6 @@
         });
       }
 
-      // Dynamic real-time preference listener
       if (window.matchMedia) {
         const colorSchemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
         const handleSystemThemeChange = (e) => {
@@ -1524,17 +2109,34 @@
       }
 
       try {
+        const storedExpenses = localStorage.getItem(EXPENSES_KEY);
+        if (storedExpenses) expenses = JSON.parse(storedExpenses);
+      } catch (e) {
+        console.error('Failed to load expenses:', e);
+        expenses = [];
+      }
+
+      try {
         const storedSettings = localStorage.getItem(SETTINGS_KEY);
         if (storedSettings) settings = { ...settings, ...JSON.parse(storedSettings) };
       } catch (e) {
         console.error('Failed to load settings:', e);
+      }
+
+      try {
+        const storedWallets = localStorage.getItem(WALLETS_KEY);
+        if (storedWallets) wallets = { ...wallets, ...JSON.parse(storedWallets) };
+      } catch (e) {
+        console.error('Failed to load wallets:', e);
       }
     }
 
     function saveStorage() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(debts));
+        localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        localStorage.setItem(WALLETS_KEY, JSON.stringify(wallets));
       } catch (e) {
         console.error('Failed to save to localStorage:', e);
       }
@@ -1560,6 +2162,19 @@
       return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     }
 
+    function getCategoryIcon(cat) {
+      switch (cat) {
+        case 'Food & Drinks': return 'fa-solid fa-burger';
+        case 'Transportation': return 'fa-solid fa-bus';
+        case 'Shopping': return 'fa-solid fa-bag-shopping';
+        case 'Bills & Utilities': return 'fa-solid fa-bolt';
+        case 'School / Academics': return 'fa-solid fa-graduation-cap';
+        case 'Entertainment': return 'fa-solid fa-gamepad';
+        case 'Personal': return 'fa-solid fa-heart';
+        default: return 'fa-solid fa-tag';
+      }
+    }
+
     // ==========================================================================
     // DISCORD WEBHOOK INTEGRATION
     // ==========================================================================
@@ -1572,7 +2187,7 @@
           description: description,
           color: color,
           fields: fields,
-          footer: { text: "JeyCub Utang Tracker • Manila GMT+8" },
+          footer: { text: "JeyCub Finance Tracker • Manila GMT+8" },
           timestamp: new Date().toISOString()
         }]
       };
@@ -1589,9 +2204,39 @@
     }
 
     // ==========================================================================
-    // RENDER FUNCTIONS
+    // RENDER FUNCTIONS & STATS
     // ==========================================================================
-    function updateStats() {
+    function updateOverviewStats() {
+      // 1. Wallets & Overall Liquid
+      const cash = Number(wallets.cash) || 0;
+      const maribank = Number(wallets.maribank) || 0;
+      const bdo = Number(wallets.bdo) || 0;
+      const gcash = Number(wallets.gcash) || 0;
+      const totalLiquid = cash + maribank + bdo + gcash;
+
+      const elCash = document.getElementById('wallet-val-cash');
+      const elMari = document.getElementById('wallet-val-maribank');
+      const elBdo = document.getElementById('wallet-val-bdo');
+      const elGcash = document.getElementById('wallet-val-gcash');
+      const elTotal = document.getElementById('wallet-total-sum');
+      const elHeroLiquid = document.getElementById('hero-total-liquid');
+
+      if (elCash) elCash.textContent = formatCurrency(cash);
+      if (elMari) elMari.textContent = formatCurrency(maribank);
+      if (elBdo) elBdo.textContent = formatCurrency(bdo);
+      if (elGcash) elGcash.textContent = formatCurrency(gcash);
+      if (elTotal) elTotal.textContent = formatCurrency(totalLiquid);
+      if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(totalLiquid);
+
+      // 2. Expenses Total
+      const totalExpenses = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      const elTotalExp = document.getElementById('stat-total-expenses');
+      if (elTotalExp) elTotalExp.textContent = formatCurrency(totalExpenses);
+
+      const elBadgeExp = document.getElementById('badge-expenses-count');
+      if (elBadgeExp) elBadgeExp.textContent = expenses.length;
+
+      // 3. Utang Collectibles Total
       let totalUnpaid = 0;
       let totalPaid = 0;
       let unpaidCount = 0;
@@ -1613,14 +2258,26 @@
         }
       });
 
-      document.getElementById('stat-total-unpaid').textContent = formatCurrency(totalUnpaid);
-      document.getElementById('stat-unpaid-count').textContent = `${unpaidCount} pending debts`;
+      const elUtangCollectibles = document.getElementById('stat-utang-collectibles');
+      if (elUtangCollectibles) elUtangCollectibles.textContent = formatCurrency(totalUnpaid);
 
-      document.getElementById('stat-total-paid').textContent = formatCurrency(totalPaid);
-      document.getElementById('stat-paid-count').textContent = `${paidCount} settled debts`;
+      const elStatUnpaid = document.getElementById('stat-total-unpaid');
+      const elUnpaidCount = document.getElementById('stat-unpaid-count');
+      if (elStatUnpaid) elStatUnpaid.textContent = formatCurrency(totalUnpaid);
+      if (elUnpaidCount) elUnpaidCount.textContent = `${unpaidCount} pending debts`;
 
-      document.getElementById('stat-debtor-count').textContent = debtors.size;
-      document.getElementById('stat-people-summary').textContent = `${debtors.size} people with balance`;
+      const elStatPaid = document.getElementById('stat-total-paid');
+      const elPaidCount = document.getElementById('stat-paid-count');
+      if (elStatPaid) elStatPaid.textContent = formatCurrency(totalPaid);
+      if (elPaidCount) elPaidCount.textContent = `${paidCount} settled debts`;
+
+      const elStatDebtorCount = document.getElementById('stat-debtor-count');
+      const elStatPeopleSummary = document.getElementById('stat-people-summary');
+      if (elStatDebtorCount) elStatDebtorCount.textContent = debtors.size;
+      if (elStatPeopleSummary) elStatPeopleSummary.textContent = `${debtors.size} people with balance`;
+
+      const elBadgeDebts = document.getElementById('badge-debts-count');
+      if (elBadgeDebts) elBadgeDebts.textContent = unpaidCount;
 
       // Update name datalist
       const allNames = Array.from(new Set(debts.map(d => d.name.trim()))).sort();
@@ -1630,17 +2287,146 @@
       }
     }
 
-    function render() {
-      updateStats();
+    // ==========================================================================
+    // RENDER EXPENSES TIMELINE
+    // ==========================================================================
+    function renderExpensesTimeline() {
+      const container = document.getElementById('expenses-timeline-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      let filtered = expenses.filter(exp => {
+        if (currentExpenseSearch) {
+          const q = currentExpenseSearch.toLowerCase();
+          const matchTitle = (exp.title || '').toLowerCase().includes(q);
+          const matchCat = (exp.category || '').toLowerCase().includes(q);
+          const matchWallet = (exp.wallet || '').toLowerCase().includes(q);
+          if (!matchTitle && !matchCat && !matchWallet) return false;
+        }
+
+        const expDate = new Date(exp.date);
+        const now = new Date();
+
+        if (settings.expenseFilter === 'today') {
+          return expDate.toDateString() === now.toDateString();
+        } else if (settings.expenseFilter === 'month') {
+          return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
+        }
+
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+            <p class="empty-state-title">No expenses recorded yet</p>
+            <p class="empty-state-desc">Log your daily meals, transport fare, bills, or shopping to see your chronological spending timeline.</p>
+            <button type="button" class="btn-primary" onclick="openExpenseModal()" style="margin-top: 0.5rem;">
+              <i class="fa-solid fa-plus"></i> Add First Expense
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort descending by date
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      // Group by calendar day
+      const dayGroups = {};
+      filtered.forEach(exp => {
+        const d = new Date(exp.date);
+        const dateKey = d.toLocaleDateString('en-US', {
+          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+        });
+        if (!dayGroups[dateKey]) dayGroups[dateKey] = [];
+        dayGroups[dateKey].push(exp);
+      });
+
+      Object.keys(dayGroups).forEach(dateLabel => {
+        const groupItems = dayGroups[dateLabel];
+        const dayTotal = groupItems.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+        const groupEl = document.createElement('div');
+        groupEl.className = 'timeline-day-group';
+
+        groupEl.innerHTML = `
+          <div class="timeline-day-header">
+            <span class="timeline-day-title">
+              <i class="fa-regular fa-calendar-days" style="color: var(--accent-primary);"></i>
+              ${dateLabel}
+            </span>
+            <span class="timeline-day-total mono">Spent: -${formatCurrency(dayTotal)}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+            ${groupItems.map(item => renderExpenseRow(item)).join('')}
+          </div>
+        `;
+
+        container.appendChild(groupEl);
+      });
+    }
+
+    function renderExpenseRow(item) {
+      const timeStr = new Date(item.date).toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit'
+      });
+      const catIcon = getCategoryIcon(item.category);
+      const walletNames = {
+        cash: 'Cash',
+        maribank: 'MariBank',
+        bdo: 'BDO',
+        gcash: 'GCash',
+        none: 'Unassigned'
+      };
+      const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
+
+      return `
+        <div class="expense-row">
+          <div class="expense-left">
+            <div class="expense-cat-icon">
+              <i class="${catIcon}"></i>
+            </div>
+            <div class="expense-desc-wrap">
+              <div class="expense-title">
+                <span>${item.title}</span>
+                <span class="wallet-source-tag">${walletLabel}</span>
+              </div>
+              <div class="expense-meta">
+                <span>${item.category || 'General'}</span>
+                <span>&bull;</span>
+                <span><i class="fa-regular fa-clock" style="margin-right: 3px;"></i>${timeStr}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="expense-right">
+            <span class="expense-amount-val mono">-${formatCurrency(item.amount)}</span>
+            <button onclick="deleteExpense('${item.id}')" class="btn-icon-danger" title="Delete expense">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================================================
+    // RENDER UTANG LEDGER FEATURE
+    // ==========================================================================
+    function renderDebtsView() {
       const container = document.getElementById('debts-container');
+      if (!container) return;
       container.innerHTML = '';
 
       let filtered = debts.filter(d => {
         if (settings.filter === 'unpaid' && d.isPaid) return false;
         if (settings.filter === 'paid' && !d.isPaid) return false;
 
-        if (currentSearch) {
-          const q = currentSearch.toLowerCase();
+        if (currentDebtSearch) {
+          const q = currentDebtSearch.toLowerCase();
           const matchName = d.name.toLowerCase().includes(q);
           const matchReason = d.reason.toLowerCase().includes(q);
           const matchCode = (d.dateCode || '').toLowerCase().includes(q);
@@ -1653,10 +2439,10 @@
         container.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">
-              <i class="fa-solid fa-sparkles"></i>
+              <i class="fa-solid fa-hand-holding-dollar"></i>
             </div>
-            <p class="empty-state-title">No records found</p>
-            <p class="empty-state-desc">There are no records matching your current filter. Click "Add Utang" to record a new one!</p>
+            <p class="empty-state-title">No utang records found</p>
+            <p class="empty-state-desc">There are no loan records matching your current filter. Click "Add Utang" to record a borrowed amount.</p>
           </div>
         `;
         return;
@@ -1778,9 +2564,40 @@
       `;
     }
 
+    function render() {
+      updateOverviewStats();
+      if (settings.activeTab === 'expenses') {
+        renderExpensesTimeline();
+      } else {
+        renderDebtsView();
+      }
+    }
+
     // ==========================================================================
-    // ACTION CONTROLLERS & EVENT LISTENERS
+    // ACTION CONTROLLERS & ACTIONS
     // ==========================================================================
+    window.editWalletBalance = function(walletKey) {
+      const names = {
+        cash: 'Cash',
+        maribank: 'MariBank',
+        bdo: 'BDO',
+        gcash: 'GCash'
+      };
+      const label = names[walletKey] || walletKey;
+      const current = Number(wallets[walletKey]) || 0;
+      const input = prompt(`Enter new amount left in ${label} (₱):`, current);
+      if (input !== null) {
+        const parsed = parseFloat(input);
+        if (!isNaN(parsed)) {
+          wallets[walletKey] = parsed;
+          saveStorage();
+          render();
+        } else {
+          alert('Please enter a valid numeric amount.');
+        }
+      }
+    };
+
     window.togglePaid = function(id) {
       const item = debts.find(d => d.id === id);
       if (!item) return;
@@ -1813,7 +2630,110 @@
       render();
     };
 
-    // Form Submit (Add Utang)
+    window.deleteExpense = function(id) {
+      const item = expenses.find(e => e.id === id);
+      if (!item) return;
+      if (!confirm(`Delete expense "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
+
+      expenses = expenses.filter(e => e.id !== id);
+      saveStorage();
+      render();
+    };
+
+    // ==========================================================================
+    // MODALS CONTROLS & SUBMITS
+    // ==========================================================================
+    window.openExpenseModal = function() {
+      document.getElementById('form-add-expense').reset();
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('expense-input-datetime').value = now.toISOString().slice(0, 16);
+
+      document.getElementById('modal-expense').classList.add('is-active');
+      document.getElementById('expense-input-title').focus();
+    };
+
+    function closeExpenseModal() {
+      document.getElementById('modal-expense').classList.remove('is-active');
+    }
+
+    window.openAddModal = function() {
+      document.getElementById('form-add-utang').reset();
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('input-datetime').value = now.toISOString().slice(0, 16);
+
+      document.getElementById('modal-add').classList.add('is-active');
+      document.getElementById('input-name').focus();
+    };
+
+    function closeAddModal() {
+      document.getElementById('modal-add').classList.remove('is-active');
+    }
+
+    function openSettingsModal() {
+      document.getElementById('setting-webhook-url').value = settings.discordWebhookUrl || '';
+      document.getElementById('setting-interest-enabled').checked = settings.interestEnabled;
+      document.getElementById('setting-wallet-cash').value = wallets.cash || '';
+      document.getElementById('setting-wallet-maribank').value = wallets.maribank || '';
+      document.getElementById('setting-wallet-bdo').value = wallets.bdo || '';
+      document.getElementById('setting-wallet-gcash').value = wallets.gcash || '';
+      document.getElementById('modal-settings').classList.add('is-active');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('modal-settings').classList.remove('is-active');
+    }
+
+    // Expense Form Submit
+    document.getElementById('form-add-expense').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('expense-input-title').value.trim();
+      const amount = parseFloat(document.getElementById('expense-input-amount').value);
+      const wallet = document.getElementById('expense-input-wallet').value;
+      const category = document.getElementById('expense-input-category').value;
+      const dtInput = document.getElementById('expense-input-datetime').value;
+      const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
+
+      if (!title || isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid title and positive amount.');
+        return;
+      }
+
+      const newExpense = {
+        id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title: title,
+        amount: amount,
+        wallet: wallet,
+        category: category,
+        date: date,
+        createdAt: new Date().toISOString()
+      };
+
+      // Auto-deduct from selected wallet if specified
+      if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+        wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+      }
+
+      expenses.unshift(newExpense);
+      saveStorage();
+      render();
+
+      sendDiscordNotification(
+        "💸 Expense Recorded",
+        `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
+        0xef4444,
+        [
+          { name: "Item", value: title, inline: true },
+          { name: "Amount", value: formatCurrency(amount), inline: true },
+          { name: "Account", value: wallet.toUpperCase(), inline: true }
+        ]
+      );
+
+      closeExpenseModal();
+    });
+
+    // Utang Form Submit
     document.getElementById('form-add-utang').addEventListener('submit', (e) => {
       e.preventDefault();
       const name = document.getElementById('input-name').value.trim();
@@ -1824,7 +2744,6 @@
 
       if (!name || isNaN(amount) || !reason) return;
 
-      // Generate date code
       const personExisting = debts.filter(d => d.name.toLowerCase() === name.toLowerCase());
       const dateCode = getManilaDateCode(date, personExisting.length + 1);
 
@@ -1843,9 +2762,8 @@
       saveStorage();
       render();
 
-      // Send Discord Webhook Alert
       sendDiscordNotification(
-        "💸 New Utang Added",
+        "🤝 Utang Loan Added",
         `**${name}** owes **${formatCurrency(amount)}** for *${reason}*.`,
         0xea580c,
         [
@@ -1858,27 +2776,13 @@
       closeAddModal();
     });
 
-    // Modals Controls
-    function openAddModal() {
-      document.getElementById('form-add-utang').reset();
-      document.getElementById('modal-add').classList.add('is-active');
-      document.getElementById('input-name').focus();
-    }
-    function closeAddModal() {
-      document.getElementById('modal-add').classList.remove('is-active');
-    }
-
-    function openSettingsModal() {
-      document.getElementById('setting-webhook-url').value = settings.discordWebhookUrl || '';
-      document.getElementById('setting-interest-enabled').checked = settings.interestEnabled;
-      document.getElementById('modal-settings').classList.add('is-active');
-    }
-    function closeSettingsModal() {
-      document.getElementById('modal-settings').classList.remove('is-active');
-    }
+    // Modal Triggers
+    document.getElementById('btn-open-expense-top').addEventListener('click', openExpenseModal);
+    document.getElementById('btn-open-expense-bottom').addEventListener('click', openExpenseModal);
+    document.getElementById('btn-close-expense').addEventListener('click', closeExpenseModal);
+    document.getElementById('btn-cancel-expense').addEventListener('click', closeExpenseModal);
 
     document.getElementById('btn-open-add-top').addEventListener('click', openAddModal);
-    document.getElementById('btn-open-add-bottom').addEventListener('click', openAddModal);
     document.getElementById('btn-close-add').addEventListener('click', closeAddModal);
     document.getElementById('btn-cancel-add').addEventListener('click', closeAddModal);
 
@@ -1889,6 +2793,17 @@
     document.getElementById('btn-save-settings').addEventListener('click', () => {
       settings.discordWebhookUrl = document.getElementById('setting-webhook-url').value.trim();
       settings.interestEnabled = document.getElementById('setting-interest-enabled').checked;
+
+      const cashVal = parseFloat(document.getElementById('setting-wallet-cash').value);
+      const mariVal = parseFloat(document.getElementById('setting-wallet-maribank').value);
+      const bdoVal = parseFloat(document.getElementById('setting-wallet-bdo').value);
+      const gcashVal = parseFloat(document.getElementById('setting-wallet-gcash').value);
+
+      wallets.cash = isNaN(cashVal) ? 0 : cashVal;
+      wallets.maribank = isNaN(mariVal) ? 0 : mariVal;
+      wallets.bdo = isNaN(bdoVal) ? 0 : bdoVal;
+      wallets.gcash = isNaN(gcashVal) ? 0 : gcashVal;
+
       saveStorage();
       render();
       closeSettingsModal();
@@ -1901,6 +2816,91 @@
           overlay.classList.remove('is-active');
         }
       });
+    });
+
+    // Tab Switcher between Expenses Timeline & Utang Tracker
+    const tabBtnExpenses = document.getElementById('tab-btn-expenses');
+    const tabBtnDebts = document.getElementById('tab-btn-debts');
+    const viewExpenses = document.getElementById('view-expenses-section');
+    const viewDebts = document.getElementById('view-debts-section');
+    const tabAddLabel = document.getElementById('tab-add-label');
+    const btnTabAdd = document.getElementById('btn-tab-add');
+
+    function switchMainTab(tab) {
+      settings.activeTab = tab;
+      saveStorage();
+
+      if (tab === 'expenses') {
+        tabBtnExpenses.classList.add('active');
+        tabBtnDebts.classList.remove('active');
+        viewExpenses.style.display = 'block';
+        viewDebts.style.display = 'none';
+        tabAddLabel.textContent = 'New Expense';
+        btnTabAdd.onclick = openExpenseModal;
+      } else {
+        tabBtnDebts.classList.add('active');
+        tabBtnExpenses.classList.remove('active');
+        viewExpenses.style.display = 'none';
+        viewDebts.style.display = 'block';
+        tabAddLabel.textContent = 'New Utang';
+        btnTabAdd.onclick = openAddModal;
+      }
+      render();
+    }
+
+    tabBtnExpenses.addEventListener('click', () => switchMainTab('expenses'));
+    tabBtnDebts.addEventListener('click', () => switchMainTab('debts'));
+    btnTabAdd.addEventListener('click', () => {
+      if (settings.activeTab === 'expenses') openExpenseModal();
+      else openAddModal();
+    });
+
+    // Search and Filter Listeners for Expenses
+    document.getElementById('expense-search-input').addEventListener('input', (e) => {
+      currentExpenseSearch = e.target.value.trim();
+      renderExpensesTimeline();
+    });
+
+    document.querySelectorAll('[data-expense-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-expense-filter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        settings.expenseFilter = btn.getAttribute('data-expense-filter');
+        saveStorage();
+        renderExpensesTimeline();
+      });
+    });
+
+    // Search and Filter Listeners for Utang
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      currentDebtSearch = e.target.value.trim();
+      renderDebtsView();
+    });
+
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        settings.filter = btn.getAttribute('data-filter');
+        saveStorage();
+        renderDebtsView();
+      });
+    });
+
+    document.getElementById('view-grouped').addEventListener('click', () => {
+      settings.lastView = 'grouped';
+      document.getElementById('view-grouped').classList.add('active');
+      document.getElementById('view-list').classList.remove('active');
+      saveStorage();
+      renderDebtsView();
+    });
+
+    document.getElementById('view-list').addEventListener('click', () => {
+      settings.lastView = 'list';
+      document.getElementById('view-list').classList.add('active');
+      document.getElementById('view-grouped').classList.remove('active');
+      saveStorage();
+      renderDebtsView();
     });
 
     // Test Webhook
@@ -1916,7 +2916,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             embeds: [{
-              title: "🔔 Test Notification from JeyCub Utang Tracker",
+              title: "🔔 Test Notification from JeyCub Finance Tracker",
               description: "Your Discord webhook is configured and working perfectly!",
               color: 0xea580c,
               timestamp: new Date().toISOString()
@@ -1929,44 +2929,21 @@
       }
     });
 
-    // Filter Controls
-    document.querySelectorAll('[data-filter]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        settings.filter = btn.getAttribute('data-filter');
-        saveStorage();
-        render();
-      });
-    });
-
-    document.getElementById('search-input').addEventListener('input', (e) => {
-      currentSearch = e.target.value.trim();
-      render();
-    });
-
-    document.getElementById('view-grouped').addEventListener('click', () => {
-      settings.lastView = 'grouped';
-      document.getElementById('view-grouped').classList.add('active');
-      document.getElementById('view-list').classList.remove('active');
-      saveStorage();
-      render();
-    });
-
-    document.getElementById('view-list').addEventListener('click', () => {
-      settings.lastView = 'list';
-      document.getElementById('view-list').classList.add('active');
-      document.getElementById('view-grouped').classList.remove('active');
-      saveStorage();
-      render();
-    });
-
     // Backup & Restore
     document.getElementById('btn-export-data').addEventListener('click', () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(debts, null, 2));
+      const exportPayload = {
+        app: "JeyCub Finance Tracker",
+        version: "3.0.0",
+        exportDate: new Date().toISOString(),
+        expenses: expenses,
+        debts: debts,
+        wallets: wallets,
+        settings: settings
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `utang_backup_${new Date().toISOString().slice(0,10)}.json`);
+      downloadAnchor.setAttribute("download", `jeycub_finance_backup_${new Date().toISOString().slice(0,10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1983,7 +2960,15 @@
             debts = imported;
             saveStorage();
             render();
-            alert(`Successfully imported ${imported.length} debt records!`);
+            alert(`Imported ${imported.length} debt records!`);
+          } else if (imported && typeof imported === 'object') {
+            if (Array.isArray(imported.debts)) debts = imported.debts;
+            if (Array.isArray(imported.expenses)) expenses = imported.expenses;
+            if (imported.wallets) wallets = { ...wallets, ...imported.wallets };
+            if (imported.settings) settings = { ...settings, ...imported.settings };
+            saveStorage();
+            render();
+            alert('Successfully restored backup data!');
           } else {
             alert('Invalid backup file format.');
           }
@@ -1995,16 +2980,15 @@
     });
 
     document.getElementById('btn-clear-all').addEventListener('click', () => {
-      if (confirm('Are you sure you want to delete ALL records? This cannot be undone.')) {
+      if (confirm('Are you sure you want to delete ALL expenses and debt records? This cannot be undone.')) {
         debts = [];
+        expenses = [];
         saveStorage();
         render();
       }
     });
 
-    // ==========================================================================
-    // BRAND NAVIGATION POPUP CONTROLLER (Website Switcher)
-    // ==========================================================================
+    // Brand Navigation Popup Controller
     function initBrandNavPopup() {
       const trigger = document.getElementById('brand-nav-trigger');
       const popup = document.getElementById('brand-nav-popup');
@@ -2045,15 +3029,45 @@
       });
     }
 
-    // Seed Demo Data if empty on first load
+    // Seed Demo Data if empty on first run
     function checkFirstRun() {
-      if (!localStorage.getItem(STORAGE_KEY)) {
+      if (!localStorage.getItem(STORAGE_KEY) && !localStorage.getItem(EXPENSES_KEY)) {
+        expenses = [
+          {
+            id: 'exp_demo_1',
+            title: 'Chickenjoy Lunch Meal',
+            amount: 145.00,
+            category: 'Food & Drinks',
+            wallet: 'gcash',
+            date: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'exp_demo_2',
+            title: 'Jeepney & LRT Fare',
+            amount: 55.00,
+            category: 'Transportation',
+            wallet: 'cash',
+            date: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: 'exp_demo_3',
+            title: 'Grocery Snacks & Coffee',
+            amount: 320.00,
+            category: 'Food & Drinks',
+            wallet: 'maribank',
+            date: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString()
+          }
+        ];
+
         debts = [
           {
             id: 'demo_1',
             name: 'Juan',
             amount: 250.00,
-            reason: 'Lunch & Milk Tea',
+            reason: 'Milk Tea & Pizza share',
             date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
             dateCode: '10-15-26-G1',
             isPaid: false,
@@ -2068,18 +3082,16 @@
             dateCode: '11-09-26-G1',
             isPaid: false,
             createdAt: new Date().toISOString()
-          },
-          {
-            id: 'demo_3',
-            name: 'Juan',
-            amount: 100.00,
-            reason: 'Grab ride split',
-            date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            dateCode: '11-14-26-G2',
-            isPaid: true,
-            createdAt: new Date().toISOString()
           }
         ];
+
+        wallets = {
+          cash: 850.00,
+          maribank: 4500.00,
+          bdo: 12000.00,
+          gcash: 1250.00
+        };
+
         saveStorage();
       }
     }
@@ -2089,19 +3101,16 @@
       initTheme();
       loadStorage();
       checkFirstRun();
-      render();
       initBrandNavPopup();
 
-      // Set default views in UI
-      if (settings.filter) {
-        document.querySelectorAll('[data-filter]').forEach(b => {
-          b.classList.toggle('active', b.getAttribute('data-filter') === settings.filter);
-        });
+      // Restore active tab
+      if (settings.activeTab) {
+        switchMainTab(settings.activeTab);
+      } else {
+        switchMainTab('expenses');
       }
-      if (settings.lastView === 'list') {
-        document.getElementById('view-list').classList.add('active');
-        document.getElementById('view-grouped').classList.remove('active');
-      }
+
+      render();
     });
   </script>
 </body>
