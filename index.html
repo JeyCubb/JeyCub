@@ -345,6 +345,9 @@
       display: flex;
       flex-direction: column;
       gap: 0.1rem;
+      align-items: flex-start;
+      text-align: left;
+      min-width: 0;
     }
     .hero-label {
       font-size: 0.65rem;
@@ -355,6 +358,7 @@
       display: flex;
       align-items: center;
       gap: 0.35rem;
+      white-space: nowrap;
     }
     .hero-value {
       font-size: 1.35rem;
@@ -362,9 +366,81 @@
       color: var(--text-primary);
       letter-spacing: -0.02em;
       line-height: 1.1;
+      white-space: nowrap;
     }
     .hero-subtitle {
       display: none;
+    }
+
+    /* Projected Hero Stat on Right */
+    .hero-projected-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .hero-projected-header {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+    .hero-projected-label {
+      cursor: pointer;
+    }
+    .hero-date-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--accent-primary);
+      border-radius: var(--radius-sm);
+      padding: 0.1rem 0.35rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+      transition: var(--transition);
+      max-width: 125px;
+      color-scheme: dark;
+    }
+    [data-theme="light"] .hero-date-input {
+      color-scheme: light;
+    }
+    .hero-date-input:hover,
+    .hero-date-input:focus {
+      border-color: var(--accent-primary);
+      background: var(--bg-card-hover);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    .hero-projected-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+    .hero-projected-value {
+      color: var(--text-primary);
+    }
+    .hero-diff-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 0.08rem 0.35rem;
+      border-radius: var(--radius-full);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .hero-diff-badge.is-negative {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.28);
+    }
+    .hero-diff-badge.is-positive {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.28);
     }
 
     .hero-quick-breakdown {
@@ -1507,6 +1583,130 @@
     input:checked + .switch-slider:before {
       transform: translateX(20px);
     }
+
+    /* Modal Projected Controls & Status Indicator */
+    .projected-control-group {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      transition: var(--transition);
+    }
+    .projected-control-group:hover,
+    .projected-control-group:focus-within {
+      border-color: var(--border-color-hover);
+    }
+    .projected-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .projected-label-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .projected-switch-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .projected-subtext {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      line-height: 1.25;
+    }
+    .projected-indicator-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .projected-indicator-pill.is-actual {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.22);
+      color: var(--color-success);
+    }
+    .projected-indicator-pill.is-actual .indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-success);
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+      flex-shrink: 0;
+    }
+    .projected-indicator-pill.is-projected {
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      color: var(--accent-primary);
+    }
+    .projected-indicator-pill.is-projected .indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      box-shadow: 0 0 8px var(--accent-glow);
+      flex-shrink: 0;
+      animation: pulse-dot 1.8s infinite ease-in-out;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+
+    /* Timeline Badge & Style for Projected items */
+    .badge-projected-tag {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.08rem 0.38rem;
+      border-radius: var(--radius-full);
+      background: rgba(249, 115, 22, 0.14);
+      color: var(--accent-primary);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .expense-row.is-projected-item {
+      border-left: 3px dashed var(--accent-primary);
+      background: rgba(249, 115, 22, 0.03);
+    }
+
+    @media (max-width: 480px) {
+      .hero-overview-card {
+        padding: 0.4rem 0.6rem;
+        gap: 0.45rem;
+      }
+      .hero-label {
+        font-size: 0.58rem;
+        letter-spacing: 0.04em;
+      }
+      .hero-value {
+        font-size: 1.18rem;
+      }
+      .hero-date-input {
+        font-size: 0.6rem;
+        padding: 0.05rem 0.25rem;
+        max-width: 110px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1516,11 +1716,26 @@
 
     <!-- 1. Hero Net Worth & Liquid Overview -->
     <div class="hero-overview-card">
+      <!-- Left: Current Overall Money -->
       <div class="hero-main-stat">
         <span class="hero-label">
           <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
         </span>
         <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
+      </div>
+
+      <!-- Right: Projected Amount by Date -->
+      <div class="hero-projected-stat">
+        <div class="hero-projected-header">
+          <label for="hero-projected-date" class="hero-label hero-projected-label" title="Change projection target date">
+            <i class="fa-solid fa-chart-line"></i> Projected by
+          </label>
+          <input type="date" id="hero-projected-date" class="hero-date-input" aria-label="Target projection date" />
+        </div>
+        <div class="hero-projected-value-row">
+          <span id="hero-total-projected" class="hero-value mono hero-projected-value">₱0.00</span>
+          <span id="hero-projected-diff" class="hero-diff-badge mono" style="display: none;"></span>
+        </div>
       </div>
     </div>
 
@@ -1745,6 +1960,28 @@
           </div>
         </div>
 
+        <!-- Projected Transaction Toggle & Indicator -->
+        <div class="form-group projected-control-group">
+          <div class="projected-toggle-row">
+            <div class="projected-label-block">
+              <span class="projected-switch-label">
+                <i class="fa-solid fa-chart-line" style="color: var(--accent-primary);"></i>
+                <span>Projected Transaction</span>
+              </span>
+              <span class="projected-subtext" id="projected-subtext">Planned / upcoming transaction</span>
+            </div>
+            <label class="switch-label" for="expense-input-projected" title="Toggle Projected status">
+              <input type="checkbox" id="expense-input-projected" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <!-- Live Status Indicator Pill -->
+          <div id="projected-indicator-pill" class="projected-indicator-pill is-actual">
+            <span class="indicator-dot"></span>
+            <span id="projected-indicator-text" class="indicator-text"><i class="fa-solid fa-bolt"></i> <strong>Actual</strong> &bull; Deducts immediately</span>
+          </div>
+        </div>
+
         <!-- Paid From (Account / Wallet) -->
         <div class="form-group">
           <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account *</label>
@@ -1921,7 +2158,8 @@
       lastView: 'grouped', // 'grouped' | 'list'
       filter: 'unpaid',    // 'all' | 'unpaid' | 'paid'
       activeTab: 'expenses', // 'expenses' | 'debts'
-      expenseFilter: 'all' // 'all' | 'today' | 'month'
+      expenseFilter: 'all', // 'all' | 'today' | 'month'
+      projectedTargetDate: ''
     };
     let currentDebtSearch = '';
     let currentExpenseSearch = '';
@@ -2133,6 +2371,29 @@
     // ==========================================================================
     // RENDER FUNCTIONS & STATS
     // ==========================================================================
+    function initProjectedDate() {
+      const heroDateInput = document.getElementById('hero-projected-date');
+      if (!heroDateInput) return;
+
+      if (!settings.projectedTargetDate) {
+        // Default to the end of the current month (e.g. 2026-11-30)
+        const now = new Date();
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const yyyy = lastDay.getFullYear();
+        const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
+        const dd = String(lastDay.getDate()).padStart(2, '0');
+        settings.projectedTargetDate = `${yyyy}-${mm}-${dd}`;
+      }
+
+      heroDateInput.value = settings.projectedTargetDate;
+
+      heroDateInput.addEventListener('change', (e) => {
+        settings.projectedTargetDate = e.target.value;
+        saveStorage();
+        updateOverviewStats();
+      });
+    }
+
     function render() {
       updateOverviewStats();
       renderExpensesTimeline();
@@ -2163,7 +2424,55 @@
       if (elTotal) elTotal.textContent = formatCurrency(totalLiquid);
       if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(totalLiquid);
 
-      // 2. Expenses Total & Utang as Expense Total
+      // 2. Projected Calculation by Target Date
+      const targetDateInput = document.getElementById('hero-projected-date');
+      const targetDateVal = (targetDateInput && targetDateInput.value) || settings.projectedTargetDate;
+      let projectedTotal = totalLiquid;
+      let netProjectedDiff = 0;
+
+      if (targetDateVal) {
+        // End of selected calendar day
+        const targetEnd = new Date(targetDateVal + 'T23:59:59.999');
+
+        for (const item of expenses) {
+          if (item.isProjected) {
+            const itemDate = new Date(item.date || item.createdAt);
+            if (itemDate <= targetEnd) {
+              const amt = Number(item.amount) || 0;
+              if (item.type === 'income') {
+                projectedTotal += amt;
+                netProjectedDiff += amt;
+              } else {
+                projectedTotal -= amt;
+                netProjectedDiff -= amt;
+              }
+            }
+          }
+        }
+      }
+
+      const elHeroProjected = document.getElementById('hero-total-projected');
+      if (elHeroProjected) {
+        elHeroProjected.textContent = formatCurrency(projectedTotal);
+      }
+
+      const elProjectedDiff = document.getElementById('hero-projected-diff');
+      if (elProjectedDiff) {
+        if (Math.abs(netProjectedDiff) > 0.001) {
+          elProjectedDiff.style.display = 'inline-flex';
+          const sign = netProjectedDiff > 0 ? '+' : '';
+          elProjectedDiff.textContent = `${sign}${formatCurrency(netProjectedDiff)}`;
+          if (netProjectedDiff > 0) {
+            elProjectedDiff.className = 'hero-diff-badge is-positive mono';
+          } else {
+            elProjectedDiff.className = 'hero-diff-badge is-negative mono';
+          }
+        } else {
+          elProjectedDiff.style.display = 'none';
+        }
+      }
+
+      // 3. Expenses Total & Utang as Expense Total
       const totalExpenses = expenses
         .filter(item => item.type !== 'income')
         .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -2259,6 +2568,7 @@
 
     function renderExpenseRow(item) {
       const isIncome = item.type === 'income';
+      const isProjected = Boolean(item.isProjected);
       const d = new Date(item.date);
       const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -2273,11 +2583,15 @@
       const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
       const amountPrefix = isIncome ? '+' : '-';
       const amountClass = isIncome ? 'expense-item-amount is-income mono' : 'expense-item-amount mono';
+      const rowClass = isProjected ? 'expense-row is-projected-item' : 'expense-row';
 
       return `
-        <div class="expense-row" data-id="${item.id}" title="Tap or hold to edit/delete">
+        <div class="${rowClass}" data-id="${item.id}" title="${isProjected ? 'Projected • ' : ''}Tap or hold to edit/delete">
           <div class="expense-line-1">
-            <span class="expense-item-name">${item.title}</span>
+            <span class="expense-item-name" style="display: flex; align-items: center; gap: 0.35rem; min-width: 0; overflow: hidden;">
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title}</span>
+              ${isProjected ? '<span class="badge-projected-tag"><i class="fa-solid fa-clock"></i> Projected</span>' : ''}
+            </span>
             <span class="${amountClass}">${amountPrefix}${formatCurrency(item.amount)}</span>
           </div>
           <div class="expense-line-2">
@@ -2317,6 +2631,76 @@
       }
     };
 
+    let userHasManuallyToggledProjected = false;
+
+    function updateProjectedModeUI(isProjected) {
+      const toggle = document.getElementById('expense-input-projected');
+      if (toggle && toggle.checked !== isProjected) {
+        toggle.checked = isProjected;
+      }
+
+      const indicatorPill = document.getElementById('projected-indicator-pill');
+      const indicatorText = document.getElementById('projected-indicator-text');
+      const subtext = document.getElementById('projected-subtext');
+      const labelWallet = document.getElementById('expense-account-label');
+      const helpWallet = document.getElementById('expense-account-help');
+      const submitBtn = document.getElementById('btn-submit-expense');
+
+      const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
+      const isIncome = rawAmount.startsWith('+');
+
+      if (isProjected) {
+        if (indicatorPill) {
+          indicatorPill.classList.remove('is-actual');
+          indicatorPill.classList.add('is-projected');
+        }
+        if (indicatorText) {
+          indicatorText.innerHTML = '<i class="fa-solid fa-chart-line"></i> <strong>Projected</strong> &bull; Won\'t deduct from balance now';
+        }
+        if (subtext) {
+          subtext.textContent = 'Planned / upcoming — factored into projected balance by date.';
+        }
+        if (labelWallet) {
+          labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later) *';
+        }
+        if (helpWallet) {
+          helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
+        }
+        if (submitBtn) {
+          submitBtn.textContent = currentEditExpenseId
+            ? (isIncome ? 'Save Changes (+ Projected)' : 'Save Changes (Projected)')
+            : (isIncome ? '+ Add Projected Value' : 'Save Projected Expense');
+        }
+      } else {
+        if (indicatorPill) {
+          indicatorPill.classList.remove('is-projected');
+          indicatorPill.classList.add('is-actual');
+        }
+        if (indicatorText) {
+          indicatorText.innerHTML = '<i class="fa-solid fa-bolt"></i> <strong>Actual</strong> &bull; Deducts immediately';
+        }
+        if (subtext) {
+          subtext.textContent = 'Realized transaction that has already occurred.';
+        }
+        if (labelWallet) {
+          labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
+        }
+        if (helpWallet) {
+          if (isIncome) {
+            helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
+          } else {
+            helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
+            helpWallet.style.color = '';
+          }
+        }
+        if (submitBtn) {
+          submitBtn.textContent = currentEditExpenseId
+            ? (isIncome ? 'Save Changes (+ Add)' : 'Save Changes')
+            : (isIncome ? '+ Add to Account' : 'Save Expense');
+        }
+      }
+    }
+
     function updateIncomeModeUI(isIncome) {
       const labelWallet = document.getElementById('expense-account-label');
       const helpWallet = document.getElementById('expense-account-help');
@@ -2324,11 +2708,16 @@
       const toggleText = document.getElementById('btn-toggle-income-text');
       const submitBtn = document.getElementById('btn-submit-expense');
       const titleModal = document.getElementById('modal-expense-title');
+      const isProjected = document.getElementById('expense-input-projected') ? document.getElementById('expense-input-projected').checked : false;
 
       if (isIncome) {
-        if (labelWallet) labelWallet.textContent = 'Add To Account *';
+        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
         if (helpWallet) {
-          helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
+          if (isProjected) {
+            helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
+          } else {
+            helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
+          }
         }
         if (toggleBtn) {
           toggleBtn.style.borderColor = 'var(--color-success)';
@@ -2337,17 +2726,23 @@
         }
         if (toggleText) toggleText.textContent = '+ Adding to Account';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save Changes (+ Add)' : '+ Add to Account';
+          submitBtn.textContent = currentEditExpenseId
+            ? (isProjected ? 'Save Changes (+ Projected)' : 'Save Changes (+ Add)')
+            : (isProjected ? '+ Add Projected Value' : '+ Add to Account');
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
         }
         if (titleModal) {
           titleModal.textContent = currentEditExpenseId ? 'Edit Value / Income' : 'Add Value / Income';
         }
       } else {
-        if (labelWallet) labelWallet.textContent = 'Deduct From Account *';
+        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : 'Deduct From Account *';
         if (helpWallet) {
-          helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
-          helpWallet.style.color = '';
+          if (isProjected) {
+            helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
+          } else {
+            helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
+            helpWallet.style.color = '';
+          }
         }
         if (toggleBtn) {
           toggleBtn.style.borderColor = '';
@@ -2356,7 +2751,9 @@
         }
         if (toggleText) toggleText.textContent = 'Type + to Add';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : 'Save Expense';
+          submitBtn.textContent = currentEditExpenseId
+            ? (isProjected ? 'Save Changes (Projected)' : 'Save Changes')
+            : (isProjected ? 'Save Projected Expense' : 'Save Expense');
           submitBtn.style.background = '';
         }
         if (titleModal) {
@@ -2370,8 +2767,13 @@
       if (!item) return;
 
       currentEditExpenseId = id;
+      userHasManuallyToggledProjected = true;
       const isIncome = item.type === 'income';
-      document.getElementById('modal-expense-title').textContent = isIncome ? 'Edit Value / Income' : 'Edit Expense';
+      const isProjected = Boolean(item.isProjected);
+
+      document.getElementById('modal-expense-title').textContent = isProjected
+        ? (isIncome ? 'Edit Projected Value' : 'Edit Projected Expense')
+        : (isIncome ? 'Edit Value / Income' : 'Edit Expense');
       document.getElementById('expense-input-title').value = item.title || '';
       document.getElementById('expense-input-amount').value = (isIncome ? '+' : '') + (Number(item.amount) || '');
       document.getElementById('expense-input-wallet').value = item.wallet || 'none';
@@ -2391,6 +2793,7 @@
       }
 
       updateIncomeModeUI(isIncome);
+      updateProjectedModeUI(isProjected);
       document.getElementById('modal-expense').classList.add('is-active');
     };
 
@@ -2398,9 +2801,10 @@
       const item = expenses.find(e => e.id === id);
       if (!item) return;
       const labelType = item.type === 'income' ? 'income' : 'expense';
-      if (!confirm(`Delete ${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
+      const labelProj = item.isProjected ? 'projected ' : '';
+      if (!confirm(`Delete ${labelProj}${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
 
-      if (item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
+      if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
         if (item.type === 'income') {
           wallets[item.wallet] = Math.max(0, (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0));
         } else {
@@ -2417,6 +2821,7 @@
     // ==========================================================================
     window.openExpenseModal = function() {
       currentEditExpenseId = null;
+      userHasManuallyToggledProjected = false;
       document.getElementById('form-add-expense').reset();
       document.getElementById('modal-expense-title').textContent = 'Record Expense';
 
@@ -2434,6 +2839,7 @@
       }
 
       updateIncomeModeUI(false);
+      updateProjectedModeUI(false);
       document.getElementById('modal-expense').classList.add('is-active');
       document.getElementById('expense-input-title').focus();
     };
@@ -2470,6 +2876,7 @@
       const category = document.getElementById('expense-input-category').value;
       const dtInput = document.getElementById('expense-input-datetime').value;
       const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
+      const isProjected = document.getElementById('expense-input-projected') ? document.getElementById('expense-input-projected').checked : false;
 
       if (!title || isNaN(amount) || amount <= 0) {
         alert('Please enter a valid title and positive amount.');
@@ -2482,17 +2889,18 @@
           const oldWallet = item.wallet;
           const oldAmount = Number(item.amount) || 0;
           const oldIsIncome = item.type === 'income';
+          const oldIsProjected = Boolean(item.isProjected);
 
-          // 1. Revert old transaction effect
-          if (oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
+          // 1. Revert old transaction effect if it was NOT projected
+          if (!oldIsProjected && oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
             if (oldIsIncome) {
               wallets[oldWallet] = Math.max(0, (Number(wallets[oldWallet]) || 0) - oldAmount);
             } else {
               wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
             }
           }
-          // 2. Apply new transaction effect
-          if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+          // 2. Apply new transaction effect if it is NOT projected
+          if (!isProjected && wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
             if (isIncome) {
               wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
             } else {
@@ -2506,6 +2914,7 @@
           item.wallet = wallet;
           item.category = category;
           item.date = date;
+          item.isProjected = isProjected;
         }
       } else {
         const newExpense = {
@@ -2516,10 +2925,12 @@
           wallet: wallet,
           category: category,
           date: date,
+          isProjected: isProjected,
           createdAt: new Date().toISOString()
         };
 
-        if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+        // Deduct/Add to actual wallet only if NOT projected
+        if (!isProjected && wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
           if (isIncome) {
             wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
           } else {
@@ -2531,24 +2942,30 @@
 
         if (isIncome) {
           sendDiscordNotification(
-            "💰 Value Added / Income",
-            `Added **+${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}* - ${category}).`,
+            isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income",
+            isProjected
+              ? `Planned **+${formatCurrency(amount)}** for **${wallet.toUpperCase()}** (*${title}* - ${category}) by ${new Date(date).toLocaleDateString()}.`
+              : `Added **+${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}* - ${category}).`,
             0x10b981,
             [
               { name: "Item", value: title, inline: true },
               { name: "Amount", value: `+${formatCurrency(amount)}`, inline: true },
-              { name: "Account", value: wallet.toUpperCase(), inline: true }
+              { name: "Account", value: wallet.toUpperCase(), inline: true },
+              { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
           );
         } else {
           sendDiscordNotification(
-            "💸 Expense Recorded",
-            `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
-            0xef4444,
+            isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded",
+            isProjected
+              ? `Planned **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}** for ${new Date(date).toLocaleDateString()}.`
+              : `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
+            isProjected ? 0xf59e0b : 0xef4444,
             [
               { name: "Item", value: title, inline: true },
               { name: "Amount", value: formatCurrency(amount), inline: true },
-              { name: "Account", value: wallet.toUpperCase(), inline: true }
+              { name: "Account", value: wallet.toUpperCase(), inline: true },
+              { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
           );
         }
@@ -2566,9 +2983,10 @@
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (!item) return;
         const labelType = item.type === 'income' ? 'income' : 'expense';
+        const labelProj = item.isProjected ? 'projected ' : '';
 
-        if (confirm(`Delete ${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) {
-          if (item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
+        if (confirm(`Delete ${labelProj}${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) {
+          if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
             if (item.type === 'income') {
               wallets[item.wallet] = Math.max(0, (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0));
             } else {
@@ -2590,6 +3008,27 @@
         const val = e.target.value.trim();
         const isInc = val.startsWith('+');
         updateIncomeModeUI(isInc);
+      });
+    }
+
+    const toggleProjected = document.getElementById('expense-input-projected');
+    if (toggleProjected) {
+      toggleProjected.addEventListener('change', (e) => {
+        userHasManuallyToggledProjected = true;
+        updateProjectedModeUI(e.target.checked);
+      });
+    }
+
+    const inputExpDatetime = document.getElementById('expense-input-datetime');
+    if (inputExpDatetime) {
+      inputExpDatetime.addEventListener('change', (e) => {
+        if (!userHasManuallyToggledProjected && e.target.value) {
+          const chosen = new Date(e.target.value);
+          const now = new Date();
+          if (chosen > now) {
+            updateProjectedModeUI(true);
+          }
+        }
       });
     }
 
@@ -2841,6 +3280,10 @@
             }
             if (remote.settings && typeof remote.settings === 'object') {
               settings = { ...settings, ...remote.settings };
+              if (settings.projectedTargetDate) {
+                const dateEl = document.getElementById('hero-projected-date');
+                if (dateEl) dateEl.value = settings.projectedTargetDate;
+              }
             }
 
             saveStorage(false);
@@ -2873,6 +3316,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       loadStorage();
+      initProjectedDate();
       checkFirstRun();
       initBrandNavPopup();
       render();
