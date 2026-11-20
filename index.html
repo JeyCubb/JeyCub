@@ -422,7 +422,7 @@
 
     .wallets-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 0.75rem;
     }
     @media (max-width: 768px) {
@@ -484,6 +484,7 @@
     .wallet-card[data-wallet="maribank"] .wallet-dot { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.4); }
     .wallet-card[data-wallet="bdo"] .wallet-dot { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
     .wallet-card[data-wallet="gcash"] .wallet-dot { background: #0ea5e9; box-shadow: 0 0 8px rgba(14, 165, 233, 0.4); }
+    .wallet-card[data-wallet="utang"] .wallet-dot { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
 
     .wallet-edit-btn {
       color: var(--text-muted);
@@ -1562,7 +1563,7 @@
           <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
         </span>
         <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
-        <span class="hero-subtitle">Cash + MariBank + BDO + GCash combined</span>
+        <span class="hero-subtitle">Cash + MariBank + BDO + GCash + Utang combined</span>
       </div>
 
       <div class="hero-quick-breakdown">
@@ -1641,6 +1642,19 @@
           </div>
           <div class="wallet-amount mono" id="wallet-val-gcash">₱0.00</div>
           <div class="wallet-label-hint">GCash Wallet Left</div>
+        </div>
+
+        <!-- Utang -->
+        <div class="wallet-card" data-wallet="utang" onclick="editWalletBalance('utang')" title="Click to update Utang balance">
+          <div class="wallet-top">
+            <span class="wallet-brand">
+              <span class="wallet-dot"></span>
+              <i class="fa-solid fa-hand-holding-dollar"></i> Utang
+            </span>
+            <i class="fa-solid fa-pen-to-square wallet-edit-btn"></i>
+          </div>
+          <div class="wallet-amount mono" id="wallet-val-utang">₱0.00</div>
+          <div class="wallet-label-hint">Utang Balance Left</div>
         </div>
       </div>
     </section>
@@ -1814,6 +1828,7 @@
             <option value="maribank">🏛️ MariBank</option>
             <option value="bdo">💳 BDO</option>
             <option value="gcash">📱 GCash</option>
+            <option value="utang">🤝 Utang</option>
             <option value="none">None / Don't Deduct</option>
           </select>
           <span class="form-hint">Selecting an account automatically deducts this expense from that account's balance.</span>
@@ -1890,6 +1905,10 @@
               <label class="form-label" for="setting-wallet-gcash">GCash (₱)</label>
               <input type="number" step="0.01" id="setting-wallet-gcash" class="form-input mono" placeholder="0.00" />
             </div>
+            <div>
+              <label class="form-label" for="setting-wallet-utang">Utang (₱)</label>
+              <input type="number" step="0.01" id="setting-wallet-utang" class="form-input mono" placeholder="0.00" />
+            </div>
           </div>
         </div>
 
@@ -1962,7 +1981,8 @@
       cash: 0,
       maribank: 0,
       bdo: 0,
-      gcash: 0
+      gcash: 0,
+      utang: 0
     };
     let settings = {
       discordWebhookUrl: '',
@@ -2171,12 +2191,14 @@
       const maribank = Number(wallets.maribank) || 0;
       const bdo = Number(wallets.bdo) || 0;
       const gcash = Number(wallets.gcash) || 0;
-      const totalLiquid = cash + maribank + bdo + gcash;
+      const utang = Number(wallets.utang) || 0;
+      const totalLiquid = cash + maribank + bdo + gcash + utang;
 
       const elCash = document.getElementById('wallet-val-cash');
       const elMari = document.getElementById('wallet-val-maribank');
       const elBdo = document.getElementById('wallet-val-bdo');
       const elGcash = document.getElementById('wallet-val-gcash');
+      const elUtang = document.getElementById('wallet-val-utang');
       const elTotal = document.getElementById('wallet-total-sum');
       const elHeroLiquid = document.getElementById('hero-total-liquid');
 
@@ -2184,6 +2206,7 @@
       if (elMari) elMari.textContent = formatCurrency(maribank);
       if (elBdo) elBdo.textContent = formatCurrency(bdo);
       if (elGcash) elGcash.textContent = formatCurrency(gcash);
+      if (elUtang) elUtang.textContent = formatCurrency(utang);
       if (elTotal) elTotal.textContent = formatCurrency(totalLiquid);
       if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(totalLiquid);
 
@@ -2293,6 +2316,7 @@
         maribank: 'MariBank',
         bdo: 'BDO',
         gcash: 'GCash',
+        utang: 'Utang',
         none: 'Unassigned'
       };
       const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
@@ -2334,7 +2358,8 @@
         cash: 'Cash',
         maribank: 'MariBank',
         bdo: 'BDO',
-        gcash: 'GCash'
+        gcash: 'GCash',
+        utang: 'Utang'
       };
       const label = names[walletKey] || walletKey;
       const current = Number(wallets[walletKey]) || 0;
@@ -2385,6 +2410,7 @@
       document.getElementById('setting-wallet-maribank').value = wallets.maribank || '';
       document.getElementById('setting-wallet-bdo').value = wallets.bdo || '';
       document.getElementById('setting-wallet-gcash').value = wallets.gcash || '';
+      document.getElementById('setting-wallet-utang').value = wallets.utang || '';
       document.getElementById('modal-settings').classList.add('is-active');
     }
 
@@ -2457,11 +2483,13 @@
       const mariVal = parseFloat(document.getElementById('setting-wallet-maribank').value);
       const bdoVal = parseFloat(document.getElementById('setting-wallet-bdo').value);
       const gcashVal = parseFloat(document.getElementById('setting-wallet-gcash').value);
+      const utangVal = parseFloat(document.getElementById('setting-wallet-utang').value);
 
       wallets.cash = isNaN(cashVal) ? 0 : cashVal;
       wallets.maribank = isNaN(mariVal) ? 0 : mariVal;
       wallets.bdo = isNaN(bdoVal) ? 0 : bdoVal;
       wallets.gcash = isNaN(gcashVal) ? 0 : gcashVal;
+      wallets.utang = isNaN(utangVal) ? 0 : utangVal;
 
       saveStorage();
       render();
