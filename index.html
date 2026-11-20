@@ -832,6 +832,9 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
+    .expense-item-amount.is-income {
+      color: var(--color-success) !important;
+    }
 
     .expense-line-2 {
       display: flex;
@@ -1729,16 +1732,22 @@
 
         <!-- Amount -->
         <div class="form-group">
-          <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+            <label class="form-label" for="expense-input-amount" style="margin-bottom: 0;">Amount (₱ Peso) *</label>
+            <button type="button" id="btn-toggle-income" class="badge" style="cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-card); font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.3rem;">
+              <i class="fa-solid fa-plus-minus"></i>
+              <span id="btn-toggle-income-text">Type + to Add</span>
+            </button>
+          </div>
           <div style="position: relative;">
             <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
-            <input type="number" step="0.01" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00" />
+            <input type="text" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00 (or +10 to add value)" autocomplete="off" />
           </div>
         </div>
 
         <!-- Paid From (Account / Wallet) -->
         <div class="form-group">
-          <label class="form-label" for="expense-input-wallet">Deduct From Account *</label>
+          <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account *</label>
           <select id="expense-input-wallet" class="form-select">
             <option value="cash">💵 Cash</option>
             <option value="maribank">🏛️ MariBank</option>
@@ -1747,7 +1756,7 @@
             <option value="utang">🤝 Utang</option>
             <option value="none">None / Don't Deduct</option>
           </select>
-          <span class="form-hint">Selecting an account automatically deducts this expense from that account's balance.</span>
+          <span class="form-hint" id="expense-account-help">Selecting an account automatically deducts this expense from that account's balance.</span>
         </div>
 
         <!-- Category -->
@@ -1761,6 +1770,7 @@
             <option value="School / Academics">📚 School & Books</option>
             <option value="Entertainment">🎮 Entertainment & Hobbies</option>
             <option value="Personal">👤 Personal Care</option>
+            <option value="Income / Top-up">💰 Income / Top-up</option>
             <option value="Utang">🤝 Utang (Lent / Borrowed)</option>
             <option value="Other">✨ Other</option>
           </select>
@@ -2086,6 +2096,7 @@
         case 'School / Academics': return 'fa-solid fa-graduation-cap';
         case 'Entertainment': return 'fa-solid fa-gamepad';
         case 'Personal': return 'fa-solid fa-heart';
+        case 'Income / Top-up': return 'fa-solid fa-money-bill-trend-up';
         case 'Utang': return 'fa-solid fa-hand-holding-dollar';
         default: return 'fa-solid fa-tag';
       }
@@ -2153,9 +2164,11 @@
       if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(totalLiquid);
 
       // 2. Expenses Total & Utang as Expense Total
-      const totalExpenses = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      const totalExpenses = expenses
+        .filter(item => item.type !== 'income')
+        .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
       const totalUtangExpense = expenses
-        .filter(item => (item.category === 'Utang' || (item.title || '').toLowerCase().includes('utang')))
+        .filter(item => item.type !== 'income' && (item.category === 'Utang' || (item.title || '').toLowerCase().includes('utang')))
         .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
       const elTotalExp = document.getElementById('stat-total-expenses');
@@ -2245,6 +2258,7 @@
     }
 
     function renderExpenseRow(item) {
+      const isIncome = item.type === 'income';
       const d = new Date(item.date);
       const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -2257,15 +2271,17 @@
         none: 'None'
       };
       const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
+      const amountPrefix = isIncome ? '+' : '-';
+      const amountClass = isIncome ? 'expense-item-amount is-income mono' : 'expense-item-amount mono';
 
       return `
         <div class="expense-row" data-id="${item.id}" title="Tap or hold to edit/delete">
           <div class="expense-line-1">
             <span class="expense-item-name">${item.title}</span>
-            <span class="expense-item-amount mono">-${formatCurrency(item.amount)}</span>
+            <span class="${amountClass}">${amountPrefix}${formatCurrency(item.amount)}</span>
           </div>
           <div class="expense-line-2">
-            <span>${item.category || 'General'}</span>
+            <span>${item.category || (isIncome ? 'Income / Top-up' : 'General')}</span>
             <span>&bull;</span>
             <span class="wallet-source-mini">${walletLabel}</span>
             <span>&bull;</span>
@@ -2301,16 +2317,65 @@
       }
     };
 
+    function updateIncomeModeUI(isIncome) {
+      const labelWallet = document.getElementById('expense-account-label');
+      const helpWallet = document.getElementById('expense-account-help');
+      const toggleBtn = document.getElementById('btn-toggle-income');
+      const toggleText = document.getElementById('btn-toggle-income-text');
+      const submitBtn = document.getElementById('btn-submit-expense');
+      const titleModal = document.getElementById('modal-expense-title');
+
+      if (isIncome) {
+        if (labelWallet) labelWallet.textContent = 'Add To Account *';
+        if (helpWallet) {
+          helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
+        }
+        if (toggleBtn) {
+          toggleBtn.style.borderColor = 'var(--color-success)';
+          toggleBtn.style.color = 'var(--color-success)';
+          toggleBtn.style.background = 'var(--color-success-bg)';
+        }
+        if (toggleText) toggleText.textContent = '+ Adding to Account';
+        if (submitBtn) {
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes (+ Add)' : '+ Add to Account';
+          submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        }
+        if (titleModal) {
+          titleModal.textContent = currentEditExpenseId ? 'Edit Value / Income' : 'Add Value / Income';
+        }
+      } else {
+        if (labelWallet) labelWallet.textContent = 'Deduct From Account *';
+        if (helpWallet) {
+          helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
+          helpWallet.style.color = '';
+        }
+        if (toggleBtn) {
+          toggleBtn.style.borderColor = '';
+          toggleBtn.style.color = '';
+          toggleBtn.style.background = '';
+        }
+        if (toggleText) toggleText.textContent = 'Type + to Add';
+        if (submitBtn) {
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : 'Save Expense';
+          submitBtn.style.background = '';
+        }
+        if (titleModal) {
+          titleModal.textContent = currentEditExpenseId ? 'Edit Expense' : 'Record Expense';
+        }
+      }
+    }
+
     window.openExpenseModalForEdit = function(id) {
       const item = expenses.find(e => e.id === id);
       if (!item) return;
 
       currentEditExpenseId = id;
-      document.getElementById('modal-expense-title').textContent = 'Edit Expense';
+      const isIncome = item.type === 'income';
+      document.getElementById('modal-expense-title').textContent = isIncome ? 'Edit Value / Income' : 'Edit Expense';
       document.getElementById('expense-input-title').value = item.title || '';
-      document.getElementById('expense-input-amount').value = Number(item.amount) || '';
+      document.getElementById('expense-input-amount').value = (isIncome ? '+' : '') + (Number(item.amount) || '');
       document.getElementById('expense-input-wallet').value = item.wallet || 'none';
-      document.getElementById('expense-input-category').value = item.category || 'Food & Drinks';
+      document.getElementById('expense-input-category').value = item.category || (isIncome ? 'Income / Top-up' : 'Food & Drinks');
 
       const d = new Date(item.date || item.createdAt);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -2320,18 +2385,27 @@
       if (btnDelete) btnDelete.style.display = 'inline-flex';
 
       const btnSubmit = document.getElementById('btn-submit-expense');
-      if (btnSubmit) btnSubmit.textContent = 'Save Changes';
+      if (btnSubmit) {
+        btnSubmit.textContent = isIncome ? 'Save Changes (+ Add)' : 'Save Changes';
+        btnSubmit.style.background = isIncome ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '';
+      }
 
+      updateIncomeModeUI(isIncome);
       document.getElementById('modal-expense').classList.add('is-active');
     };
 
     window.deleteExpense = function(id) {
       const item = expenses.find(e => e.id === id);
       if (!item) return;
-      if (!confirm(`Delete expense "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
+      const labelType = item.type === 'income' ? 'income' : 'expense';
+      if (!confirm(`Delete ${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
 
       if (item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
-        wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
+        if (item.type === 'income') {
+          wallets[item.wallet] = Math.max(0, (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0));
+        } else {
+          wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
+        }
       }
       expenses = expenses.filter(e => e.id !== id);
       saveStorage();
@@ -2354,8 +2428,12 @@
       if (btnDelete) btnDelete.style.display = 'none';
 
       const btnSubmit = document.getElementById('btn-submit-expense');
-      if (btnSubmit) btnSubmit.textContent = 'Save Expense';
+      if (btnSubmit) {
+        btnSubmit.textContent = 'Save Expense';
+        btnSubmit.style.background = '';
+      }
 
+      updateIncomeModeUI(false);
       document.getElementById('modal-expense').classList.add('is-active');
       document.getElementById('expense-input-title').focus();
     };
@@ -2384,7 +2462,10 @@
     document.getElementById('form-add-expense').addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('expense-input-title').value.trim();
-      const amount = parseFloat(document.getElementById('expense-input-amount').value);
+      const rawAmount = document.getElementById('expense-input-amount').value.trim();
+      const isIncome = rawAmount.startsWith('+');
+      const cleanAmountStr = rawAmount.replace(/^[+\-\s]+/, '').trim();
+      const amount = parseFloat(cleanAmountStr);
       const wallet = document.getElementById('expense-input-wallet').value;
       const category = document.getElementById('expense-input-category').value;
       const dtInput = document.getElementById('expense-input-datetime').value;
@@ -2400,18 +2481,28 @@
         if (item) {
           const oldWallet = item.wallet;
           const oldAmount = Number(item.amount) || 0;
+          const oldIsIncome = item.type === 'income';
 
-          // Revert old wallet deduction
+          // 1. Revert old transaction effect
           if (oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
-            wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
+            if (oldIsIncome) {
+              wallets[oldWallet] = Math.max(0, (Number(wallets[oldWallet]) || 0) - oldAmount);
+            } else {
+              wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
+            }
           }
-          // Apply new wallet deduction
+          // 2. Apply new transaction effect
           if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
-            wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+            if (isIncome) {
+              wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
+            } else {
+              wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+            }
           }
 
           item.title = title;
           item.amount = amount;
+          item.type = isIncome ? 'income' : 'expense';
           item.wallet = wallet;
           item.category = category;
           item.date = date;
@@ -2421,6 +2512,7 @@
           id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
           title: title,
           amount: amount,
+          type: isIncome ? 'income' : 'expense',
           wallet: wallet,
           category: category,
           date: date,
@@ -2428,21 +2520,38 @@
         };
 
         if (wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
-          wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+          if (isIncome) {
+            wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
+          } else {
+            wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+          }
         }
 
         expenses.unshift(newExpense);
 
-        sendDiscordNotification(
-          "💸 Expense Recorded",
-          `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
-          0xef4444,
-          [
-            { name: "Item", value: title, inline: true },
-            { name: "Amount", value: formatCurrency(amount), inline: true },
-            { name: "Account", value: wallet.toUpperCase(), inline: true }
-          ]
-        );
+        if (isIncome) {
+          sendDiscordNotification(
+            "💰 Value Added / Income",
+            `Added **+${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}* - ${category}).`,
+            0x10b981,
+            [
+              { name: "Item", value: title, inline: true },
+              { name: "Amount", value: `+${formatCurrency(amount)}`, inline: true },
+              { name: "Account", value: wallet.toUpperCase(), inline: true }
+            ]
+          );
+        } else {
+          sendDiscordNotification(
+            "💸 Expense Recorded",
+            `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
+            0xef4444,
+            [
+              { name: "Item", value: title, inline: true },
+              { name: "Amount", value: formatCurrency(amount), inline: true },
+              { name: "Account", value: wallet.toUpperCase(), inline: true }
+            ]
+          );
+        }
       }
 
       saveStorage();
@@ -2456,16 +2565,48 @@
         if (!currentEditExpenseId) return;
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (!item) return;
+        const labelType = item.type === 'income' ? 'income' : 'expense';
 
-        if (confirm(`Delete expense "${item.title}" for ${formatCurrency(item.amount)}?`)) {
+        if (confirm(`Delete ${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) {
           if (item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
-            wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
+            if (item.type === 'income') {
+              wallets[item.wallet] = Math.max(0, (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0));
+            } else {
+              wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
+            }
           }
           expenses = expenses.filter(e => e.id !== currentEditExpenseId);
           saveStorage();
           render();
           closeExpenseModal();
         }
+      });
+    }
+
+    // Amount Input Live Listener & Toggle Button
+    const inputAmount = document.getElementById('expense-input-amount');
+    if (inputAmount) {
+      inputAmount.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        const isInc = val.startsWith('+');
+        updateIncomeModeUI(isInc);
+      });
+    }
+
+    const btnToggleIncome = document.getElementById('btn-toggle-income');
+    if (btnToggleIncome) {
+      btnToggleIncome.addEventListener('click', () => {
+        const input = document.getElementById('expense-input-amount');
+        if (!input) return;
+        let val = input.value.trim();
+        if (val.startsWith('+')) {
+          val = val.replace(/^\++\s*/, '');
+        } else {
+          val = '+' + val;
+        }
+        input.value = val;
+        input.focus();
+        updateIncomeModeUI(val.startsWith('+'));
       });
     }
 
