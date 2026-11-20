@@ -1920,6 +1920,8 @@
     let firebaseDb = null;
     let isCloudUpdating = false;
     let cloudSyncTimeout = null;
+    let hasReceivedInitialCloudData = false;
+    let firebaseInitAttempts = 0;
     const clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
     // ==========================================================================
@@ -2034,6 +2036,7 @@
     }
 
     function saveToCloud() {
+      if (!firebaseDb || !hasReceivedInitialCloudData) return;
       clearTimeout(cloudSyncTimeout);
       cloudSyncTimeout = setTimeout(() => {
         if (!firebaseDb) return;
@@ -2045,7 +2048,7 @@
             lastUpdated: Date.now(),
             lastSender: clientId
           };
-          firebaseDb.ref('jeycub_finance/data').set(payload).catch(err => {
+          firebaseDb.ref('tip_grade_calculator/jeycub_finance').set(payload).catch(err => {
             console.warn('Firebase set error:', err);
           });
         } catch (e) {
@@ -2655,7 +2658,12 @@
     // FIREBASE REALTIME CLOUD SYNC (Single Data Across All Devices)
     // ==========================================================================
     function initFirebase() {
-      if (typeof firebase === 'undefined') return;
+      if (typeof firebase === 'undefined') {
+        if (firebaseInitAttempts++ < 30) {
+          setTimeout(initFirebase, 250);
+        }
+        return;
+      }
       try {
         const config = {
           databaseURL: "https://jeycub-stardew-farm-calendar-default-rtdb.firebaseio.com/"
@@ -2665,8 +2673,10 @@
         }
         firebaseDb = firebase.database();
 
-        firebaseDb.ref('jeycub_finance/data').on('value', snapshot => {
+        firebaseDb.ref('tip_grade_calculator/jeycub_finance').on('value', snapshot => {
           const remote = snapshot.val();
+          hasReceivedInitialCloudData = true;
+
           if (!remote) {
             // Seed cloud if local already has data
             if (expenses.length > 0 || Object.values(wallets).some(v => Number(v) > 0)) {
@@ -2715,7 +2725,7 @@
 
       localStorage.setItem('jeycub_initialized', 'true');
       expenses = [];
-      saveStorage();
+      saveStorage(false);
     }
 
     // Initialize Application
