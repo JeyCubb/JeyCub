@@ -1572,33 +1572,6 @@
 </head>
 <body>
 
-  <!-- Top App Header -->
-  <header class="app-layout" style="padding-bottom: 0;">
-    <div class="top-header">
-      <div class="brand-title-wrap">
-        <div class="brand-logo-icon">₱</div>
-        <div>
-          <h1 class="brand-name">
-            JeyCub Finance
-            <span class="brand-badge">Expense & Tracker</span>
-          </h1>
-          <p class="brand-subtitle">Expenses timeline & current liquid money</p>
-        </div>
-      </div>
-
-      <div class="header-actions">
-        <button id="btn-open-settings-top" class="control-single-btn" title="Settings & Balances">
-          <i class="fa-solid fa-gear"></i>
-          <span>Settings</span>
-        </button>
-        <button id="btn-open-expense-top" class="btn-primary" title="Record New Expense">
-          <i class="fa-solid fa-receipt"></i>
-          <span>Add Expense</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
   <!-- Main Content Layout -->
   <main class="app-layout">
 
@@ -1609,18 +1582,6 @@
           <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
         </span>
         <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
-        <span class="hero-subtitle">Cash + MariBank + BDO + GCash + Utang combined</span>
-      </div>
-
-      <div class="hero-quick-breakdown">
-        <div class="hero-sub-pill">
-          <span class="hero-sub-label"><i class="fa-solid fa-arrow-trend-down" style="color: var(--color-error);"></i> Total Expenses</span>
-          <span id="stat-total-expenses" class="hero-sub-val mono" style="color: var(--color-error);">₱0.00</span>
-        </div>
-        <div class="hero-sub-pill">
-          <span class="hero-sub-label"><i class="fa-solid fa-hand-holding-dollar" style="color: var(--color-warning);"></i> Total Utang Lent</span>
-          <span id="stat-utang-collectibles" class="hero-sub-val mono" style="color: var(--color-warning);">₱0.00</span>
-        </div>
       </div>
     </div>
 
@@ -1709,30 +1670,14 @@
     <div id="view-expenses-section">
       <!-- Section Header with Quick Action -->
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.35rem; flex-shrink: 0;">
-        <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <h2 style="font-size: 0.88rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
-            <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-primary);"></i>
-            <span>Expenses Timeline</span>
-          </h2>
-          <span class="badge-status" id="badge-expenses-count" style="background: rgba(249, 115, 22, 0.12); color: var(--accent-primary); border: 1px solid var(--border-color); font-weight: 700; font-size: 0.68rem; padding: 0.1rem 0.4rem;">0</span>
-        </div>
+        <h2 style="font-size: 0.88rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-primary);"></i>
+          <span>Expenses Timeline</span>
+        </h2>
         <button type="button" onclick="openExpenseModal()" class="btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.75rem;">
           <i class="fa-solid fa-plus"></i>
           <span>New Expense</span>
         </button>
-      </div>
-
-      <!-- Expense Filter & Search Bar -->
-      <div class="filter-bar">
-        <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="expense-search-input" class="search-input" placeholder="Search expenses by title, category, or note..." />
-        </div>
-        <div class="segmented-control">
-          <button type="button" class="segment-btn active" data-expense-filter="all">All</button>
-          <button type="button" class="segment-btn" data-expense-filter="today">Today</button>
-          <button type="button" class="segment-btn" data-expense-filter="month">This Month</button>
-        </div>
       </div>
 
       <!-- Timeline Container -->
@@ -1823,11 +1768,8 @@
         </button>
       </div>
 
-      <!-- Right: Settings & Theme Toggle -->
+      <!-- Right: Theme Toggle -->
       <div class="dock-right-controls">
-        <button id="btn-open-settings-bottom" class="dock-btn" title="Settings" aria-label="Settings">
-          <i class="fa-solid fa-gear"></i>
-        </button>
         <button id="theme-toggle" class="dock-btn theme-toggle" title="Switch Theme" aria-label="Switch Theme">
           <i class="fa-solid fa-sun" id="theme-icon"></i>
         </button>
@@ -2518,14 +2460,15 @@
     });
 
     // Modal Triggers
-    document.getElementById('btn-open-expense-top').addEventListener('click', openExpenseModal);
-    document.getElementById('btn-open-expense-bottom').addEventListener('click', openExpenseModal);
-    document.getElementById('btn-close-expense').addEventListener('click', closeExpenseModal);
-    document.getElementById('btn-cancel-expense').addEventListener('click', closeExpenseModal);
+    const btnOpenExpBottom = document.getElementById('btn-open-expense-bottom');
+    if (btnOpenExpBottom) btnOpenExpBottom.addEventListener('click', openExpenseModal);
+    const btnCloseExp = document.getElementById('btn-close-expense');
+    if (btnCloseExp) btnCloseExp.addEventListener('click', closeExpenseModal);
+    const btnCancelExp = document.getElementById('btn-cancel-expense');
+    if (btnCancelExp) btnCancelExp.addEventListener('click', closeExpenseModal);
 
-    document.getElementById('btn-open-settings-top').addEventListener('click', openSettingsModal);
-    document.getElementById('btn-open-settings-bottom').addEventListener('click', openSettingsModal);
-    document.getElementById('btn-close-settings').addEventListener('click', closeSettingsModal);
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    if (btnCloseSettings) btnCloseSettings.addEventListener('click', closeSettingsModal);
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
       settings.discordWebhookUrl = document.getElementById('setting-webhook-url').value.trim();
@@ -2556,11 +2499,14 @@
       });
     });
 
-    // Search and Filter Listeners for Expenses
-    document.getElementById('expense-search-input').addEventListener('input', (e) => {
-      currentExpenseSearch = e.target.value.trim();
-      renderExpensesTimeline();
-    });
+    // Search and Filter Listeners for Expenses (if present)
+    const expenseSearchInput = document.getElementById('expense-search-input');
+    if (expenseSearchInput) {
+      expenseSearchInput.addEventListener('input', (e) => {
+        currentExpenseSearch = e.target.value.trim();
+        renderExpensesTimeline();
+      });
+    }
 
     document.querySelectorAll('[data-expense-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
