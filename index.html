@@ -780,46 +780,8 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 0.45rem;
+      gap: 0.25rem;
       padding-right: 2px;
-    }
-
-    /* Timeline Day Group */
-    .timeline-day-group {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 0.5rem 0.65rem;
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-    .timeline-day-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding-bottom: 0.35rem;
-      border-bottom: 1px solid var(--border-color);
-      flex-wrap: wrap;
-    }
-    .timeline-day-title {
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .timeline-day-total {
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--color-error);
-      background: var(--color-error-bg);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      border-radius: var(--radius-full);
-      padding: 0.12rem 0.5rem;
     }
 
     /* Expense Item Row: Double Regular Text Line (Compact) */
@@ -827,9 +789,9 @@
       display: flex;
       flex-direction: column;
       gap: 0.15rem;
-      padding: 0.35rem 0.55rem;
+      padding: 0.4rem 0.65rem;
       border-radius: var(--radius-sm);
-      background: var(--bg-input);
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
       cursor: pointer;
       user-select: none;
@@ -2228,42 +2190,11 @@
         return;
       }
 
-      // Sort descending by date
+      // Sort descending by date (most recent first)
       filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      // Group by calendar day
-      const dayGroups = {};
-      filtered.forEach(exp => {
-        const d = new Date(exp.date);
-        const dateKey = d.toLocaleDateString('en-US', {
-          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-        });
-        if (!dayGroups[dateKey]) dayGroups[dateKey] = [];
-        dayGroups[dateKey].push(exp);
-      });
-
-      Object.keys(dayGroups).forEach(dateLabel => {
-        const groupItems = dayGroups[dateLabel];
-        const dayTotal = groupItems.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-
-        const groupEl = document.createElement('div');
-        groupEl.className = 'timeline-day-group';
-
-        groupEl.innerHTML = `
-          <div class="timeline-day-header">
-            <span class="timeline-day-title">
-              <i class="fa-regular fa-calendar-days" style="color: var(--accent-primary);"></i>
-              ${dateLabel}
-            </span>
-            <span class="timeline-day-total mono">Spent: -${formatCurrency(dayTotal)}</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-            ${groupItems.map(item => renderExpenseRow(item)).join('')}
-          </div>
-        `;
-
-        container.appendChild(groupEl);
-      });
+      // Render flat compact expense rows directly in the container
+      container.innerHTML = filtered.map(item => renderExpenseRow(item)).join('');
 
       // Bind hold & tap listeners to rows
       container.querySelectorAll('.expense-row').forEach(row => {
@@ -2311,9 +2242,9 @@
     }
 
     function renderExpenseRow(item) {
-      const timeStr = new Date(item.date).toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit'
-      });
+      const d = new Date(item.date);
+      const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       const walletNames = {
         cash: 'Cash',
         maribank: 'MariBank',
@@ -2335,7 +2266,7 @@
             <span>&bull;</span>
             <span class="wallet-source-mini">${walletLabel}</span>
             <span>&bull;</span>
-            <span>${timeStr}</span>
+            <span>${dateStr}, ${timeStr}</span>
           </div>
         </div>
       `;
