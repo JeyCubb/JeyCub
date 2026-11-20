@@ -2806,7 +2806,7 @@
 
       if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
         if (item.type === 'income') {
-          wallets[item.wallet] = Math.max(0, (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0));
+          wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0);
         } else {
           wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
         }
@@ -2869,11 +2869,11 @@
       e.preventDefault();
       const title = document.getElementById('expense-input-title').value.trim();
       const rawAmount = document.getElementById('expense-input-amount').value.trim();
-      const isIncome = rawAmount.startsWith('+');
+      const category = document.getElementById('expense-input-category').value;
+      const isIncome = rawAmount.startsWith('+') || category === 'Income / Top-up';
       const cleanAmountStr = rawAmount.replace(/^[+\-\s]+/, '').trim();
       const amount = parseFloat(cleanAmountStr);
       const wallet = document.getElementById('expense-input-wallet').value;
-      const category = document.getElementById('expense-input-category').value;
       const dtInput = document.getElementById('expense-input-datetime').value;
       const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
       const isProjected = document.getElementById('expense-input-projected') ? document.getElementById('expense-input-projected').checked : false;
@@ -2894,7 +2894,7 @@
           // 1. Revert old transaction effect if it was NOT projected
           if (!oldIsProjected && oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
             if (oldIsIncome) {
-              wallets[oldWallet] = Math.max(0, (Number(wallets[oldWallet]) || 0) - oldAmount);
+              wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) - oldAmount;
             } else {
               wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
             }
@@ -2904,7 +2904,7 @@
             if (isIncome) {
               wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
             } else {
-              wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+              wallets[wallet] = (Number(wallets[wallet]) || 0) - amount;
             }
           }
 
@@ -2934,7 +2934,7 @@
           if (isIncome) {
             wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
           } else {
-            wallets[wallet] = Math.max(0, (Number(wallets[wallet]) || 0) - amount);
+            wallets[wallet] = (Number(wallets[wallet]) || 0) - amount;
           }
         }
 
@@ -2988,7 +2988,7 @@
         if (confirm(`Delete ${labelProj}${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) {
           if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
             if (item.type === 'income') {
-              wallets[item.wallet] = Math.max(0, (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0));
+              wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0);
             } else {
               wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
             }
@@ -3006,8 +3006,24 @@
     if (inputAmount) {
       inputAmount.addEventListener('input', (e) => {
         const val = e.target.value.trim();
-        const isInc = val.startsWith('+');
+        const catVal = document.getElementById('expense-input-category') ? document.getElementById('expense-input-category').value : '';
+        const isInc = val.startsWith('+') || catVal === 'Income / Top-up';
         updateIncomeModeUI(isInc);
+      });
+    }
+
+    const selectExpCategory = document.getElementById('expense-input-category');
+    if (selectExpCategory) {
+      selectExpCategory.addEventListener('change', (e) => {
+        const isInc = e.target.value === 'Income / Top-up';
+        if (isInc) {
+          const amtInput = document.getElementById('expense-input-amount');
+          if (amtInput && !amtInput.value.trim().startsWith('+') && amtInput.value.trim()) {
+            amtInput.value = '+' + amtInput.value.trim();
+          }
+        }
+        const amtVal = document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value.trim() : '';
+        updateIncomeModeUI(isInc || amtVal.startsWith('+'));
       });
     }
 
