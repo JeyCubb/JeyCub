@@ -430,6 +430,49 @@
       border: 1px solid rgba(16, 185, 129, 0.28);
     }
 
+    /* Projected Date of Completion on Hero Top-Right */
+    .hero-completion-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+      gap: 0.1rem;
+      min-width: 0;
+      flex-shrink: 0;
+    }
+    .hero-completion-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+    .hero-completion-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .hero-completion-subtext {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: -0.05rem;
+    }
+    @media (max-width: 480px) {
+      .hero-completion-value {
+        font-size: 0.95rem;
+      }
+      .hero-completion-label {
+        font-size: 0.58rem;
+      }
+    }
+
     .hero-quick-breakdown {
       display: flex;
       align-items: center;
@@ -1762,6 +1805,15 @@
           <span id="hero-projected-diff" class="hero-diff-badge mono" style="display: none;"></span>
         </div>
       </div>
+
+      <!-- Right: Projected Date of Completion (Active in Projected Mode) -->
+      <div class="hero-completion-stat" id="hero-completion-stat" style="display: none;">
+        <span class="hero-completion-label">
+          <i class="fa-solid fa-calendar-check"></i> Projected Completion
+        </span>
+        <span id="hero-completion-date" class="hero-completion-value mono">--</span>
+        <span id="hero-completion-subtext" class="hero-completion-subtext" style="display: none;"></span>
+      </div>
     </div>
 
     <!-- 2. Account Balances: Cash, MariBank, BDO, GCash -->
@@ -2522,7 +2574,52 @@
         if (btnOpenExpText) btnOpenExpText.textContent = 'Add Expense';
       }
 
-      // 3. Expenses Total & Utang as Expense Total
+      // 3. Projected Date of Completion on Hero Card
+      const elCompletionStat = document.getElementById('hero-completion-stat');
+      const elCompletionDate = document.getElementById('hero-completion-date');
+      const elCompletionSub = document.getElementById('hero-completion-subtext');
+
+      if (isProjectedMode) {
+        const projectedItems = expenses.filter(item => item.isProjected);
+        if (projectedItems.length > 0) {
+          const timestamps = projectedItems
+            .map(item => new Date(item.date || item.createdAt).getTime())
+            .filter(t => !isNaN(t));
+
+          if (timestamps.length > 0) {
+            const maxTimestamp = Math.max(...timestamps);
+            const compDate = new Date(maxTimestamp);
+            const dateStr = compDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            });
+
+            if (elCompletionDate) elCompletionDate.textContent = dateStr;
+            if (elCompletionStat) elCompletionStat.style.display = 'flex';
+
+            if (elCompletionSub) {
+              const now = new Date();
+              const diffMs = compDate - now;
+              const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+              if (diffDays > 0) {
+                elCompletionSub.textContent = `${diffDays} days away`;
+                elCompletionSub.style.display = 'block';
+              } else {
+                elCompletionSub.style.display = 'none';
+              }
+            }
+          } else {
+            if (elCompletionStat) elCompletionStat.style.display = 'none';
+          }
+        } else {
+          if (elCompletionStat) elCompletionStat.style.display = 'none';
+        }
+      } else {
+        if (elCompletionStat) elCompletionStat.style.display = 'none';
+      }
+
+      // 4. Expenses Total & Utang as Expense Total
       const relevantExpenses = isProjectedMode
         ? expenses
         : expenses.filter(item => !item.isProjected);
