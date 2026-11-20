@@ -372,61 +372,48 @@
       display: none;
     }
 
-    /* Projected Hero Stat on Right */
-    .hero-projected-stat {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      text-align: right;
-      gap: 0.1rem;
-      min-width: 0;
+    /* Projected Mode Hero Card Styles */
+    .hero-overview-card.is-projected-mode {
+      border-color: var(--accent-primary) !important;
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(26, 22, 19, 0.98) 100%) !important;
+      box-shadow: 0 0 16px var(--accent-glow) !important;
     }
-    .hero-projected-header {
+    [data-theme="light"] .hero-overview-card.is-projected-mode {
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.16) 0%, #ffffff 100%) !important;
+    }
+
+    .hero-label-row {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
-      justify-content: flex-end;
+      gap: 0.45rem;
+      flex-wrap: wrap;
     }
-    .hero-projected-label {
-      cursor: pointer;
-    }
-    .hero-date-input {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      color: var(--accent-primary);
-      border-radius: var(--radius-sm);
-      padding: 0.1rem 0.35rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      font-weight: 700;
-      cursor: pointer;
-      outline: none;
-      transition: var(--transition);
-      max-width: 125px;
-      color-scheme: dark;
-    }
-    [data-theme="light"] .hero-date-input {
-      color-scheme: light;
-    }
-    .hero-date-input:hover,
-    .hero-date-input:focus {
-      border-color: var(--accent-primary);
-      background: var(--bg-card-hover);
-      box-shadow: 0 0 0 2px var(--accent-glow);
-    }
-    .hero-projected-value-row {
+    .hero-value-wrap {
       display: flex;
       align-items: baseline;
-      gap: 0.35rem;
-      justify-content: flex-end;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
-    .hero-projected-value {
-      color: var(--text-primary);
-    }
-    .hero-diff-badge {
-      font-size: 0.62rem;
+    .hero-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.6rem;
       font-weight: 800;
-      padding: 0.08rem 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.12rem 0.45rem;
+      border-radius: var(--radius-full);
+      background: rgba(249, 115, 22, 0.22);
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .hero-diff-badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.1rem 0.45rem;
       border-radius: var(--radius-full);
       letter-spacing: -0.01em;
       white-space: nowrap;
@@ -1348,6 +1335,51 @@
       gap: 0.45rem;
       flex-shrink: 0;
     }
+    .dock-mode-pill-btn {
+      height: 34px !important;
+      min-height: 34px !important;
+      border-radius: var(--radius-full) !important;
+      background: var(--bg-input) !important;
+      border: 1.5px solid var(--border-color) !important;
+      color: var(--text-secondary) !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0 0.75rem !important;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .dock-mode-pill-btn:hover {
+      border-color: var(--accent-primary) !important;
+      color: var(--text-primary) !important;
+      transform: translateY(-1px);
+    }
+    .dock-mode-pill-btn.is-active {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+      border-color: var(--accent-primary) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 14px var(--accent-glow) !important;
+      transform: translateY(-1px);
+    }
+    .dock-mode-pill-btn.is-active i {
+      animation: mode-pulse 1.8s infinite ease-in-out;
+    }
+    @keyframes mode-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    @media (max-width: 480px) {
+      .dock-mode-pill-btn {
+        padding: 0 0.55rem !important;
+        font-size: 0.72rem;
+      }
+    }
     .dock-btn {
       width: 34px !important;
       height: 34px !important;
@@ -1715,25 +1747,18 @@
   <main class="app-layout">
 
     <!-- 1. Hero Net Worth & Liquid Overview -->
-    <div class="hero-overview-card">
-      <!-- Left: Current Overall Money -->
+    <div class="hero-overview-card" id="hero-overview-card">
       <div class="hero-main-stat">
-        <span class="hero-label">
-          <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
-        </span>
-        <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
-      </div>
-
-      <!-- Right: Projected Amount by Date -->
-      <div class="hero-projected-stat">
-        <div class="hero-projected-header">
-          <label for="hero-projected-date" class="hero-label hero-projected-label" title="Change projection target date">
-            <i class="fa-solid fa-chart-line"></i> Projected by
-          </label>
-          <input type="date" id="hero-projected-date" class="hero-date-input" aria-label="Target projection date" />
+        <div class="hero-label-row">
+          <span class="hero-label" id="hero-stat-label">
+            <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
+          </span>
+          <span id="hero-mode-badge" class="hero-mode-badge" style="display: none;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Projected Mode
+          </span>
         </div>
-        <div class="hero-projected-value-row">
-          <span id="hero-total-projected" class="hero-value mono hero-projected-value">₱0.00</span>
+        <div class="hero-value-wrap">
+          <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
           <span id="hero-projected-diff" class="hero-diff-badge mono" style="display: none;"></span>
         </div>
       </div>
@@ -1744,7 +1769,7 @@
       <div class="wallets-header">
         <div class="wallets-title">
           <i class="fa-solid fa-wallet" style="color: var(--accent-primary);"></i>
-          <span>Amount Left in Accounts</span>
+          <span id="wallets-title-text">Amount Left in Accounts</span>
         </div>
       </div>
 
@@ -1910,12 +1935,16 @@
       <div class="dock-center-action">
         <button id="btn-open-expense-bottom" class="btn-primary" style="padding: 0.5rem 1.15rem;">
           <i class="fa-solid fa-plus"></i>
-          <span>Add Expense</span>
+          <span id="btn-open-expense-text">Add Expense</span>
         </button>
       </div>
 
-      <!-- Right: Theme Toggle -->
+      <!-- Right: Projected Mode & Theme Toggle -->
       <div class="dock-right-controls">
+        <button type="button" id="btn-toggle-projected-mode" class="dock-mode-pill-btn" title="Toggle Projected Mode" aria-pressed="false">
+          <i class="fa-solid fa-chart-line"></i>
+          <span class="dock-mode-text" id="dock-mode-label">Projected</span>
+        </button>
         <button id="theme-toggle" class="dock-btn theme-toggle" title="Switch Theme" aria-label="Switch Theme">
           <i class="fa-solid fa-sun" id="theme-icon"></i>
         </button>
@@ -2138,6 +2167,7 @@
     const EXPENSES_KEY = 'jeycub_expenses_data_v1';
     const SETTINGS_KEY = 'utang_tracker_settings_v1';
     const WALLETS_KEY = 'utang_tracker_wallets_v1';
+    const PROJECTED_MODE_KEY = 'jeycub_projected_mode';
     const THEME_KEY = 'jeycub_ut_theme';
     const THEME_EXPLICIT_KEY = 'jeycub_ut_theme_explicit';
     const INTEREST_RATE = 0.01; // 1%
@@ -2152,6 +2182,7 @@
       gcash: 0,
       utang: 0
     };
+    let isProjectedMode = false;
     let settings = {
       discordWebhookUrl: '',
       interestEnabled: true,
@@ -2159,7 +2190,7 @@
       filter: 'unpaid',    // 'all' | 'unpaid' | 'paid'
       activeTab: 'expenses', // 'expenses' | 'debts'
       expenseFilter: 'all', // 'all' | 'today' | 'month'
-      projectedTargetDate: ''
+      isProjectedMode: false
     };
     let currentDebtSearch = '';
     let currentExpenseSearch = '';
@@ -2263,6 +2294,17 @@
         if (storedWallets) wallets = { ...wallets, ...JSON.parse(storedWallets) };
       } catch (e) {
         console.error('Failed to load wallets:', e);
+      }
+
+      try {
+        const storedProjMode = localStorage.getItem(PROJECTED_MODE_KEY);
+        if (storedProjMode !== null) {
+          isProjectedMode = storedProjMode === 'true';
+        } else if (settings && settings.isProjectedMode !== undefined) {
+          isProjectedMode = Boolean(settings.isProjectedMode);
+        }
+      } catch (e) {
+        console.error('Failed to load projected mode state:', e);
       }
     }
 
@@ -2371,27 +2413,34 @@
     // ==========================================================================
     // RENDER FUNCTIONS & STATS
     // ==========================================================================
-    function initProjectedDate() {
-      const heroDateInput = document.getElementById('hero-projected-date');
-      if (!heroDateInput) return;
-
-      if (!settings.projectedTargetDate) {
-        // Default to the end of the current month (e.g. 2026-11-30)
-        const now = new Date();
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        const yyyy = lastDay.getFullYear();
-        const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
-        const dd = String(lastDay.getDate()).padStart(2, '0');
-        settings.projectedTargetDate = `${yyyy}-${mm}-${dd}`;
+    function getProjectedWallets() {
+      const proj = {
+        cash: Number(wallets.cash) || 0,
+        maribank: Number(wallets.maribank) || 0,
+        bdo: Number(wallets.bdo) || 0,
+        gcash: Number(wallets.gcash) || 0,
+        utang: Number(wallets.utang) || 0
+      };
+      for (const item of expenses) {
+        if (item.isProjected && item.wallet && item.wallet !== 'none' && proj[item.wallet] !== undefined) {
+          const amt = Number(item.amount) || 0;
+          if (item.type === 'income') {
+            proj[item.wallet] += amt;
+          } else {
+            proj[item.wallet] -= amt;
+          }
+        }
       }
+      return proj;
+    }
 
-      heroDateInput.value = settings.projectedTargetDate;
-
-      heroDateInput.addEventListener('change', (e) => {
-        settings.projectedTargetDate = e.target.value;
-        saveStorage();
-        updateOverviewStats();
-      });
+    function toggleProjectedMode() {
+      isProjectedMode = !isProjectedMode;
+      try {
+        localStorage.setItem(PROJECTED_MODE_KEY, isProjectedMode ? 'true' : 'false');
+      } catch (e) {}
+      settings.isProjectedMode = isProjectedMode;
+      render();
     }
 
     function render() {
@@ -2408,6 +2457,14 @@
       const utang = Number(wallets.utang) || 0;
       const totalLiquid = cash + maribank + bdo + gcash + utang;
 
+      // 2. Projected Calculations derived from main data + projected items
+      const projWallets = getProjectedWallets();
+      const projTotal = projWallets.cash + projWallets.maribank + projWallets.bdo + projWallets.gcash + projWallets.utang;
+      const netDiff = projTotal - totalLiquid;
+
+      const activeWallets = isProjectedMode ? projWallets : wallets;
+      const displayTotal = isProjectedMode ? projTotal : totalLiquid;
+
       const elCash = document.getElementById('wallet-val-cash');
       const elMari = document.getElementById('wallet-val-maribank');
       const elBdo = document.getElementById('wallet-val-bdo');
@@ -2415,68 +2472,65 @@
       const elUtang = document.getElementById('wallet-val-utang');
       const elTotal = document.getElementById('wallet-total-sum');
       const elHeroLiquid = document.getElementById('hero-total-liquid');
+      const elHeroCard = document.getElementById('hero-overview-card');
+      const elHeroLabel = document.getElementById('hero-stat-label');
+      const elHeroBadge = document.getElementById('hero-mode-badge');
+      const elHeroDiff = document.getElementById('hero-projected-diff');
+      const elWalletsTitle = document.getElementById('wallets-title-text');
+      const btnToggleProjected = document.getElementById('btn-toggle-projected-mode');
+      const btnOpenExpText = document.getElementById('btn-open-expense-text');
 
-      if (elCash) elCash.textContent = formatCurrency(cash);
-      if (elMari) elMari.textContent = formatCurrency(maribank);
-      if (elBdo) elBdo.textContent = formatCurrency(bdo);
-      if (elGcash) elGcash.textContent = formatCurrency(gcash);
-      if (elUtang) elUtang.textContent = formatCurrency(utang);
-      if (elTotal) elTotal.textContent = formatCurrency(totalLiquid);
-      if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(totalLiquid);
+      if (elCash) elCash.textContent = formatCurrency(activeWallets.cash);
+      if (elMari) elMari.textContent = formatCurrency(activeWallets.maribank);
+      if (elBdo) elBdo.textContent = formatCurrency(activeWallets.bdo);
+      if (elGcash) elGcash.textContent = formatCurrency(activeWallets.gcash);
+      if (elUtang) elUtang.textContent = formatCurrency(activeWallets.utang);
+      if (elTotal) elTotal.textContent = formatCurrency(displayTotal);
+      if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(displayTotal);
 
-      // 2. Projected Calculation by Target Date
-      const targetDateInput = document.getElementById('hero-projected-date');
-      const targetDateVal = (targetDateInput && targetDateInput.value) || settings.projectedTargetDate;
-      let projectedTotal = totalLiquid;
-      let netProjectedDiff = 0;
-
-      if (targetDateVal) {
-        // End of selected calendar day
-        const targetEnd = new Date(targetDateVal + 'T23:59:59.999');
-
-        for (const item of expenses) {
-          if (item.isProjected) {
-            const itemDate = new Date(item.date || item.createdAt);
-            if (itemDate <= targetEnd) {
-              const amt = Number(item.amount) || 0;
-              if (item.type === 'income') {
-                projectedTotal += amt;
-                netProjectedDiff += amt;
-              } else {
-                projectedTotal -= amt;
-                netProjectedDiff -= amt;
-              }
-            }
-          }
+      if (isProjectedMode) {
+        if (elHeroCard) elHeroCard.classList.add('is-projected-mode');
+        if (elHeroLabel) elHeroLabel.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Projected Overall Money';
+        if (elHeroBadge) elHeroBadge.style.display = 'inline-flex';
+        if (elWalletsTitle) elWalletsTitle.textContent = 'Projected Amount in Accounts';
+        if (btnToggleProjected) {
+          btnToggleProjected.classList.add('is-active');
+          btnToggleProjected.setAttribute('aria-pressed', 'true');
         }
-      }
+        if (btnOpenExpText) btnOpenExpText.textContent = 'Add Projected';
 
-      const elHeroProjected = document.getElementById('hero-total-projected');
-      if (elHeroProjected) {
-        elHeroProjected.textContent = formatCurrency(projectedTotal);
-      }
-
-      const elProjectedDiff = document.getElementById('hero-projected-diff');
-      if (elProjectedDiff) {
-        if (Math.abs(netProjectedDiff) > 0.001) {
-          elProjectedDiff.style.display = 'inline-flex';
-          const sign = netProjectedDiff > 0 ? '+' : '';
-          elProjectedDiff.textContent = `${sign}${formatCurrency(netProjectedDiff)}`;
-          if (netProjectedDiff > 0) {
-            elProjectedDiff.className = 'hero-diff-badge is-positive mono';
+        if (elHeroDiff) {
+          if (Math.abs(netDiff) > 0.001) {
+            elHeroDiff.style.display = 'inline-flex';
+            const sign = netDiff > 0 ? '+' : '';
+            elHeroDiff.textContent = `${sign}${formatCurrency(netDiff)} vs actual`;
+            elHeroDiff.className = netDiff > 0 ? 'hero-diff-badge is-positive mono' : 'hero-diff-badge is-negative mono';
           } else {
-            elProjectedDiff.className = 'hero-diff-badge is-negative mono';
+            elHeroDiff.style.display = 'none';
           }
-        } else {
-          elProjectedDiff.style.display = 'none';
         }
+      } else {
+        if (elHeroCard) elHeroCard.classList.remove('is-projected-mode');
+        if (elHeroLabel) elHeroLabel.innerHTML = '<i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)';
+        if (elHeroBadge) elHeroBadge.style.display = 'none';
+        if (elHeroDiff) elHeroDiff.style.display = 'none';
+        if (elWalletsTitle) elWalletsTitle.textContent = 'Amount Left in Accounts';
+        if (btnToggleProjected) {
+          btnToggleProjected.classList.remove('is-active');
+          btnToggleProjected.setAttribute('aria-pressed', 'false');
+        }
+        if (btnOpenExpText) btnOpenExpText.textContent = 'Add Expense';
       }
 
       // 3. Expenses Total & Utang as Expense Total
-      const totalExpenses = expenses
+      const relevantExpenses = isProjectedMode
+        ? expenses
+        : expenses.filter(item => !item.isProjected);
+
+      const totalExpenses = relevantExpenses
         .filter(item => item.type !== 'income')
         .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      const totalUtangExpense = expenses
+      const totalUtangExpense = relevantExpenses
         .filter(item => item.type !== 'income' && (item.category === 'Utang' || (item.title || '').toLowerCase().includes('utang')))
         .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
@@ -2484,7 +2538,7 @@
       if (elTotalExp) elTotalExp.textContent = formatCurrency(totalExpenses);
 
       const elBadgeExp = document.getElementById('badge-expenses-count');
-      if (elBadgeExp) elBadgeExp.textContent = expenses.length;
+      if (elBadgeExp) elBadgeExp.textContent = relevantExpenses.length;
 
       const elUtangCollectibles = document.getElementById('stat-utang-collectibles');
       if (elUtangCollectibles) elUtangCollectibles.textContent = formatCurrency(totalUtangExpense);
@@ -2497,18 +2551,21 @@
       if (!container) return;
       container.innerHTML = '';
 
-      let filtered = [...expenses];
+      let filtered = isProjectedMode
+        ? [...expenses]
+        : expenses.filter(item => !item.isProjected);
 
       if (filtered.length === 0) {
+        const msg = isProjectedMode ? 'No transactions or projected items yet' : 'No expenses recorded yet';
         container.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">
               <i class="fa-solid fa-receipt"></i>
             </div>
-            <p class="empty-state-title">No expenses recorded yet</p>
+            <p class="empty-state-title">${msg}</p>
             <p class="empty-state-desc">Log your daily meals, transport fare, bills, or shopping to see your chronological spending timeline.</p>
             <button type="button" class="btn-primary" onclick="openExpenseModal()" style="margin-top: 0.5rem;">
-              <i class="fa-solid fa-plus"></i> Add First Expense
+              <i class="fa-solid fa-plus"></i> ${isProjectedMode ? 'Add Projected' : 'Add First Expense'}
             </button>
           </div>
         `;
@@ -2618,7 +2675,10 @@
       };
       const label = names[walletKey] || walletKey;
       const current = Number(wallets[walletKey]) || 0;
-      const input = prompt(`Enter new amount left in ${label} (₱):`, current);
+      const promptMsg = isProjectedMode
+        ? `Enter new actual balance in ${label} (₱):\n(Current actual: ₱${current.toFixed(2)}. Projected balance will adjust accordingly)`
+        : `Enter new amount left in ${label} (₱):`;
+      const input = prompt(promptMsg, current);
       if (input !== null) {
         const parsed = parseFloat(input);
         if (!isNaN(parsed)) {
@@ -2823,7 +2883,7 @@
       currentEditExpenseId = null;
       userHasManuallyToggledProjected = false;
       document.getElementById('form-add-expense').reset();
-      document.getElementById('modal-expense-title').textContent = 'Record Expense';
+      document.getElementById('modal-expense-title').textContent = isProjectedMode ? 'Record Projected Expense' : 'Record Expense';
 
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -2834,12 +2894,12 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = 'Save Expense';
+        btnSubmit.textContent = isProjectedMode ? 'Save Projected Expense' : 'Save Expense';
         btnSubmit.style.background = '';
       }
 
       updateIncomeModeUI(false);
-      updateProjectedModeUI(false);
+      updateProjectedModeUI(Boolean(isProjectedMode));
       document.getElementById('modal-expense').classList.add('is-active');
       document.getElementById('expense-input-title').focus();
     };
@@ -3296,10 +3356,6 @@
             }
             if (remote.settings && typeof remote.settings === 'object') {
               settings = { ...settings, ...remote.settings };
-              if (settings.projectedTargetDate) {
-                const dateEl = document.getElementById('hero-projected-date');
-                if (dateEl) dateEl.value = settings.projectedTargetDate;
-              }
             }
 
             saveStorage(false);
@@ -3332,9 +3388,14 @@
     document.addEventListener('DOMContentLoaded', () => {
       initTheme();
       loadStorage();
-      initProjectedDate();
       checkFirstRun();
       initBrandNavPopup();
+
+      const btnToggleProjected = document.getElementById('btn-toggle-projected-mode');
+      if (btnToggleProjected) {
+        btnToggleProjected.addEventListener('click', toggleProjectedMode);
+      }
+
       render();
       initFirebase();
     });
