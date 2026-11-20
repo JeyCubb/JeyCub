@@ -1535,7 +1535,7 @@
             JeyCub Finance
             <span class="brand-badge">Expense & Tracker</span>
           </h1>
-          <p class="brand-subtitle">Expenses timeline, liquid money & utang ledger</p>
+          <p class="brand-subtitle">Expenses timeline & current liquid money</p>
         </div>
       </div>
 
@@ -1547,10 +1547,6 @@
         <button id="btn-open-expense-top" class="btn-primary" title="Record New Expense">
           <i class="fa-solid fa-receipt"></i>
           <span>Add Expense</span>
-        </button>
-        <button id="btn-open-add-top" class="btn-secondary" title="Record Utang Loan">
-          <i class="fa-solid fa-hand-holding-dollar"></i>
-          <span>Add Utang</span>
         </button>
       </div>
     </div>
@@ -1575,7 +1571,7 @@
           <span id="stat-total-expenses" class="hero-sub-val mono" style="color: var(--color-error);">₱0.00</span>
         </div>
         <div class="hero-sub-pill">
-          <span class="hero-sub-label"><i class="fa-solid fa-triangle-exclamation" style="color: var(--color-warning);"></i> Utang Collectibles</span>
+          <span class="hero-sub-label"><i class="fa-solid fa-hand-holding-dollar" style="color: var(--color-warning);"></i> Total Utang Lent</span>
           <span id="stat-utang-collectibles" class="hero-sub-val mono" style="color: var(--color-warning);">₱0.00</span>
         </div>
       </div>
@@ -1649,32 +1645,23 @@
       </div>
     </section>
 
-    <!-- 3. Primary Feature Switcher Tabs (Expenses Timeline vs Utang Ledger) -->
-    <div class="feature-nav-bar">
-      <div class="feature-tabs" role="tablist">
-        <button type="button" class="feature-tab-btn active" id="tab-btn-expenses">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Expenses Timeline</span>
-          <span class="feature-tab-badge" id="badge-expenses-count">0</span>
-        </button>
-        <button type="button" class="feature-tab-btn" id="tab-btn-debts">
-          <i class="fa-solid fa-hand-holding-dollar"></i>
-          <span>Utang Ledger Feature</span>
-          <span class="feature-tab-badge" id="badge-debts-count">0</span>
-        </button>
-      </div>
-
-      <!-- Quick Action on Tab Bar -->
-      <div id="tab-quick-action">
-        <button type="button" id="btn-tab-add" class="btn-primary" style="padding: 0.45rem 0.95rem; font-size: 0.78rem;">
-          <i class="fa-solid fa-plus"></i>
-          <span id="tab-add-label">New Expense</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- VIEW 1: EXPENSES TIMELINE -->
+    <!-- 3. Expenses Timeline Section -->
     <div id="view-expenses-section">
+      <!-- Section Header with Quick Action -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <h2 style="font-size: 1.05rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 0.45rem;">
+            <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-primary);"></i>
+            <span>Expenses Timeline</span>
+          </h2>
+          <span class="badge-status" id="badge-expenses-count" style="background: rgba(249, 115, 22, 0.12); color: var(--accent-primary); border: 1px solid var(--border-color); font-weight: 700;">0</span>
+        </div>
+        <button type="button" onclick="openExpenseModal()" class="btn-primary" style="padding: 0.42rem 0.95rem; font-size: 0.8rem;">
+          <i class="fa-solid fa-plus"></i>
+          <span>New Expense</span>
+        </button>
+      </div>
+
       <!-- Expense Filter & Search Bar -->
       <div class="filter-bar" style="margin-bottom: 1.25rem;">
         <div class="search-box">
@@ -1691,65 +1678,6 @@
       <!-- Timeline Container -->
       <div id="expenses-timeline-container" class="timeline-container">
         <!-- Dynamic via JS -->
-      </div>
-    </div>
-
-    <!-- VIEW 2: UTANG TRACKER FEATURE -->
-    <div id="view-debts-section" style="display: none;">
-      <!-- Utang Stats Overview Cards -->
-      <div class="stats-grid" style="margin-bottom: 1.25rem;">
-        <div class="stat-card stat-unpaid">
-          <div class="stat-icon-watermark">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <p class="stat-label">Total Unpaid Balance</p>
-          <p id="stat-total-unpaid" class="stat-value mono">₱0.00</p>
-          <p id="stat-unpaid-count" class="stat-subtext">0 pending debts</p>
-        </div>
-
-        <div class="stat-card stat-paid">
-          <div class="stat-icon-watermark">
-            <i class="fa-solid fa-circle-check"></i>
-          </div>
-          <p class="stat-label">Total Settled / Paid</p>
-          <p id="stat-total-paid" class="stat-value mono">₱0.00</p>
-          <p id="stat-paid-count" class="stat-subtext">0 settled debts</p>
-        </div>
-
-        <div class="stat-card stat-debtors">
-          <div class="stat-icon-watermark">
-            <i class="fa-solid fa-users"></i>
-          </div>
-          <p class="stat-label">Active Debtors</p>
-          <p id="stat-debtor-count" class="stat-value mono">0</p>
-          <p id="stat-people-summary" class="stat-subtext">with outstanding balances</p>
-        </div>
-      </div>
-
-      <!-- Filter Bar for Utang -->
-      <div class="filter-bar" style="margin-bottom: 1.25rem;">
-        <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="search-input" class="search-input" placeholder="Search utang by debtor name or reason..." />
-        </div>
-        <div class="segmented-control" role="tablist">
-          <button type="button" data-filter="unpaid" class="segment-btn active">Unpaid</button>
-          <button type="button" data-filter="all" class="segment-btn">All</button>
-          <button type="button" data-filter="paid" class="segment-btn">Paid</button>
-        </div>
-        <div class="segmented-control">
-          <button type="button" id="view-grouped" class="segment-btn active" title="Group entries by Person">
-            <i class="fa-solid fa-user-group" style="margin-right: 3px;"></i> By Person
-          </button>
-          <button type="button" id="view-list" class="segment-btn" title="Sort all entries by Date Timeline">
-            <i class="fa-solid fa-clock-rotate-left" style="margin-right: 3px;"></i> Timeline
-          </button>
-        </div>
-      </div>
-
-      <!-- Debts List Container -->
-      <div id="debts-container" class="debts-list">
-        <!-- Injected dynamically via JS -->
       </div>
     </div>
 
@@ -1902,6 +1830,7 @@
             <option value="School / Academics">📚 School & Books</option>
             <option value="Entertainment">🎮 Entertainment & Hobbies</option>
             <option value="Personal">👤 Personal Care</option>
+            <option value="Utang">🤝 Utang (Lent / Borrowed)</option>
             <option value="Other">✨ Other</option>
           </select>
         </div>
@@ -1915,61 +1844,6 @@
         <div class="modal-actions">
           <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
           <button type="submit" class="btn-primary">Save Expense</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==========================================================================
-       MODAL 2: ADD / EDIT UTANG
-       ========================================================================== -->
-  <div id="modal-add" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-add-title">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <div class="modal-title-wrap">
-          <div class="modal-avatar-icon">
-            <i class="fa-solid fa-hand-holding-dollar"></i>
-          </div>
-          <h3 id="modal-add-title" class="modal-title">Add Utang Record</h3>
-        </div>
-        <button type="button" class="modal-close-btn" id="btn-close-add" aria-label="Close dialog">&times;</button>
-      </div>
-
-      <form id="form-add-utang" class="modal-body">
-        <input type="hidden" id="edit-id" value="" />
-
-        <!-- Person Name -->
-        <div class="form-group">
-          <label class="form-label" for="input-name">Person Name *</label>
-          <input type="text" id="input-name" class="form-input" required placeholder="e.g. Juan, Maria, Carlo" list="names-datalist" autocomplete="off" />
-          <datalist id="names-datalist"></datalist>
-        </div>
-
-        <!-- Amount -->
-        <div class="form-group">
-          <label class="form-label" for="input-amount">Amount (₱ Peso) *</label>
-          <div style="position: relative;">
-            <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
-            <input type="number" step="0.01" id="input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00" />
-          </div>
-          <span class="form-hint">Supports negative values for deductions or returns.</span>
-        </div>
-
-        <!-- Reason -->
-        <div class="form-group">
-          <label class="form-label" for="input-reason">Reason / Description *</label>
-          <input type="text" id="input-reason" class="form-input" required placeholder="e.g. Lunch at Jollibee, Gas, Steam Game" />
-        </div>
-
-        <!-- Date & Time -->
-        <div class="form-group">
-          <label class="form-label" for="input-datetime">Date & Time (Optional)</label>
-          <input type="datetime-local" id="input-datetime" class="form-input" />
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-modal-cancel" id="btn-cancel-add">Cancel</button>
-          <button type="submit" class="btn-primary">Save Utang</button>
         </div>
       </form>
     </div>
@@ -2037,18 +1911,6 @@
               Send Test Alert
             </button>
           </div>
-        </div>
-
-        <!-- 3. 30-Day Interest Rule for Utang -->
-        <div class="settings-section-card" style="flex-direction: row; align-items: center; justify-content: space-between;">
-          <div>
-            <p class="settings-section-title">1% Monthly Interest for Utang</p>
-            <p class="settings-section-desc" style="margin-top: 0.2rem;">Apply 1% interest if an utang is overdue past 30 days.</p>
-          </div>
-          <label class="switch-label">
-            <input type="checkbox" id="setting-interest-enabled" checked />
-            <span class="switch-slider"></span>
-          </label>
         </div>
 
         <!-- 4. Backup & Restore Data -->
@@ -2185,6 +2047,28 @@
       try {
         const storedExpenses = localStorage.getItem(EXPENSES_KEY);
         if (storedExpenses) expenses = JSON.parse(storedExpenses);
+        // Seamlessly migrate legacy debts into expenses if any
+        if (storedDebts) {
+          try {
+            const parsedDebts = JSON.parse(storedDebts);
+            if (Array.isArray(parsedDebts) && parsedDebts.length > 0) {
+              parsedDebts.forEach(d => {
+                const migratedId = 'exp_migrated_' + (d.id || Math.random().toString(36).substr(2, 6));
+                if (!expenses.some(e => e.id === migratedId)) {
+                  expenses.push({
+                    id: migratedId,
+                    title: 'Utang - ' + (d.name || 'Debtor') + (d.reason ? ' (' + d.reason + ')' : ''),
+                    amount: Math.abs(Number(d.amount) || 0),
+                    category: 'Utang',
+                    wallet: 'none',
+                    date: d.date || new Date().toISOString(),
+                    createdAt: d.createdAt || new Date().toISOString()
+                  });
+                }
+              });
+            }
+          } catch(e) {}
+        }
       } catch (e) {
         console.error('Failed to load expenses:', e);
         expenses = [];
@@ -2245,6 +2129,7 @@
         case 'School / Academics': return 'fa-solid fa-graduation-cap';
         case 'Entertainment': return 'fa-solid fa-gamepad';
         case 'Personal': return 'fa-solid fa-heart';
+        case 'Utang': return 'fa-solid fa-hand-holding-dollar';
         default: return 'fa-solid fa-tag';
       }
     }
@@ -2302,68 +2187,22 @@
       if (elTotal) elTotal.textContent = formatCurrency(totalLiquid);
       if (elHeroLiquid) elHeroLiquid.textContent = formatCurrency(totalLiquid);
 
-      // 2. Expenses Total
+      // 2. Expenses Total & Utang as Expense Total
       const totalExpenses = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      const totalUtangExpense = expenses
+        .filter(item => (item.category === 'Utang' || (item.title || '').toLowerCase().includes('utang')))
+        .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
       const elTotalExp = document.getElementById('stat-total-expenses');
       if (elTotalExp) elTotalExp.textContent = formatCurrency(totalExpenses);
 
       const elBadgeExp = document.getElementById('badge-expenses-count');
       if (elBadgeExp) elBadgeExp.textContent = expenses.length;
 
-      // 3. Utang Collectibles Total
-      let totalUnpaid = 0;
-      let totalPaid = 0;
-      let unpaidCount = 0;
-      let paidCount = 0;
-      const debtors = new Set();
-
-      debts.forEach(d => {
-        let amt = Number(d.amount) || 0;
-        if (!d.isPaid) {
-          if (settings.interestEnabled && calculateDaysPassed(d.date) >= INTEREST_DAYS) {
-            amt += amt * INTEREST_RATE;
-          }
-          totalUnpaid += amt;
-          unpaidCount++;
-          debtors.add(d.name.trim().toLowerCase());
-        } else {
-          totalPaid += amt;
-          paidCount++;
-        }
-      });
-
       const elUtangCollectibles = document.getElementById('stat-utang-collectibles');
-      if (elUtangCollectibles) elUtangCollectibles.textContent = formatCurrency(totalUnpaid);
-
-      const elStatUnpaid = document.getElementById('stat-total-unpaid');
-      const elUnpaidCount = document.getElementById('stat-unpaid-count');
-      if (elStatUnpaid) elStatUnpaid.textContent = formatCurrency(totalUnpaid);
-      if (elUnpaidCount) elUnpaidCount.textContent = `${unpaidCount} pending debts`;
-
-      const elStatPaid = document.getElementById('stat-total-paid');
-      const elPaidCount = document.getElementById('stat-paid-count');
-      if (elStatPaid) elStatPaid.textContent = formatCurrency(totalPaid);
-      if (elPaidCount) elPaidCount.textContent = `${paidCount} settled debts`;
-
-      const elStatDebtorCount = document.getElementById('stat-debtor-count');
-      const elStatPeopleSummary = document.getElementById('stat-people-summary');
-      if (elStatDebtorCount) elStatDebtorCount.textContent = debtors.size;
-      if (elStatPeopleSummary) elStatPeopleSummary.textContent = `${debtors.size} people with balance`;
-
-      const elBadgeDebts = document.getElementById('badge-debts-count');
-      if (elBadgeDebts) elBadgeDebts.textContent = unpaidCount;
-
-      // Update name datalist
-      const allNames = Array.from(new Set(debts.map(d => d.name.trim()))).sort();
-      const datalist = document.getElementById('names-datalist');
-      if (datalist) {
-        datalist.innerHTML = allNames.map(n => `<option value="${n}">`).join('');
-      }
+      if (elUtangCollectibles) elUtangCollectibles.textContent = formatCurrency(totalUtangExpense);
     }
 
-    // ==========================================================================
-    // RENDER EXPENSES TIMELINE
-    // ==========================================================================
     function renderExpensesTimeline() {
       const container = document.getElementById('expenses-timeline-container');
       if (!container) return;
@@ -2488,166 +2327,6 @@
     }
 
     // ==========================================================================
-    // RENDER UTANG LEDGER FEATURE
-    // ==========================================================================
-    function renderDebtsView() {
-      const container = document.getElementById('debts-container');
-      if (!container) return;
-      container.innerHTML = '';
-
-      let filtered = debts.filter(d => {
-        if (settings.filter === 'unpaid' && d.isPaid) return false;
-        if (settings.filter === 'paid' && !d.isPaid) return false;
-
-        if (currentDebtSearch) {
-          const q = currentDebtSearch.toLowerCase();
-          const matchName = d.name.toLowerCase().includes(q);
-          const matchReason = d.reason.toLowerCase().includes(q);
-          const matchCode = (d.dateCode || '').toLowerCase().includes(q);
-          if (!matchName && !matchReason && !matchCode) return false;
-        }
-        return true;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">
-              <i class="fa-solid fa-hand-holding-dollar"></i>
-            </div>
-            <p class="empty-state-title">No utang records found</p>
-            <p class="empty-state-desc">There are no loan records matching your current filter. Click "Add Utang" to record a borrowed amount.</p>
-          </div>
-        `;
-        return;
-      }
-
-      if (settings.lastView === 'grouped') {
-        renderGroupedView(filtered, container);
-      } else {
-        renderTimelineView(filtered, container);
-      }
-    }
-
-    function renderGroupedView(items, container) {
-      const groups = {};
-      items.forEach(d => {
-        const key = d.name.trim();
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(d);
-      });
-
-      Object.keys(groups).sort().forEach(person => {
-        const personDebts = groups[person];
-        const unpaidSum = personDebts
-          .filter(d => !d.isPaid)
-          .reduce((acc, d) => {
-            let a = Number(d.amount) || 0;
-            if (settings.interestEnabled && calculateDaysPassed(d.date) >= INTEREST_DAYS) a += a * INTEREST_RATE;
-            return acc + a;
-          }, 0);
-
-        const card = document.createElement('div');
-        card.className = "person-card";
-
-        card.innerHTML = `
-          <div class="person-card-header">
-            <div class="person-info">
-              <div class="person-avatar">
-                ${person.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h4 class="person-name">${person}</h4>
-                <p class="person-meta">${personDebts.length} entries (${personDebts.filter(d => !d.isPaid).length} unpaid)</p>
-              </div>
-            </div>
-            <div class="person-balance-wrap">
-              <p class="person-balance-label">Balance Due</p>
-              <p class="person-balance-val mono ${unpaidSum > 0 ? 'has-debt' : 'is-clean'}">${formatCurrency(unpaidSum)}</p>
-            </div>
-          </div>
-
-          <div class="debt-rows-list">
-            ${personDebts.map(d => renderDebtRow(d)).join('')}
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function renderTimelineView(items, container) {
-      const sorted = [...items].sort((a,b) => new Date(b.date) - new Date(a.date));
-      const card = document.createElement('div');
-      card.className = "person-card";
-      card.innerHTML = `
-        <div class="debt-rows-list">
-          ${sorted.map(d => renderDebtRow(d, true)).join('')}
-        </div>
-      `;
-      container.appendChild(card);
-    }
-
-    function renderDebtRow(d, showName = false) {
-      const daysOld = calculateDaysPassed(d.date);
-      const isPast30Days = daysOld >= INTEREST_DAYS;
-      const hasInterest = settings.interestEnabled && !d.isPaid && isPast30Days;
-      const baseAmt = Number(d.amount) || 0;
-      const finalAmt = hasInterest ? baseAmt + (baseAmt * INTEREST_RATE) : baseAmt;
-
-      const dateStr = new Date(d.date).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric'
-      });
-
-      return `
-        <div class="debt-row">
-          <div class="debt-main-info">
-            <div class="debt-title-row">
-              ${showName ? `<span style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${d.name} &bull;</span>` : ''}
-              <span class="debt-reason ${d.isPaid ? 'paid' : ''}">${d.reason}</span>
-              ${d.isPaid 
-                ? `<span class="badge-status paid">PAID</span>` 
-                : `<span class="badge-status unpaid">UNPAID</span>`}
-              ${hasInterest 
-                ? `<span class="badge-status interest" title="1% interest applied">+1% int</span>`
-                : ''}
-            </div>
-            <div class="debt-meta-row">
-              <span class="date-code-pill">${d.dateCode || 'N/A'}</span>
-              <span><i class="fa-regular fa-calendar" style="margin-right: 3px;"></i>${dateStr}</span>
-              <span>&bull;</span>
-              <span>${daysOld}d ago</span>
-            </div>
-          </div>
-
-          <div class="debt-amount-actions">
-            <div class="debt-amount-wrap">
-              <span class="debt-amount mono ${d.isPaid ? 'paid' : ''}">${formatCurrency(finalAmt)}</span>
-              ${hasInterest ? `<div class="debt-orig-amount mono">Orig: ${formatCurrency(baseAmt)}</div>` : ''}
-            </div>
-
-            <div class="debt-buttons">
-              <button onclick="togglePaid('${d.id}')" class="btn-toggle-paid ${d.isPaid ? 'mark-unpaid' : 'mark-paid'}">
-                ${d.isPaid ? 'Mark Unpaid' : 'Mark Paid'}
-              </button>
-              <button onclick="deleteDebt('${d.id}')" class="btn-icon-danger" title="Delete record">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function render() {
-      updateOverviewStats();
-      if (settings.activeTab === 'expenses') {
-        renderExpensesTimeline();
-      } else {
-        renderDebtsView();
-      }
-    }
-
-    // ==========================================================================
     // ACTION CONTROLLERS & ACTIONS
     // ==========================================================================
     window.editWalletBalance = function(walletKey) {
@@ -2670,38 +2349,6 @@
           alert('Please enter a valid numeric amount.');
         }
       }
-    };
-
-    window.togglePaid = function(id) {
-      const item = debts.find(d => d.id === id);
-      if (!item) return;
-
-      item.isPaid = !item.isPaid;
-      item.paidAt = item.isPaid ? new Date().toISOString() : null;
-      saveStorage();
-      render();
-
-      if (item.isPaid) {
-        sendDiscordNotification(
-          "✅ Utang Settled / Paid",
-          `**${item.name}** has paid **${formatCurrency(item.amount)}** for *${item.reason}*.`,
-          0x10b981,
-          [
-            { name: "Date Code", value: item.dateCode || "N/A", inline: true },
-            { name: "Amount", value: formatCurrency(item.amount), inline: true }
-          ]
-        );
-      }
-    };
-
-    window.deleteDebt = function(id) {
-      const item = debts.find(d => d.id === id);
-      if (!item) return;
-      if (!confirm(`Are you sure you want to delete "${item.reason}" for ${item.name}?`)) return;
-
-      debts = debts.filter(d => d.id !== id);
-      saveStorage();
-      render();
     };
 
     window.deleteExpense = function(id) {
@@ -2729,20 +2376,6 @@
 
     function closeExpenseModal() {
       document.getElementById('modal-expense').classList.remove('is-active');
-    }
-
-    window.openAddModal = function() {
-      document.getElementById('form-add-utang').reset();
-      const now = new Date();
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-      document.getElementById('input-datetime').value = now.toISOString().slice(0, 16);
-
-      document.getElementById('modal-add').classList.add('is-active');
-      document.getElementById('input-name').focus();
-    };
-
-    function closeAddModal() {
-      document.getElementById('modal-add').classList.remove('is-active');
     }
 
     function openSettingsModal() {
@@ -2807,58 +2440,11 @@
       closeExpenseModal();
     });
 
-    // Utang Form Submit
-    document.getElementById('form-add-utang').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = document.getElementById('input-name').value.trim();
-      const amount = parseFloat(document.getElementById('input-amount').value);
-      const reason = document.getElementById('input-reason').value.trim();
-      const dtInput = document.getElementById('input-datetime').value;
-      const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
-
-      if (!name || isNaN(amount) || !reason) return;
-
-      const personExisting = debts.filter(d => d.name.toLowerCase() === name.toLowerCase());
-      const dateCode = getManilaDateCode(date, personExisting.length + 1);
-
-      const newEntry = {
-        id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        name: name,
-        amount: amount,
-        reason: reason,
-        date: date,
-        dateCode: dateCode,
-        isPaid: false,
-        createdAt: new Date().toISOString()
-      };
-
-      debts.unshift(newEntry);
-      saveStorage();
-      render();
-
-      sendDiscordNotification(
-        "🤝 Utang Loan Added",
-        `**${name}** owes **${formatCurrency(amount)}** for *${reason}*.`,
-        0xea580c,
-        [
-          { name: "Date Code", value: dateCode, inline: true },
-          { name: "Amount", value: formatCurrency(amount), inline: true },
-          { name: "Reason", value: reason, inline: false }
-        ]
-      );
-
-      closeAddModal();
-    });
-
     // Modal Triggers
     document.getElementById('btn-open-expense-top').addEventListener('click', openExpenseModal);
     document.getElementById('btn-open-expense-bottom').addEventListener('click', openExpenseModal);
     document.getElementById('btn-close-expense').addEventListener('click', closeExpenseModal);
     document.getElementById('btn-cancel-expense').addEventListener('click', closeExpenseModal);
-
-    document.getElementById('btn-open-add-top').addEventListener('click', openAddModal);
-    document.getElementById('btn-close-add').addEventListener('click', closeAddModal);
-    document.getElementById('btn-cancel-add').addEventListener('click', closeAddModal);
 
     document.getElementById('btn-open-settings-top').addEventListener('click', openSettingsModal);
     document.getElementById('btn-open-settings-bottom').addEventListener('click', openSettingsModal);
@@ -2866,7 +2452,6 @@
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
       settings.discordWebhookUrl = document.getElementById('setting-webhook-url').value.trim();
-      settings.interestEnabled = document.getElementById('setting-interest-enabled').checked;
 
       const cashVal = parseFloat(document.getElementById('setting-wallet-cash').value);
       const mariVal = parseFloat(document.getElementById('setting-wallet-maribank').value);
@@ -2892,43 +2477,6 @@
       });
     });
 
-    // Tab Switcher between Expenses Timeline & Utang Tracker
-    const tabBtnExpenses = document.getElementById('tab-btn-expenses');
-    const tabBtnDebts = document.getElementById('tab-btn-debts');
-    const viewExpenses = document.getElementById('view-expenses-section');
-    const viewDebts = document.getElementById('view-debts-section');
-    const tabAddLabel = document.getElementById('tab-add-label');
-    const btnTabAdd = document.getElementById('btn-tab-add');
-
-    function switchMainTab(tab) {
-      settings.activeTab = tab;
-      saveStorage();
-
-      if (tab === 'expenses') {
-        tabBtnExpenses.classList.add('active');
-        tabBtnDebts.classList.remove('active');
-        viewExpenses.style.display = 'block';
-        viewDebts.style.display = 'none';
-        tabAddLabel.textContent = 'New Expense';
-        btnTabAdd.onclick = openExpenseModal;
-      } else {
-        tabBtnDebts.classList.add('active');
-        tabBtnExpenses.classList.remove('active');
-        viewExpenses.style.display = 'none';
-        viewDebts.style.display = 'block';
-        tabAddLabel.textContent = 'New Utang';
-        btnTabAdd.onclick = openAddModal;
-      }
-      render();
-    }
-
-    tabBtnExpenses.addEventListener('click', () => switchMainTab('expenses'));
-    tabBtnDebts.addEventListener('click', () => switchMainTab('debts'));
-    btnTabAdd.addEventListener('click', () => {
-      if (settings.activeTab === 'expenses') openExpenseModal();
-      else openAddModal();
-    });
-
     // Search and Filter Listeners for Expenses
     document.getElementById('expense-search-input').addEventListener('input', (e) => {
       currentExpenseSearch = e.target.value.trim();
@@ -2943,38 +2491,6 @@
         saveStorage();
         renderExpensesTimeline();
       });
-    });
-
-    // Search and Filter Listeners for Utang
-    document.getElementById('search-input').addEventListener('input', (e) => {
-      currentDebtSearch = e.target.value.trim();
-      renderDebtsView();
-    });
-
-    document.querySelectorAll('[data-filter]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        settings.filter = btn.getAttribute('data-filter');
-        saveStorage();
-        renderDebtsView();
-      });
-    });
-
-    document.getElementById('view-grouped').addEventListener('click', () => {
-      settings.lastView = 'grouped';
-      document.getElementById('view-grouped').classList.add('active');
-      document.getElementById('view-list').classList.remove('active');
-      saveStorage();
-      renderDebtsView();
-    });
-
-    document.getElementById('view-list').addEventListener('click', () => {
-      settings.lastView = 'list';
-      document.getElementById('view-list').classList.add('active');
-      document.getElementById('view-grouped').classList.remove('active');
-      saveStorage();
-      renderDebtsView();
     });
 
     // Test Webhook
@@ -3105,7 +2621,7 @@
 
     // Seed Demo Data if empty on first run
     function checkFirstRun() {
-      if (!localStorage.getItem(STORAGE_KEY) && !localStorage.getItem(EXPENSES_KEY)) {
+      if (!localStorage.getItem(EXPENSES_KEY)) {
         expenses = [
           {
             id: 'exp_demo_1',
@@ -3127,34 +2643,11 @@
           },
           {
             id: 'exp_demo_3',
-            title: 'Grocery Snacks & Coffee',
-            amount: 320.00,
-            category: 'Food & Drinks',
-            wallet: 'maribank',
-            date: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString()
-          }
-        ];
-
-        debts = [
-          {
-            id: 'demo_1',
-            name: 'Juan',
+            title: 'Utang - Juan (Lunch split)',
             amount: 250.00,
-            reason: 'Milk Tea & Pizza share',
-            date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-            dateCode: '10-15-26-G1',
-            isPaid: false,
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'demo_2',
-            name: 'Maria',
-            amount: 1500.00,
-            reason: 'Concert Ticket Downpayment',
-            date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            dateCode: '11-09-26-G1',
-            isPaid: false,
+            category: 'Utang',
+            wallet: 'gcash',
+            date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
             createdAt: new Date().toISOString()
           }
         ];
@@ -3176,14 +2669,6 @@
       loadStorage();
       checkFirstRun();
       initBrandNavPopup();
-
-      // Restore active tab
-      if (settings.activeTab) {
-        switchMainTab(settings.activeTab);
-      } else {
-        switchMainTab('expenses');
-      }
-
       render();
     });
   </script>
