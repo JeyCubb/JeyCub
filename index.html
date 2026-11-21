@@ -19,6 +19,16 @@
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {}
     })();
+
+    // Prevent pinch-to-zoom on iOS/iPadOS Safari & touch browsers
+    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+    document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
   </script>
 
   <!-- Favicon matching JeyCub Suite style -->
@@ -124,6 +134,7 @@
       max-height: 100dvh !important;
       overflow: hidden !important;
       overscroll-behavior: none !important;
+      touch-action: pan-x pan-y;
       box-sizing: border-box;
       margin: 0;
       padding: 0;
