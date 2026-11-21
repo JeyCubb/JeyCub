@@ -1933,6 +1933,46 @@
     }
 
     /* Enhanced Modal, Input & Toast Styles */
+    .autocomplete-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      z-index: 1050;
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 0.25rem 0;
+    }
+    .autocomplete-item {
+      padding: 0.5rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.15s ease;
+    }
+    .autocomplete-item:hover, .autocomplete-item.is-selected {
+      background: rgba(249, 115, 22, 0.14);
+      color: var(--accent-primary);
+    }
+    .autocomplete-item i {
+      color: var(--accent-primary);
+      font-size: 0.75rem;
+    }
+
     .currency-input-wrap {
       position: relative;
       display: flex;
@@ -2465,16 +2505,13 @@
           </select>
         </div>
 
-        <!-- Person for Utang (input + suggestions dropdown) -->
+        <!-- Person for Utang (input + live suggestions popup) -->
         <div class="form-group" id="group-utang-person" style="display: none;">
           <label class="form-label" for="expense-input-utang-person" id="expense-utang-person-label">Person *</label>
-          <div id="utang-suggested-wrap" style="display: none;">
-            <select id="expense-select-utang-person" class="form-select" aria-label="Suggested Person">
-              <option value="">👤 Suggested People</option>
-            </select>
+          <div class="autocomplete-wrapper">
+            <input type="text" id="expense-input-utang-person" class="form-input" autocomplete="off" placeholder="Enter person name..." />
+            <div id="utang-person-suggestions" class="autocomplete-dropdown" style="display: none;"></div>
           </div>
-          <input type="text" id="expense-input-utang-person" class="form-input" autocomplete="off" list="utang-person-datalist" />
-          <datalist id="utang-person-datalist"></datalist>
         </div>
 
         <!-- Date & Time -->
@@ -3653,36 +3690,47 @@
       return Array.from(namesSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     }
 
-    function populateUtangPersonSuggestions() {
-      const select = document.getElementById('expense-select-utang-person');
-      const datalist = document.getElementById('utang-person-datalist');
-      const wrap = document.getElementById('utang-suggested-wrap');
+    function renderUtangPersonSuggestions(filterText = '') {
+      const dropdown = document.getElementById('utang-person-suggestions');
       const input = document.getElementById('expense-input-utang-person');
+      if (!dropdown || !input) return;
 
       const people = getPreviousUtangPeople();
+      const query = (filterText !== undefined && filterText !== null ? String(filterText) : input.value).trim().toLowerCase();
 
-      if (datalist) {
-        datalist.innerHTML = people.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+      const filtered = query
+        ? people.filter(p => p.toLowerCase().includes(query))
+        : people;
+
+      if (filtered.length === 0) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        return;
       }
 
-      if (!select || !wrap) return;
+      dropdown.innerHTML = filtered.map(p => `
+        <div class="autocomplete-item" data-value="${escapeHtml(p)}">
+          <i class="fa-solid fa-user"></i>
+          <span>${escapeHtml(p)}</span>
+        </div>
+      `).join('');
 
-      if (people.length > 0) {
-        const currentValue = input ? input.value.trim() : '';
-        select.innerHTML = `
-          <option value="">👤 Suggested People</option>
-          ${people.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')}
-        `;
-        if (currentValue && people.some(p => p.toLowerCase() === currentValue.toLowerCase())) {
-          const match = people.find(p => p.toLowerCase() === currentValue.toLowerCase());
-          select.value = match;
-        } else {
-          select.value = '';
-        }
-        wrap.style.display = 'block';
-      } else {
-        wrap.style.display = 'none';
-      }
+      dropdown.style.display = 'flex';
+
+      dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          const val = item.getAttribute('data-value');
+          if (val) {
+            input.value = val;
+            const inpTitle = document.getElementById('expense-input-title');
+            if (inpTitle && (!inpTitle.value.trim() || inpTitle.value.trim().toLowerCase() === 'utang' || inpTitle.value.trim().toLowerCase() === 'psu')) {
+              inpTitle.value = val;
+            }
+          }
+          dropdown.style.display = 'none';
+        });
+      });
     }
 
     function updateUtangWalletVisibility() {
@@ -3707,8 +3755,9 @@
 
       if (utangPersonGroup) {
         utangPersonGroup.style.display = isUtang ? 'flex' : 'none';
-        if (isUtang) {
-          populateUtangPersonSuggestions();
+        if (!isUtang) {
+          const dropdown = document.getElementById('utang-person-suggestions');
+          if (dropdown) dropdown.style.display = 'none';
         }
       }
 
@@ -3884,10 +3933,6 @@
       if (elUtangPerson) {
         elUtangPerson.value = item.debtor || (item.wallet === 'utang' ? item.title : '');
       }
-      const elUtangPersonSelect = document.getElementById('expense-select-utang-person');
-      if (elUtangPersonSelect) {
-        elUtangPersonSelect.value = item.debtor || '';
-      }
 
       const d = new Date(item.date || item.createdAt);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -3979,8 +4024,6 @@
       }
       const elUtangPerson = document.getElementById('expense-input-utang-person');
       if (elUtangPerson) elUtangPerson.value = '';
-      const elUtangPersonSelect = document.getElementById('expense-select-utang-person');
-      if (elUtangPersonSelect) elUtangPersonSelect.value = '';
 
       const btnDelete = document.getElementById('btn-delete-expense');
       if (btnDelete) btnDelete.style.display = 'none';
@@ -4014,6 +4057,8 @@
       if (btnSaveActual) btnSaveActual.style.display = 'none';
       const btnMarkPaid = document.getElementById('btn-mark-paid-utang');
       if (btnMarkPaid) btnMarkPaid.style.display = 'none';
+      const personDropdown = document.getElementById('utang-person-suggestions');
+      if (personDropdown) personDropdown.style.display = 'none';
       const expModal = document.getElementById('modal-expense');
       const actExpense = document.getElementById('modal-actions-expense');
       if (expModal) {
@@ -4337,38 +4382,34 @@
       });
     }
 
-    const selUtangPerson = document.getElementById('expense-select-utang-person');
-    if (selUtangPerson) {
-      selUtangPerson.addEventListener('change', () => {
-        const inpUtangPerson = document.getElementById('expense-input-utang-person');
-        const inpTitle = document.getElementById('expense-input-title');
-        if (selUtangPerson.value) {
-          if (inpUtangPerson) inpUtangPerson.value = selUtangPerson.value;
-          if (inpTitle && (!inpTitle.value.trim() || inpTitle.value.trim().toLowerCase() === 'utang')) {
-            inpTitle.value = selUtangPerson.value;
-          }
-        }
-      });
-    }
-
     const inpUtangPerson = document.getElementById('expense-input-utang-person');
     if (inpUtangPerson) {
-      inpUtangPerson.addEventListener('input', () => {
-        const sel = document.getElementById('expense-select-utang-person');
-        const val = inpUtangPerson.value.trim().toLowerCase();
-        if (sel) {
-          const match = Array.from(sel.options).find(o => o.value.toLowerCase() === val);
-          sel.value = match ? match.value : '';
-        }
-      });
-      inpUtangPerson.addEventListener('blur', () => {
+      inpUtangPerson.addEventListener('input', (e) => {
+        renderUtangPersonSuggestions(e.target.value);
         const inpTitle = document.getElementById('expense-input-title');
         const val = inpUtangPerson.value.trim();
-        if (val && inpTitle && (!inpTitle.value.trim() || inpTitle.value.trim().toLowerCase() === 'utang')) {
+        if (val && inpTitle && (!inpTitle.value.trim() || inpTitle.value.trim().toLowerCase() === 'utang' || inpTitle.value.trim().toLowerCase() === 'psu')) {
           inpTitle.value = val;
         }
       });
+      inpUtangPerson.addEventListener('focus', (e) => {
+        renderUtangPersonSuggestions(e.target.value);
+      });
+      inpUtangPerson.addEventListener('blur', () => {
+        setTimeout(() => {
+          const dropdown = document.getElementById('utang-person-suggestions');
+          if (dropdown) dropdown.style.display = 'none';
+        }, 180);
+      });
     }
+
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('utang-person-suggestions');
+      const input = document.getElementById('expense-input-utang-person');
+      if (dropdown && input && !input.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
 
     const chkToggleIncome = document.getElementById('checkbox-toggle-income');
     if (chkToggleIncome) {
