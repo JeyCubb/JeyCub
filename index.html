@@ -2004,7 +2004,7 @@
           </span>
         </div>
         <div class="hero-value-wrap">
-          <span id="hero-total-liquid" class="hero-value mono">₱0.00</span>
+          <span id="hero-total-liquid" class="hero-value mono">₱0</span>
         </div>
       </div>
 
@@ -2035,7 +2035,7 @@
               <i class="fa-solid fa-money-bill-wave"></i> Cash
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-cash">₱0.00</div>
+          <div class="wallet-amount mono" id="wallet-val-cash">₱0</div>
           <div class="wallet-label-hint">Physical Cash Left</div>
         </div>
 
@@ -2046,7 +2046,7 @@
               <i class="fa-solid fa-credit-card"></i> MariBank
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-maribank">₱0.00</div>
+          <div class="wallet-amount mono" id="wallet-val-maribank">₱0</div>
           <div class="wallet-label-hint">Digital Bank Left</div>
         </div>
 
@@ -2057,7 +2057,7 @@
               <i class="fa-solid fa-building-columns"></i> BDO
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-bdo">₱0.00</div>
+          <div class="wallet-amount mono" id="wallet-val-bdo">₱0</div>
           <div class="wallet-label-hint">BDO Savings Left</div>
         </div>
 
@@ -2068,7 +2068,7 @@
               <i class="fa-solid fa-mobile-screen-button"></i> GCash
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-gcash">₱0.00</div>
+          <div class="wallet-amount mono" id="wallet-val-gcash">₱0</div>
           <div class="wallet-label-hint">GCash Wallet Left</div>
         </div>
 
@@ -2079,7 +2079,7 @@
               <i class="fa-solid fa-hand-holding-dollar"></i> Utang
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-utang">₱0.00</div>
+          <div class="wallet-amount mono" id="wallet-val-utang">₱0</div>
           <div class="wallet-label-hint">Utang Balance Left</div>
         </div>
       </div>
@@ -2223,7 +2223,7 @@
           <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
           <div style="position: relative;">
             <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
-            <input type="text" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00 (or +10 to add value)" autocomplete="off" />
+            <input type="text" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0 (or +10 to add value)" autocomplete="off" />
           </div>
         </div>
 
@@ -2297,23 +2297,23 @@
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; padding-top: 0.2rem;">
             <div>
               <label class="form-label" for="setting-wallet-cash">Cash (₱)</label>
-              <input type="number" step="0.01" id="setting-wallet-cash" class="form-input mono" placeholder="0.00" />
+              <input type="number" step="any" id="setting-wallet-cash" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-maribank">MariBank (₱)</label>
-              <input type="number" step="0.01" id="setting-wallet-maribank" class="form-input mono" placeholder="0.00" />
+              <input type="number" step="any" id="setting-wallet-maribank" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-bdo">BDO (₱)</label>
-              <input type="number" step="0.01" id="setting-wallet-bdo" class="form-input mono" placeholder="0.00" />
+              <input type="number" step="any" id="setting-wallet-bdo" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-gcash">GCash (₱)</label>
-              <input type="number" step="0.01" id="setting-wallet-gcash" class="form-input mono" placeholder="0.00" />
+              <input type="number" step="any" id="setting-wallet-gcash" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-utang">Utang (₱)</label>
-              <input type="number" step="0.01" id="setting-wallet-utang" class="form-input mono" placeholder="0.00" />
+              <input type="number" step="any" id="setting-wallet-utang" class="form-input mono" placeholder="0" />
             </div>
           </div>
         </div>
@@ -2390,12 +2390,12 @@
         <div class="target-stats-strip">
           <div class="target-stat-item">
             <span class="target-stat-label">Actual Liquid</span>
-            <span class="target-stat-val mono" id="proj-dialog-actual">₱0.00</span>
+            <span class="target-stat-val mono" id="proj-dialog-actual">₱0</span>
           </div>
           <div class="target-stat-divider"></div>
           <div class="target-stat-item">
             <span class="target-stat-label">Current Goal</span>
-            <span class="target-stat-val mono" id="proj-dialog-current" style="color: var(--accent-primary);">₱20,000.00</span>
+            <span class="target-stat-val mono" id="proj-dialog-current" style="color: var(--accent-primary);">₱20,000</span>
           </div>
         </div>
 
@@ -2470,7 +2470,7 @@
           <label class="form-label" for="wallet-modal-input">New Balance Amount (₱)</label>
           <div class="currency-input-wrap">
             <span class="currency-prefix">₱</span>
-            <input type="number" id="wallet-modal-input" class="form-input mono target-number-input" placeholder="0.00" step="any" autocomplete="off" />
+            <input type="number" id="wallet-modal-input" class="form-input mono target-number-input" placeholder="0" step="any" autocomplete="off" />
           </div>
           <div class="target-quick-chips">
             <button type="button" class="chip-btn" data-wallet-delta="100">+₱100</button>
@@ -2715,8 +2715,9 @@
     }
 
     function formatCurrency(num) {
-      const val = Number(num) || 0;
-      return '₱' + val.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      let val = Math.round(Number(num) || 0);
+      if (Object.is(val, -0)) val = 0;
+      return '₱' + val.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
     function calculateDaysPassed(dateString) {
@@ -3332,7 +3333,7 @@
 
       document.getElementById('modal-edit-wallet-title').textContent = `Update ${cfg.name} Balance`;
       document.getElementById('modal-edit-wallet-sub').textContent = isProjectedMode
-        ? `Actual balance: ₱${current.toFixed(2)}. Projected total will update automatically.`
+        ? `Actual balance: ${formatCurrency(current)}. Projected total will update automatically.`
         : `Enter current funds available in ${cfg.name}`;
 
       const avatar = document.getElementById('wallet-modal-avatar');
@@ -4159,7 +4160,7 @@
           const delta = parseFloat(btn.getAttribute('data-wallet-delta')) || 0;
           const input = document.getElementById('wallet-modal-input');
           const cur = parseFloat(input.value) || 0;
-          input.value = (cur + delta).toFixed(2);
+          input.value = Math.round(cur + delta);
         });
       });
 
@@ -4167,7 +4168,7 @@
         btn.addEventListener('click', () => {
           const setVal = parseFloat(btn.getAttribute('data-wallet-set')) || 0;
           const input = document.getElementById('wallet-modal-input');
-          input.value = setVal.toFixed(2);
+          input.value = Math.round(setVal);
         });
       });
 
