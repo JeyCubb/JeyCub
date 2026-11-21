@@ -2368,7 +2368,6 @@
             <option value="bdo">🏛️ BDO</option>
             <option value="gcash">📱 GCash</option>
             <option value="utang">🤝 Utang</option>
-            <option value="none">None / Don't Deduct</option>
           </select>
         </div>
 
@@ -3631,7 +3630,7 @@
         : (isIncome ? 'Edit Value / Income' : 'Edit Expense');
       document.getElementById('expense-input-title').value = item.title || '';
       document.getElementById('expense-input-amount').value = (isIncome ? '+' : '') + (Number(item.amount) || '');
-      document.getElementById('expense-input-wallet').value = item.wallet || 'none';
+      document.getElementById('expense-input-wallet').value = (item.wallet && item.wallet !== 'none') ? item.wallet : 'cash';
       const elUtangWallet = document.getElementById('expense-input-utang-wallet');
       if (elUtangWallet) {
         elUtangWallet.value = item.utangWallet || 'cash';
