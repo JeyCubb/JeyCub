@@ -2133,13 +2133,6 @@
 
     <!-- 1. Account Balances: Cash, MariBank, BDO, GCash -->
     <section class="wallets-section" aria-label="Available Funds by Account">
-      <div class="wallets-header">
-        <div class="wallets-title">
-          <i class="fa-solid fa-wallet" style="color: var(--accent-primary);"></i>
-          <span id="wallets-title-text">Amount Left in Accounts</span>
-        </div>
-      </div>
-
       <div class="wallets-grid">
         <!-- Cash -->
         <div class="wallet-card" data-wallet="cash" onclick="editWalletBalance('cash')" title="Click to update Cash balance">
@@ -2200,14 +2193,6 @@
 
     <!-- 3. Expenses Timeline Section -->
     <div id="view-expenses-section">
-      <!-- Section Header -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.35rem; flex-shrink: 0;">
-        <h2 style="font-size: 0.88rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 0.35rem;">
-          <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-primary);"></i>
-          <span>Expenses Timeline</span>
-        </h2>
-      </div>
-
       <!-- Timeline Container -->
       <div id="expenses-timeline-container" class="timeline-container">
         <!-- Dynamic via JS -->
