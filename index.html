@@ -2978,6 +2978,13 @@
         migrationApplied = true;
       }
 
+      // Ensure Cash balance does not keep orphaned income if actual Baon was deleted
+      const actualCashIncomes = expenses.filter(e => !e.isProjected && (e.type === 'income' || (e.title || '').toLowerCase() === 'baon') && e.wallet === 'cash');
+      if (actualCashIncomes.length === 0 && Number(wallets.cash) > 0) {
+        wallets.cash = 0;
+        migrationApplied = true;
+      }
+
       // Synchronize Utang card balance with active unpaid Utangs
       syncUtangWalletBalance();
       if (migrationApplied) {
@@ -4095,14 +4102,73 @@
       }
     };
 
+    function performDeleteExpense(item) {
+      if (!item) return;
+      const isIncome = item.type === 'income' || 
+        (item.category && item.category.toLowerCase().includes('income')) || 
+        ((item.title || '').trim().toLowerCase() === 'baon') ||
+        (String(item.amount).startsWith('+'));
+      const amt = Math.abs(Number(item.amount)) || 0;
+      const wKey = (item.wallet || 'cash').toLowerCase();
+      const utangKey = item.utangWallet ? item.utangWallet.toLowerCase() : 'cash';
+      const isProj = Boolean(item.isProjected);
+      const labelType = isIncome ? 'income' : 'expense';
+      const labelProj = isProj ? 'Projected ' : '';
+
+      if (!isProj) {
+        // Actual item: adjust actual wallet
+        if (wKey && wKey !== 'none' && wKey !== 'utang' && wallets[wKey] !== undefined) {
+          if (isIncome) {
+            wallets[wKey] = (Number(wallets[wKey]) || 0) - amt;
+          } else {
+            wallets[wKey] = (Number(wallets[wKey]) || 0) + amt;
+          }
+        }
+        if (wKey === 'utang' && utangKey && utangKey !== 'none' && wallets[utangKey] !== undefined) {
+          if (isIncome) {
+            wallets[utangKey] = (Number(wallets[utangKey]) || 0) - amt;
+            if (item.isPaid && item.paidApplied) {
+              wallets[utangKey] = (Number(wallets[utangKey]) || 0) + amt;
+            }
+          } else {
+            wallets[utangKey] = (Number(wallets[utangKey]) || 0) + amt;
+            if (item.isPaid && item.paidApplied) {
+              wallets[utangKey] = (Number(wallets[utangKey]) || 0) - amt;
+            }
+          }
+        }
+      } else {
+        // Projected item: if user deletes a projected income, adjust the projected target down
+        if (isIncome && settings.projectedTarget) {
+          settings.projectedTarget = Math.max(0, (Number(settings.projectedTarget) || 0) - amt);
+        }
+      }
+
+      expenses = expenses.filter(e => e.id !== item.id);
+      syncUtangWalletBalance();
+      saveStorage(true);
+      if (isProj) {
+        syncProjectedBaonToTarget();
+      } else {
+        render();
+      }
+      closeExpenseModal();
+      showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted. Wallet balance updated.`, 'info');
+    }
+
     window.deleteExpense = async function(id) {
       const item = expenses.find(e => e.id === id);
       if (!item) return;
-      const labelType = item.type === 'income' ? 'income' : 'expense';
+      const isIncome = item.type === 'income' || 
+        (item.category && item.category.toLowerCase().includes('income')) || 
+        ((item.title || '').trim().toLowerCase() === 'baon') ||
+        (String(item.amount).startsWith('+'));
+      const amt = Math.abs(Number(item.amount)) || 0;
+      const labelType = isIncome ? 'income' : 'expense';
       const labelProj = item.isProjected ? 'Projected ' : '';
       const ok = await showAppConfirm({
         title: `Delete ${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)}?`,
-        message: `Delete <strong>${item.title}</strong> for <span style="color: var(--accent-primary); font-weight: 700;">${formatCurrency(item.amount)}</span>?<br><span style="font-size: 0.75rem; color: var(--text-muted);">This will remove it from your records and balance timeline.</span>`,
+        message: `Delete <strong>${item.title}</strong> for <span style="color: var(--accent-primary); font-weight: 700;">${formatCurrency(amt)}</span>?<br><span style="font-size: 0.75rem; color: var(--text-muted);">This will remove it from your records and balance timeline.</span>`,
         confirmText: 'Yes, Delete',
         cancelText: 'Cancel',
         isDanger: true,
@@ -4110,29 +4176,7 @@
       });
       if (!ok) return;
 
-      if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
-        if (item.type === 'income') {
-          wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0);
-        } else {
-          wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
-        }
-      }
-      if (!item.isProjected && item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
-        if (item.type === 'income') {
-          wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) - (Number(item.amount) || 0);
-        } else {
-          wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + (Number(item.amount) || 0);
-        }
-      }
-      const wasProj = Boolean(item.isProjected);
-      expenses = expenses.filter(e => e.id !== id);
-      saveStorage();
-      if (wasProj) {
-        syncProjectedBaonToTarget();
-      } else {
-        render();
-      }
-      showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted.`, 'info');
+      performDeleteExpense(item);
     };
 
     // ==========================================================================
@@ -4596,12 +4640,17 @@
         if (!currentEditExpenseId) return;
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (!item) return;
-        const labelType = item.type === 'income' ? 'income' : 'expense';
+        const isIncome = item.type === 'income' || 
+          (item.category && item.category.toLowerCase().includes('income')) || 
+          ((item.title || '').trim().toLowerCase() === 'baon') ||
+          (String(item.amount).startsWith('+'));
+        const amt = Math.abs(Number(item.amount)) || 0;
+        const labelType = isIncome ? 'income' : 'expense';
         const labelProj = item.isProjected ? 'Projected ' : '';
 
         const ok = await showAppConfirm({
           title: `Delete ${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)}?`,
-          message: `Delete <strong>${item.title}</strong> for <span style="color: var(--accent-primary); font-weight: 700;">${formatCurrency(item.amount)}</span>?<br><span style="font-size: 0.75rem; color: var(--text-muted);">This action will update your balance timeline.</span>`,
+          message: `Delete <strong>${item.title}</strong> for <span style="color: var(--accent-primary); font-weight: 700;">${formatCurrency(amt)}</span>?<br><span style="font-size: 0.75rem; color: var(--text-muted);">This action will update your balance timeline.</span>`,
           confirmText: 'Yes, Delete',
           cancelText: 'Cancel',
           isDanger: true,
@@ -4609,43 +4658,7 @@
         });
 
         if (ok) {
-          if (!item.isProjected && item.wallet && item.wallet !== 'none' && item.wallet !== 'utang' && wallets[item.wallet] !== undefined) {
-            if (item.type === 'income') {
-              wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0);
-            } else {
-              wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
-            }
-          }
-          if (!item.isProjected && item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
-            if (item.type === 'income') {
-              wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) - (Number(item.amount) || 0);
-            } else {
-              wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + (Number(item.amount) || 0);
-            }
-          }
-          if (!item.isProjected && item.wallet === 'utang' && item.isPaid && item.paidApplied) {
-            const oldAmt = Number(item.amount) || 0;
-            if (item.type === 'income') {
-              if (item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
-                wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + oldAmt;
-              }
-            } else {
-              if (item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
-                wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) - oldAmt;
-              }
-            }
-          }
-          const wasProj = Boolean(item.isProjected);
-          expenses = expenses.filter(e => e.id !== currentEditExpenseId);
-          syncUtangWalletBalance();
-          saveStorage();
-          if (wasProj) {
-            syncProjectedBaonToTarget();
-          } else {
-            render();
-          }
-          closeExpenseModal();
-          showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted.`, 'info');
+          performDeleteExpense(item);
         }
       });
     }
@@ -5026,6 +5039,13 @@
               expenses = expenses.filter(e => !dupIds.has(e.id));
               const refundAmt = 1000 * duplicatesToRemove.length;
               wallets.cash = Math.max(0, (Number(wallets.cash) || 0) - refundAmt);
+              needsCloudHeal = true;
+            }
+
+            // Ensure Cash balance does not keep orphaned income if actual Baon was deleted
+            const actualCashIncomes = expenses.filter(e => !e.isProjected && (e.type === 'income' || (e.title || '').toLowerCase() === 'baon') && e.wallet === 'cash');
+            if (actualCashIncomes.length === 0 && Number(wallets.cash) > 0) {
+              wallets.cash = 0;
               needsCloudHeal = true;
             }
 
