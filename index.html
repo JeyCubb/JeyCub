@@ -1484,7 +1484,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0.65rem;
+      padding: 0.45rem;
       z-index: 2000;
       opacity: 0;
       visibility: hidden;
@@ -2263,7 +2263,7 @@
           </div>
           <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto; flex-shrink: 0;">
             <button type="button" class="btn-modal-cancel" id="btn-cancel-expense" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; white-space: nowrap;">Cancel</button>
-            <button type="submit" id="btn-submit-expense" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">Save</button>
+            <button type="submit" id="btn-submit-expense" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">Save Expense</button>
           </div>
         </div>
       </form>
@@ -3431,7 +3431,7 @@
         }
         if (toggleText) toggleText.textContent = '+ Adding to Account';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save (+ Add)' : '+ Add';
+          submitBtn.textContent = currentEditExpenseId ? 'Save (+ Add)' : '+ Add Expense';
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
         }
         if (titleModal) {
@@ -3456,7 +3456,9 @@
         }
         if (toggleText) toggleText.textContent = 'Type + to Add';
         if (submitBtn) {
-          submitBtn.textContent = 'Save';
+          submitBtn.textContent = currentEditExpenseId
+            ? (isProjected ? 'Save Changes (Projected)' : 'Save Changes')
+            : (isProjected ? 'Save Projected Expense' : 'Save Expense');
           submitBtn.style.background = '';
         }
         if (titleModal) {
@@ -3491,7 +3493,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = isIncome ? 'Save (+ Add)' : 'Save';
+        btnSubmit.textContent = isIncome ? 'Save Changes (+ Add)' : 'Save Changes';
         btnSubmit.style.background = isIncome ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '';
       }
 
@@ -3545,7 +3547,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = 'Save';
+        btnSubmit.textContent = isProjectedMode ? 'Save Projected Expense' : 'Save Expense';
         btnSubmit.style.background = '';
       }
 
