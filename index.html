@@ -2384,20 +2384,15 @@
           </select>
         </div>
 
-        <!-- Debtor / Debtee for Utang (Person input + suggestions dropdown) -->
+        <!-- Person for Utang (input + suggestions dropdown) -->
         <div class="form-group" id="group-utang-person" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label class="form-label" for="expense-input-utang-person" id="expense-utang-person-label" style="margin-bottom: 0;">Debtor / Debtee Name *</label>
-            <span id="utang-suggested-badge" style="font-size: 0.68rem; color: var(--accent-primary); font-weight: 600; display: none;">
-              <i class="fa-solid fa-users"></i> Previous data found
-            </span>
-          </div>
+          <label class="form-label" for="expense-input-utang-person" id="expense-utang-person-label">Person *</label>
           <div id="utang-suggested-wrap" style="display: none;">
-            <select id="expense-select-utang-person" class="form-select" aria-label="Suggested Debtor or Debtee">
-              <option value="">👤 Suggested People (Choose to auto-fill)...</option>
+            <select id="expense-select-utang-person" class="form-select" aria-label="Suggested Person">
+              <option value="">👤 Suggested People</option>
             </select>
           </div>
-          <input type="text" id="expense-input-utang-person" class="form-input" placeholder="Enter debtor / debtee name..." autocomplete="off" list="utang-person-datalist" />
+          <input type="text" id="expense-input-utang-person" class="form-input" autocomplete="off" list="utang-person-datalist" />
           <datalist id="utang-person-datalist"></datalist>
         </div>
 
@@ -3576,7 +3571,6 @@
       const select = document.getElementById('expense-select-utang-person');
       const datalist = document.getElementById('utang-person-datalist');
       const wrap = document.getElementById('utang-suggested-wrap');
-      const badge = document.getElementById('utang-suggested-badge');
       const input = document.getElementById('expense-input-utang-person');
 
       const people = getPreviousUtangPeople();
@@ -3590,7 +3584,7 @@
       if (people.length > 0) {
         const currentValue = input ? input.value.trim() : '';
         select.innerHTML = `
-          <option value="">👤 Suggested People (${people.length} found - tap to choose)...</option>
+          <option value="">👤 Suggested People</option>
           ${people.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')}
         `;
         if (currentValue && people.some(p => p.toLowerCase() === currentValue.toLowerCase())) {
@@ -3600,10 +3594,8 @@
           select.value = '';
         }
         wrap.style.display = 'block';
-        if (badge) badge.style.display = 'inline-flex';
       } else {
         wrap.style.display = 'none';
-        if (badge) badge.style.display = 'none';
       }
     }
 
@@ -4006,7 +3998,7 @@
             isUtang ? 0xef4444 : 0x10b981,
             [
               { name: "Item", value: finalTitle, inline: true },
-              ...(debtor ? [{ name: "Debtor / Debtee", value: debtor, inline: true }] : []),
+              ...(debtor ? [{ name: "Person", value: debtor, inline: true }] : []),
               { name: "Amount", value: `${isUtang ? '-' : '+'}${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
@@ -4023,7 +4015,7 @@
             isUtang ? 0x10b981 : (isProjected ? 0xf59e0b : 0xef4444),
             [
               { name: "Item", value: finalTitle, inline: true },
-              ...(debtor ? [{ name: "Debtor / Debtee", value: debtor, inline: true }] : []),
+              ...(debtor ? [{ name: "Person", value: debtor, inline: true }] : []),
               { name: "Amount", value: `${isUtang ? '+' : ''}${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
