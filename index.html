@@ -386,15 +386,17 @@
       background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(26, 22, 19, 0.95) 100%);
       border: 1px solid rgba(249, 115, 22, 0.3);
       border-radius: var(--radius-md);
-      padding: 0.45rem 0.85rem;
+      padding: 0.28rem 0.65rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.5rem;
       box-shadow: var(--shadow-sm);
       position: relative;
       overflow: hidden;
       flex-shrink: 0;
+      min-height: 34px;
+      box-sizing: border-box;
     }
     [data-theme="light"] .hero-overview-card {
       background: linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, #ffffff 100%);
@@ -403,25 +405,25 @@
 
     .hero-main-stat {
       display: flex;
-      flex-direction: column;
-      gap: 0.1rem;
-      align-items: flex-start;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.4rem;
       text-align: left;
       min-width: 0;
     }
     .hero-label {
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       color: var(--accent-primary);
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.3rem;
       white-space: nowrap;
     }
     .hero-value {
-      font-size: 1.35rem;
+      font-size: 1.15rem;
       font-weight: 900;
       color: var(--text-primary);
       letter-spacing: -0.02em;
@@ -1250,10 +1252,13 @@
       max-width: 980px !important;
       margin: 0 auto !important;
       z-index: 1000 !important;
-      padding: 0.25rem 0 0 0 !important;
+      padding: 0.2rem 0 0 0 !important;
       box-sizing: border-box !important;
       pointer-events: auto !important;
       flex-shrink: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.25rem !important;
     }
 
     .bottom-panel > * {
@@ -2127,30 +2132,7 @@
   <!-- Main Content Layout -->
   <main class="app-layout">
 
-    <!-- 1. Hero Net Worth & Liquid Overview -->
-    <div class="hero-overview-card" id="hero-overview-card">
-      <div class="hero-main-stat">
-        <div class="hero-label-row">
-          <span class="hero-label" id="hero-stat-label">
-            <i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)
-          </span>
-        </div>
-        <div class="hero-value-wrap">
-          <span id="hero-total-liquid" class="hero-value mono">₱0</span>
-        </div>
-      </div>
-
-      <!-- Right: Projected Date of Completion (Active in Projected Mode) -->
-      <div class="hero-completion-stat" id="hero-completion-stat" style="display: none;">
-        <span class="hero-completion-label">
-          <i class="fa-solid fa-calendar-check"></i> Projected Completion
-        </span>
-        <span id="hero-completion-date" class="hero-completion-value mono">--</span>
-        <span id="hero-completion-subtext" class="hero-completion-subtext" style="display: none;"></span>
-      </div>
-    </div>
-
-    <!-- 2. Account Balances: Cash, MariBank, BDO, GCash -->
+    <!-- 1. Account Balances: Cash, MariBank, BDO, GCash -->
     <section class="wallets-section" aria-label="Available Funds by Account">
       <div class="wallets-header">
         <div class="wallets-title">
@@ -2239,6 +2221,28 @@
        FIXED BOTTOM PANEL DOCK (Cross-App Website Switcher & Actions)
        ========================================================================== -->
   <div class="bottom-panel">
+
+    <!-- Net: ₱ Bar (On Top of the Ribbon) -->
+    <div class="hero-overview-card" id="hero-overview-card">
+      <div class="hero-main-stat">
+        <span class="hero-label" id="hero-stat-label">
+          <i class="fa-solid fa-coins"></i> Net:
+        </span>
+        <div class="hero-value-wrap">
+          <span id="hero-total-liquid" class="hero-value mono">₱0</span>
+        </div>
+      </div>
+
+      <!-- Right: Projected Date of Completion (Active in Projected Mode) -->
+      <div class="hero-completion-stat" id="hero-completion-stat" style="display: none;">
+        <span class="hero-completion-label">
+          <i class="fa-solid fa-calendar-check"></i> Projected Completion
+        </span>
+        <span id="hero-completion-date" class="hero-completion-value mono">--</span>
+        <span id="hero-completion-subtext" class="hero-completion-subtext" style="display: none;"></span>
+      </div>
+    </div>
+
     <div class="bottom-panel-inner">
       <!-- Left: Cross-App Website Switcher Trigger & Pop-up -->
       <div class="brand-nav-wrapper">
@@ -2987,7 +2991,7 @@
 
       if (isProjectedMode) {
         if (elHeroCard) elHeroCard.classList.add('is-projected-mode');
-        if (elHeroLabel) elHeroLabel.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Projected Overall Money';
+        if (elHeroLabel) elHeroLabel.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Projected Net:';
         if (elWalletsTitle) elWalletsTitle.textContent = 'Projected Amount in Accounts';
         if (btnToggleProjected) {
           btnToggleProjected.classList.add('is-active');
@@ -3002,7 +3006,7 @@
         }
       } else {
         if (elHeroCard) elHeroCard.classList.remove('is-projected-mode');
-        if (elHeroLabel) elHeroLabel.innerHTML = '<i class="fa-solid fa-coins"></i> Current Overall Money (Liquid)';
+        if (elHeroLabel) elHeroLabel.innerHTML = '<i class="fa-solid fa-coins"></i> Net:';
         if (elWalletsTitle) elWalletsTitle.textContent = 'Amount Left in Accounts';
         if (btnToggleProjected) {
           btnToggleProjected.classList.remove('is-active');
