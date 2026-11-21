@@ -1700,6 +1700,81 @@
       font-weight: 700;
     }
 
+    /* Expense Modal Actions: Adaptive Symmetrical Layout */
+    .modal-actions-expense {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      padding-top: 0.35rem;
+      margin-top: 0.15rem;
+      width: 100%;
+    }
+    .modal-actions-expense .modal-actions-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
+    .modal-actions-expense .modal-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .modal-actions-expense .btn-modal-delete {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.32);
+      font-weight: 700;
+      font-size: 0.78rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .modal-actions-expense .btn-modal-delete:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+    .modal-actions-expense .btn-modal-delete:active {
+      transform: scale(0.96);
+    }
+
+    /* In Edit Mode: 2x2 perfectly balanced and symmetrical grid */
+    #modal-expense.is-edit-mode .modal-actions-expense {
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    #modal-expense.is-edit-mode .modal-actions-left {
+      width: 100%;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    #modal-expense.is-edit-mode .modal-actions-right {
+      width: 100%;
+      justify-content: space-between;
+      margin-left: 0;
+      gap: 0.5rem;
+    }
+    #modal-expense.is-edit-mode .modal-actions-right .btn-modal-cancel {
+      flex: 1;
+      justify-content: center;
+      text-align: center;
+      padding: 0.52rem 0.75rem;
+    }
+    #modal-expense.is-edit-mode .modal-actions-right .btn-primary {
+      flex: 1.35;
+      justify-content: center;
+      text-align: center;
+      padding: 0.52rem 0.85rem;
+    }
+
     /* Enhanced Modal, Input & Toast Styles */
     .currency-input-wrap {
       position: relative;
@@ -2258,8 +2333,8 @@
           <input type="datetime-local" id="expense-input-datetime" class="form-input" />
         </div>
 
-        <div class="modal-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
-          <div style="display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0;">
+        <div class="modal-actions-expense" id="modal-actions-expense">
+          <div class="modal-actions-left">
             <label class="income-toggle-control" id="income-toggle-control" title="Toggle between Expense and Add Money">
               <span class="income-switch">
                 <input type="checkbox" id="checkbox-toggle-income" />
@@ -2267,12 +2342,12 @@
               </span>
               <span class="income-toggle-label" id="income-toggle-label">Add Money</span>
             </label>
-            <button type="button" id="btn-delete-expense" class="btn-modal-cancel" style="display: none; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.28); font-weight: 700; font-size: 0.76rem; padding: 0.42rem 0.65rem;">
+            <button type="button" id="btn-delete-expense" class="btn-modal-delete" style="display: none;">
               <i class="fa-solid fa-trash-can"></i> Delete
             </button>
             <button type="button" id="btn-toggle-income" style="display: none;"><span id="btn-toggle-income-text"></span></button>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto; flex-shrink: 0;">
+          <div class="modal-actions-right">
             <button type="button" class="btn-modal-cancel" id="btn-cancel-expense" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; white-space: nowrap;">Cancel</button>
             <button type="submit" id="btn-submit-expense" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">Save Expense</button>
           </div>
@@ -3521,7 +3596,11 @@
       updateIncomeModeUI(isIncome);
       updateProjectedModeUI(isProjected);
       updateUtangWalletVisibility();
-      document.getElementById('modal-expense').classList.add('is-active');
+      const expModal = document.getElementById('modal-expense');
+      if (expModal) {
+        expModal.classList.add('is-edit-mode');
+        expModal.classList.add('is-active');
+      }
     };
 
     window.deleteExpense = async function(id) {
@@ -3586,13 +3665,21 @@
       updateIncomeModeUI(false);
       updateProjectedModeUI(Boolean(isProjectedMode));
       updateUtangWalletVisibility();
-      document.getElementById('modal-expense').classList.add('is-active');
+      const expModal = document.getElementById('modal-expense');
+      if (expModal) {
+        expModal.classList.remove('is-edit-mode');
+        expModal.classList.add('is-active');
+      }
       document.getElementById('expense-input-title').focus();
     };
 
     function closeExpenseModal() {
       currentEditExpenseId = null;
-      document.getElementById('modal-expense').classList.remove('is-active');
+      const expModal = document.getElementById('modal-expense');
+      if (expModal) {
+        expModal.classList.remove('is-edit-mode');
+        expModal.classList.remove('is-active');
+      }
     }
 
     function openSettingsModal() {
