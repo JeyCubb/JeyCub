@@ -2856,6 +2856,22 @@
       }
     }
 
+    // Synchronize Utang card balance with active unpaid Utangs
+    function syncUtangWalletBalance() {
+      let totalUtang = 0;
+      for (const item of expenses) {
+        if (item.wallet === 'utang' && !item.isProjected && !item.isPaid) {
+          const amt = Number(item.amount) || 0;
+          if (item.type === 'income') {
+            totalUtang += amt;
+          } else {
+            totalUtang -= amt;
+          }
+        }
+      }
+      wallets.utang = totalUtang;
+    }
+
     // ==========================================================================
     // DATA PERSISTENCE & HELPERS
     // ==========================================================================
@@ -2899,19 +2915,17 @@
         console.error('Failed to load wallets:', e);
       }
 
-      // One-time sync for any Utang marked as Paid before balance settlement was introduced
+      // Ensure secondary wallet balance adjustments for any legacy paid items
       let migrationApplied = false;
       expenses.forEach(item => {
         if (item.wallet === 'utang' && item.isPaid && !item.paidApplied && !item.isProjected) {
           const amt = Number(item.amount) || 0;
           const secWallet = item.utangWallet;
           if (item.type === 'income') {
-            if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) - amt;
             if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
               wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
             }
           } else {
-            if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) + amt;
             if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
               wallets[secWallet] = (Number(wallets[secWallet]) || 0) + amt;
             }
@@ -2920,6 +2934,9 @@
           migrationApplied = true;
         }
       });
+
+      // Synchronize Utang card balance with active unpaid Utangs
+      syncUtangWalletBalance();
       if (migrationApplied) {
         saveStorage();
       }
@@ -4162,7 +4179,7 @@
           wasProj = oldIsProjected;
 
           // 1. Revert old transaction effect if it was NOT projected
-          if (!oldIsProjected && oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
+          if (!oldIsProjected && oldWallet && oldWallet !== 'none' && oldWallet !== 'utang' && wallets[oldWallet] !== undefined) {
             if (oldIsIncome) {
               wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) - oldAmount;
             } else {
@@ -4178,12 +4195,10 @@
           }
           if (!oldIsProjected && oldWallet === 'utang' && wasPaid) {
             if (oldIsIncome) {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) + oldAmount;
               if (oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
                 wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmount;
               }
             } else {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) - oldAmount;
               if (oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
                 wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmount;
               }
@@ -4191,7 +4206,7 @@
           }
 
           // 2. Apply new transaction effect if it is NOT projected
-          if (!isProjected && wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+          if (!isProjected && wallet && wallet !== 'none' && wallet !== 'utang' && wallets[wallet] !== undefined) {
             if (isIncome) {
               wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
             } else {
@@ -4207,12 +4222,10 @@
           }
           if (!isProjected && wallet === 'utang' && item.isPaid) {
             if (isIncome) {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) - amount;
               if (utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
                 wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amount;
               }
             } else {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) + amount;
               if (utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
                 wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amount;
               }
@@ -4246,7 +4259,7 @@
         };
 
         // Deduct/Add to actual wallet only if NOT projected
-        if (!isProjected && wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
+        if (!isProjected && wallet && wallet !== 'none' && wallet !== 'utang' && wallets[wallet] !== undefined) {
           if (isIncome) {
             wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
           } else {
@@ -4309,6 +4322,7 @@
       settings.lastUsedWallet = wallet;
       if (utangWallet) settings.lastUsedUtangWallet = utangWallet;
 
+      syncUtangWalletBalance();
       saveStorage();
       if (wasProj || isProjected) {
         syncProjectedBaonToTarget();
@@ -4346,15 +4360,13 @@
         if (!item.isProjected) {
           if (willBePaid) {
             // Settling Utang:
-            // Borrowing (Income): repaid from wallet -> subtracts from utang liability and secondary wallet
-            // Lending (Expense): collected into wallet -> adds back to utang and secondary wallet
+            // Borrowing (Income): repaid from wallet -> subtracts from secondary wallet
+            // Lending (Expense): collected into wallet -> adds back to secondary wallet
             if (item.type === 'income') {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) - amt;
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
                 wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
               }
             } else {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) + amt;
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
                 wallets[secWallet] = (Number(wallets[secWallet]) || 0) + amt;
               }
@@ -4362,12 +4374,10 @@
           } else {
             // Re-opening Utang (Unmarking Paid):
             if (item.type === 'income') {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) + amt;
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
                 wallets[secWallet] = (Number(wallets[secWallet]) || 0) + amt;
               }
             } else {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) - amt;
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
                 wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
               }
@@ -4378,6 +4388,7 @@
         item.isPaid = willBePaid;
         item.paidApplied = willBePaid;
 
+        syncUtangWalletBalance();
         saveStorage();
         render();
         closeExpenseModal();
@@ -4424,7 +4435,7 @@
         });
 
         if (ok) {
-          if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
+          if (!item.isProjected && item.wallet && item.wallet !== 'none' && item.wallet !== 'utang' && wallets[item.wallet] !== undefined) {
             if (item.type === 'income') {
               wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0);
             } else {
@@ -4441,12 +4452,10 @@
           if (!item.isProjected && item.wallet === 'utang' && item.isPaid && item.paidApplied) {
             const oldAmt = Number(item.amount) || 0;
             if (item.type === 'income') {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) + oldAmt;
               if (item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
                 wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + oldAmt;
               }
             } else {
-              if (wallets.utang !== undefined) wallets.utang = (Number(wallets.utang) || 0) - oldAmt;
               if (item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
                 wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) - oldAmt;
               }
@@ -4454,6 +4463,7 @@
           }
           const wasProj = Boolean(item.isProjected);
           expenses = expenses.filter(e => e.id !== currentEditExpenseId);
+          syncUtangWalletBalance();
           saveStorage();
           if (wasProj) {
             syncProjectedBaonToTarget();
