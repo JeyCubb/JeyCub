@@ -1629,49 +1629,75 @@
       border-color: var(--border-color-hover);
     }
 
-    /* Modal Transaction Type Segmented Toggle */
-    .transaction-type-segment {
+    /* Clean iOS-Style Toggle Switch for Income/Add Mode */
+    .income-toggle-control {
       display: inline-flex;
       align-items: center;
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
+      gap: 0.45rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: 0.2rem 0.35rem;
       border-radius: var(--radius-md);
-      padding: 2px;
-      gap: 2px;
+      transition: var(--transition);
       flex-shrink: 0;
     }
-    .type-segment-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 0.35rem 0.52rem;
-      border-radius: calc(var(--radius-md) - 2px);
+    .income-toggle-control:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .income-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .income-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .income-switch-slider {
+      position: absolute;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.28rem;
-      transition: all 0.18s ease;
-      line-height: 1;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 20px;
+    }
+    .income-switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: #ffffff;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    .income-switch input:checked + .income-switch-slider {
+      background-color: #10b981;
+      border-color: #059669;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+    }
+    .income-switch input:checked + .income-switch-slider:before {
+      transform: translateX(16px);
+      background-color: #ffffff;
+    }
+    .income-toggle-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: color 0.18s ease;
       white-space: nowrap;
     }
-    .type-segment-btn:hover {
-      color: var(--text-primary);
-    }
-    #btn-mode-expense.is-active {
-      background: rgba(249, 115, 22, 0.18);
-      color: var(--accent-primary);
-      border-color: rgba(249, 115, 22, 0.38);
-      font-weight: 700;
-      box-shadow: 0 1px 4px rgba(249, 115, 22, 0.2);
-    }
-    #btn-mode-income.is-active {
-      background: rgba(16, 185, 129, 0.18);
+    .income-toggle-control.is-active .income-toggle-label {
       color: #10b981;
-      border-color: rgba(16, 185, 129, 0.38);
       font-weight: 700;
-      box-shadow: 0 1px 4px rgba(16, 185, 129, 0.2);
     }
 
     /* Enhanced Modal, Input & Toast Styles */
@@ -2222,17 +2248,14 @@
         </div>
 
         <div class="modal-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
-          <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
-            <div class="transaction-type-segment" id="transaction-type-segment">
-              <button type="button" id="btn-mode-expense" class="type-segment-btn is-active" title="Record as Expense (deduct)">
-                <i class="fa-solid fa-arrow-down" style="font-size: 0.65rem;"></i>
-                <span>Expense</span>
-              </button>
-              <button type="button" id="btn-mode-income" class="type-segment-btn" title="Record as Add / Income">
-                <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i>
-                <span>Add</span>
-              </button>
-            </div>
+          <div style="display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0;">
+            <label class="income-toggle-control" id="income-toggle-control" title="Toggle between Expense and Add Money">
+              <span class="income-switch">
+                <input type="checkbox" id="checkbox-toggle-income" />
+                <span class="income-switch-slider"></span>
+              </span>
+              <span class="income-toggle-label" id="income-toggle-label">Add Money</span>
+            </label>
             <button type="button" id="btn-delete-expense" class="btn-modal-cancel" style="display: none; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.28); font-weight: 700; font-size: 0.76rem; padding: 0.42rem 0.65rem;">
               <i class="fa-solid fa-trash-can"></i> Delete
             </button>
@@ -3381,21 +3404,16 @@
       const toggleText = document.getElementById('btn-toggle-income-text');
       const submitBtn = document.getElementById('btn-submit-expense');
       const titleModal = document.getElementById('modal-expense-title');
-      const btnModeExp = document.getElementById('btn-mode-expense');
-      const btnModeInc = document.getElementById('btn-mode-income');
+      const chkIncome = document.getElementById('checkbox-toggle-income');
+      const toggleCtrl = document.getElementById('income-toggle-control');
+      const toggleLbl = document.getElementById('income-toggle-label');
       const isProjected = currentEditExpenseId 
         ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
         : Boolean(isProjectedMode);
 
-      if (btnModeExp && btnModeInc) {
-        if (isIncome) {
-          btnModeExp.classList.remove('is-active');
-          btnModeInc.classList.add('is-active');
-        } else {
-          btnModeExp.classList.add('is-active');
-          btnModeInc.classList.remove('is-active');
-        }
-      }
+      if (chkIncome) chkIncome.checked = Boolean(isIncome);
+      if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
+      if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
 
       if (isIncome) {
         if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
@@ -3714,25 +3732,20 @@
       });
     }
 
-    const btnModeExp = document.getElementById('btn-mode-expense');
-    const btnModeInc = document.getElementById('btn-mode-income');
-    if (btnModeExp) {
-      btnModeExp.addEventListener('click', () => {
+    const chkToggleIncome = document.getElementById('checkbox-toggle-income');
+    if (chkToggleIncome) {
+      chkToggleIncome.addEventListener('change', (e) => {
         const input = document.getElementById('expense-input-amount');
         if (!input) return;
-        input.value = input.value.replace(/^\++\s*/, '');
+        let val = input.value.trim();
+        if (e.target.checked) {
+          val = '+' + val.replace(/^\++\s*/, '');
+        } else {
+          val = val.replace(/^\++\s*/, '');
+        }
+        input.value = val;
         input.focus();
-        updateIncomeModeUI(false);
-      });
-    }
-    if (btnModeInc) {
-      btnModeInc.addEventListener('click', () => {
-        const input = document.getElementById('expense-input-amount');
-        if (!input) return;
-        let val = input.value.trim().replace(/^\++\s*/, '');
-        input.value = '+' + val;
-        input.focus();
-        updateIncomeModeUI(true);
+        updateIncomeModeUI(e.target.checked);
       });
     }
 
