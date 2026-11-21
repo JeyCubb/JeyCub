@@ -4838,8 +4838,25 @@
               settings = { ...settings, ...remote.settings };
             }
 
+            // Heal legacy PSU / Cash mismatch from cloud data so it never reverts
+            let needsCloudHeal = false;
+            const psuItem = expenses.find(e => e.wallet === 'utang' && (e.title === 'PSU' || (e.debtor && e.debtor.toLowerCase().includes('benedict'))));
+            if (psuItem && psuItem.type === 'income') {
+              psuItem.type = 'expense';
+              needsCloudHeal = true;
+            }
+            if ((Number(wallets.cash) || 0) < 0 && psuItem && psuItem.isPaid) {
+              wallets.cash = Math.abs(Number(wallets.cash) || 290);
+              needsCloudHeal = true;
+            }
+
+            syncUtangWalletBalance();
             saveStorage(false);
             render();
+
+            if (needsCloudHeal) {
+              saveToCloud();
+            }
           } catch (err) {
             console.error('Error applying cloud sync:', err);
           } finally {
