@@ -3373,8 +3373,8 @@
         }
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
-            ? (isIncome ? 'Save Changes (+ Projected)' : 'Save Changes (Projected)')
-            : (isIncome ? '+ Add Projected Value' : 'Save Projected Expense');
+            ? 'Save Changes'
+            : (isIncome ? '+ Add Money' : 'Save Expense');
         }
       } else {
         if (labelWallet) {
@@ -3382,8 +3382,8 @@
         }
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
-            ? (isIncome ? 'Save Changes (+ Add)' : 'Save Changes')
-            : (isIncome ? '+ Add to Account' : 'Save Expense');
+            ? 'Save Changes'
+            : (isIncome ? '+ Add Money' : 'Save Expense');
         }
       }
     }
@@ -3414,7 +3414,7 @@
         }
         if (toggleText) toggleText.textContent = '+ Adding to Account';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save (+ Add)' : '+ Add Expense';
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : '+ Add Money';
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
         }
         if (titleModal) {
@@ -3431,9 +3431,7 @@
         }
         if (toggleText) toggleText.textContent = 'Type + to Add';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId
-            ? (isProjected ? 'Save Changes (Projected)' : 'Save Changes')
-            : (isProjected ? 'Save Projected Expense' : 'Save Expense');
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : 'Save Expense';
           submitBtn.style.background = '';
         }
         if (titleModal) {
@@ -3468,7 +3466,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = isIncome ? 'Save Changes (+ Add)' : 'Save Changes';
+        btnSubmit.textContent = 'Save Changes';
         btnSubmit.style.background = isIncome ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '';
       }
 
@@ -3522,7 +3520,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = isProjectedMode ? 'Save Projected Expense' : 'Save Expense';
+        btnSubmit.textContent = 'Save Expense';
         btnSubmit.style.background = '';
       }
 
