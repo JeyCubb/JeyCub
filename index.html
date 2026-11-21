@@ -2790,6 +2790,10 @@
       if (!settings.projectedTarget || Number(settings.projectedTarget) <= 0) {
         settings.projectedTarget = 20000;
       }
+      if (!settings.lastUsedWallet && expenses.length > 0) {
+        const lastExp = expenses.find(e => e.wallet && e.wallet !== 'none');
+        if (lastExp) settings.lastUsedWallet = lastExp.wallet;
+      }
 
       try {
         const storedWallets = localStorage.getItem(WALLETS_KEY);
@@ -3848,12 +3852,19 @@
       document.getElementById('form-add-expense').reset();
       document.getElementById('modal-expense-title').textContent = isProjectedMode ? 'Record Projected Expense' : 'Record Expense';
 
+      // Retain previously used payment method
+      const targetWallet = settings.lastUsedWallet || (expenses.find(e => e.wallet && e.wallet !== 'none')?.wallet) || 'cash';
+      const elWallet = document.getElementById('expense-input-wallet');
+      if (elWallet) elWallet.value = targetWallet;
+
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       document.getElementById('expense-input-datetime').value = now.toISOString().slice(0, 16);
 
       const elUtangWallet = document.getElementById('expense-input-utang-wallet');
-      if (elUtangWallet) elUtangWallet.value = 'cash';
+      if (elUtangWallet) {
+        elUtangWallet.value = settings.lastUsedUtangWallet || 'cash';
+      }
       const elUtangPerson = document.getElementById('expense-input-utang-person');
       if (elUtangPerson) elUtangPerson.value = '';
       const elUtangPersonSelect = document.getElementById('expense-select-utang-person');
@@ -4079,6 +4090,10 @@
         }
       }
 
+      // Retain used payment method for future records
+      settings.lastUsedWallet = wallet;
+      if (utangWallet) settings.lastUsedUtangWallet = utangWallet;
+
       saveStorage();
       if (wasProj || isProjected) {
         syncProjectedBaonToTarget();
@@ -4171,9 +4186,19 @@
     const selectWallet = document.getElementById('expense-input-wallet');
     if (selectWallet) {
       selectWallet.addEventListener('change', () => {
+        settings.lastUsedWallet = selectWallet.value;
+        saveStorage(true);
         const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
         updateIncomeModeUI(rawAmount.startsWith('+'));
         updateUtangWalletVisibility();
+      });
+    }
+
+    const selectUtangWallet = document.getElementById('expense-input-utang-wallet');
+    if (selectUtangWallet) {
+      selectUtangWallet.addEventListener('change', () => {
+        settings.lastUsedUtangWallet = selectUtangWallet.value;
+        saveStorage(true);
       });
     }
 
