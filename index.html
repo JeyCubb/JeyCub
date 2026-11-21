@@ -1640,89 +1640,6 @@
       transform: translateX(20px);
     }
 
-    /* Modal Projected Controls & Status Indicator */
-    .projected-control-group {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 0.65rem 0.85rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-      transition: var(--transition);
-    }
-    .projected-control-group:hover,
-    .projected-control-group:focus-within {
-      border-color: var(--border-color-hover);
-    }
-    .projected-toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-    }
-    .projected-label-block {
-      display: flex;
-      flex-direction: column;
-      gap: 0.1rem;
-    }
-    .projected-switch-label {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      cursor: pointer;
-      user-select: none;
-    }
-    .projected-subtext {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      line-height: 1.25;
-    }
-    .projected-indicator-pill {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.3rem 0.6rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.72rem;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    .projected-indicator-pill.is-actual {
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.22);
-      color: var(--color-success);
-    }
-    .projected-indicator-pill.is-actual .indicator-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--color-success);
-      box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
-      flex-shrink: 0;
-    }
-    .projected-indicator-pill.is-projected {
-      background: rgba(249, 115, 22, 0.12);
-      border: 1px solid rgba(249, 115, 22, 0.35);
-      color: var(--accent-primary);
-    }
-    .projected-indicator-pill.is-projected .indicator-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent-primary);
-      box-shadow: 0 0 8px var(--accent-glow);
-      flex-shrink: 0;
-      animation: pulse-dot 1.8s infinite ease-in-out;
-    }
-    @keyframes pulse-dot {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.3); opacity: 0.7; }
-    }
-
     /* Timeline Badge & Style for Projected items */
     .badge-projected-tag {
       font-size: 0.6rem;
@@ -2015,28 +1932,6 @@
           <div style="position: relative;">
             <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
             <input type="text" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required placeholder="0.00 (or +10 to add value)" autocomplete="off" />
-          </div>
-        </div>
-
-        <!-- Projected Transaction Toggle & Indicator -->
-        <div class="form-group projected-control-group">
-          <div class="projected-toggle-row">
-            <div class="projected-label-block">
-              <span class="projected-switch-label">
-                <i class="fa-solid fa-chart-line" style="color: var(--accent-primary);"></i>
-                <span>Projected Transaction</span>
-              </span>
-              <span class="projected-subtext" id="projected-subtext">Planned / upcoming transaction</span>
-            </div>
-            <label class="switch-label" for="expense-input-projected" title="Toggle Projected status">
-              <input type="checkbox" id="expense-input-projected" />
-              <span class="switch-slider"></span>
-            </label>
-          </div>
-          <!-- Live Status Indicator Pill -->
-          <div id="projected-indicator-pill" class="projected-indicator-pill is-actual">
-            <span class="indicator-dot"></span>
-            <span id="projected-indicator-text" class="indicator-text"><i class="fa-solid fa-bolt"></i> <strong>Actual</strong> &bull; Deducts immediately</span>
           </div>
         </div>
 
@@ -2885,35 +2780,14 @@
       }
     };
 
-    let userHasManuallyToggledProjected = false;
-
     function updateProjectedModeUI(isProjected) {
-      const toggle = document.getElementById('expense-input-projected');
-      if (toggle && toggle.checked !== isProjected) {
-        toggle.checked = isProjected;
-      }
-
-      const indicatorPill = document.getElementById('projected-indicator-pill');
-      const indicatorText = document.getElementById('projected-indicator-text');
-      const subtext = document.getElementById('projected-subtext');
       const labelWallet = document.getElementById('expense-account-label');
       const helpWallet = document.getElementById('expense-account-help');
       const submitBtn = document.getElementById('btn-submit-expense');
-
       const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
       const isIncome = rawAmount.startsWith('+');
 
       if (isProjected) {
-        if (indicatorPill) {
-          indicatorPill.classList.remove('is-actual');
-          indicatorPill.classList.add('is-projected');
-        }
-        if (indicatorText) {
-          indicatorText.innerHTML = '<i class="fa-solid fa-chart-line"></i> <strong>Projected</strong> &bull; Won\'t deduct from balance now';
-        }
-        if (subtext) {
-          subtext.textContent = 'Planned / upcoming — factored into projected balance by date.';
-        }
         if (labelWallet) {
           labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later) *';
         }
@@ -2926,16 +2800,6 @@
             : (isIncome ? '+ Add Projected Value' : 'Save Projected Expense');
         }
       } else {
-        if (indicatorPill) {
-          indicatorPill.classList.remove('is-projected');
-          indicatorPill.classList.add('is-actual');
-        }
-        if (indicatorText) {
-          indicatorText.innerHTML = '<i class="fa-solid fa-bolt"></i> <strong>Actual</strong> &bull; Deducts immediately';
-        }
-        if (subtext) {
-          subtext.textContent = 'Realized transaction that has already occurred.';
-        }
         if (labelWallet) {
           labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
         }
@@ -2962,7 +2826,9 @@
       const toggleText = document.getElementById('btn-toggle-income-text');
       const submitBtn = document.getElementById('btn-submit-expense');
       const titleModal = document.getElementById('modal-expense-title');
-      const isProjected = document.getElementById('expense-input-projected') ? document.getElementById('expense-input-projected').checked : false;
+      const isProjected = currentEditExpenseId 
+        ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
+        : Boolean(isProjectedMode);
 
       if (isIncome) {
         if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
@@ -2986,7 +2852,9 @@
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
         }
         if (titleModal) {
-          titleModal.textContent = currentEditExpenseId ? 'Edit Value / Income' : 'Add Value / Income';
+          titleModal.textContent = currentEditExpenseId 
+            ? (isProjected ? 'Edit Projected Value' : 'Edit Value / Income') 
+            : (isProjected ? 'Add Projected Value' : 'Add Value / Income');
         }
       } else {
         if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : 'Deduct From Account *';
@@ -3011,7 +2879,9 @@
           submitBtn.style.background = '';
         }
         if (titleModal) {
-          titleModal.textContent = currentEditExpenseId ? 'Edit Expense' : 'Record Expense';
+          titleModal.textContent = currentEditExpenseId 
+            ? (isProjected ? 'Edit Projected Expense' : 'Edit Expense') 
+            : (isProjected ? 'Record Projected Expense' : 'Record Expense');
         }
       }
     }
@@ -3021,7 +2891,6 @@
       if (!item) return;
 
       currentEditExpenseId = id;
-      userHasManuallyToggledProjected = true;
       const isIncome = item.type === 'income';
       const isProjected = Boolean(item.isProjected);
 
@@ -3075,7 +2944,6 @@
     // ==========================================================================
     window.openExpenseModal = function() {
       currentEditExpenseId = null;
-      userHasManuallyToggledProjected = false;
       document.getElementById('form-add-expense').reset();
       document.getElementById('modal-expense-title').textContent = isProjectedMode ? 'Record Projected Expense' : 'Record Expense';
 
@@ -3130,7 +2998,9 @@
       const wallet = document.getElementById('expense-input-wallet').value;
       const dtInput = document.getElementById('expense-input-datetime').value;
       const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
-      const isProjected = document.getElementById('expense-input-projected') ? document.getElementById('expense-input-projected').checked : false;
+      const isProjected = currentEditExpenseId 
+        ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
+        : Boolean(isProjectedMode);
 
       if (!title || isNaN(amount) || amount <= 0) {
         alert('Please enter a valid title and positive amount.');
@@ -3278,27 +3148,6 @@
         }
         const amtVal = document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value.trim() : '';
         updateIncomeModeUI(isInc || amtVal.startsWith('+'));
-      });
-    }
-
-    const toggleProjected = document.getElementById('expense-input-projected');
-    if (toggleProjected) {
-      toggleProjected.addEventListener('change', (e) => {
-        userHasManuallyToggledProjected = true;
-        updateProjectedModeUI(e.target.checked);
-      });
-    }
-
-    const inputExpDatetime = document.getElementById('expense-input-datetime');
-    if (inputExpDatetime) {
-      inputExpDatetime.addEventListener('change', (e) => {
-        if (!userHasManuallyToggledProjected && e.target.value) {
-          const chosen = new Date(e.target.value);
-          const now = new Date();
-          if (chosen > now) {
-            updateProjectedModeUI(true);
-          }
-        }
       });
     }
 
