@@ -2935,6 +2935,19 @@
         }
       });
 
+      // Fix PSU if it was classified as Borrowing instead of Lending, correcting Cash balance
+      const psuItem = expenses.find(e => e.wallet === 'utang' && (e.title === 'PSU' || (e.debtor && e.debtor.toLowerCase().includes('benedict'))));
+      if (psuItem) {
+        if (psuItem.type === 'income') {
+          psuItem.type = 'expense'; // It was Lent to Benedict
+          migrationApplied = true;
+        }
+        if (psuItem.isPaid && (Number(wallets.cash) || 0) < 0) {
+          wallets.cash = Math.abs(Number(wallets.cash) || 290);
+          migrationApplied = true;
+        }
+      }
+
       // Synchronize Utang card balance with active unpaid Utangs
       syncUtangWalletBalance();
       if (migrationApplied) {
@@ -3884,7 +3897,7 @@
       if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
 
       if (isUtang) {
-        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Borrowing' : 'Lending';
+        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Borrowing (You owe)' : 'Lending (They owe you)';
         if (btnSaveActualText) {
           btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
         }
@@ -3907,7 +3920,7 @@
           toggleBtn.style.color = 'var(--color-success)';
           toggleBtn.style.background = 'var(--color-success-bg)';
         }
-        if (toggleText) toggleText.textContent = isUtang ? 'Borrowing (Money In)' : '+ Adding to Account';
+        if (toggleText) toggleText.textContent = isUtang ? 'Borrowing (You owe them)' : '+ Adding to Account';
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : (isUtang ? 'Save Borrowing' : '+ Add Money');
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
@@ -3934,7 +3947,7 @@
           toggleBtn.style.color = '';
           toggleBtn.style.background = '';
         }
-        if (toggleText) toggleText.textContent = isUtang ? 'Lending (Money Out)' : 'Type + to Add';
+        if (toggleText) toggleText.textContent = isUtang ? 'Lending (They owe you)' : 'Type + to Add';
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : (isUtang ? 'Save Lending' : 'Save Expense');
           submitBtn.style.background = '';
