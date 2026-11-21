@@ -1436,17 +1436,17 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.72);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 1.25rem;
       z-index: 2000;
       opacity: 0;
       visibility: hidden;
-      transition: all 0.22s ease;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
     }
     .modal-overlay.is-active {
       opacity: 1;
@@ -1455,13 +1455,13 @@
     .modal-dialog {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
+      border-radius: 18px;
       width: 100%;
       max-width: 500px;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.05);
       overflow: hidden;
-      transform: translateY(16px) scale(0.97);
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(18px) scale(0.96);
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1);
       max-height: 90vh;
       display: flex;
       flex-direction: column;
@@ -1573,6 +1573,189 @@
       background: var(--bg-card-hover);
       color: var(--text-primary);
       border-color: var(--border-color-hover);
+    }
+
+    /* Enhanced Modal, Input & Toast Styles */
+    .currency-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .currency-prefix {
+      position: absolute;
+      left: 0.95rem;
+      color: var(--accent-primary);
+      font-weight: 800;
+      font-size: 1.15rem;
+      pointer-events: none;
+      user-select: none;
+    }
+    .target-number-input {
+      padding-left: 2.2rem !important;
+      font-size: 1.25rem !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.01em;
+    }
+    .target-quick-chips {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin-top: 0.45rem;
+    }
+    .chip-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.32rem 0.7rem;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.16s ease;
+      font-family: inherit;
+    }
+    .chip-btn:hover {
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+    .chip-btn:active {
+      transform: translateY(0);
+    }
+    .target-stats-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+    }
+    .target-stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .target-stat-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .target-stat-val {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .target-stat-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--border-color);
+    }
+    .target-dynamic-preview {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(26, 22, 19, 0.6) 100%);
+      border: 1px dashed rgba(249, 115, 22, 0.35);
+      border-radius: var(--radius-md);
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .preview-header {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-primary);
+    }
+    .preview-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+    .metric-label {
+      color: var(--text-muted);
+    }
+    .metric-val {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+      width: calc(100% - 2rem);
+      max-width: 400px;
+    }
+    .toast {
+      background: rgba(22, 18, 16, 0.94);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(249, 115, 22, 0.12);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      pointer-events: auto;
+      transform: translateY(-16px);
+      opacity: 0;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="light"] .toast {
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    .toast.is-visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .toast.is-success {
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+    .toast.is-success .toast-icon {
+      color: var(--color-success);
+    }
+    .toast.is-error {
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    .toast.is-error .toast-icon {
+      color: var(--color-error);
+    }
+    .toast.is-info {
+      border-color: rgba(249, 115, 22, 0.5);
+    }
+    .toast.is-info .toast-icon {
+      color: var(--accent-primary);
     }
 
     .settings-section-card {
@@ -2064,6 +2247,156 @@
       </div>
     </div>
   </div>
+
+  <!-- ==========================================================================
+       MODAL 4: ADJUST PROJECTED TARGET MONEY
+       ========================================================================== -->
+  <div id="modal-projected-target" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-projected-target-title">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-avatar-icon" style="background: rgba(249, 115, 22, 0.18); color: var(--accent-primary);">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div>
+            <h3 id="modal-projected-target-title" class="modal-title">Adjust Projected Target</h3>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Set savings goal & calculate completion date</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-proj-target" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <div class="modal-body" style="gap: 1.15rem;">
+        <!-- Current vs Goal Summary Strip -->
+        <div class="target-stats-strip">
+          <div class="target-stat-item">
+            <span class="target-stat-label">Actual Liquid</span>
+            <span class="target-stat-val mono" id="proj-dialog-actual">₱0.00</span>
+          </div>
+          <div class="target-stat-divider"></div>
+          <div class="target-stat-item">
+            <span class="target-stat-label">Current Goal</span>
+            <span class="target-stat-val mono" id="proj-dialog-current" style="color: var(--accent-primary);">₱20,000.00</span>
+          </div>
+        </div>
+
+        <!-- Target Input with Currency Prefix -->
+        <div class="form-group">
+          <label class="form-label" for="proj-target-input">Desired Target Money (₱)</label>
+          <div class="currency-input-wrap">
+            <span class="currency-prefix">₱</span>
+            <input type="number" id="proj-target-input" class="form-input mono target-number-input" placeholder="20000" step="500" min="0" autocomplete="off" />
+          </div>
+          <!-- Quick Adjustment Chips -->
+          <div class="target-quick-chips">
+            <button type="button" class="chip-btn" data-target-add="-1000">-₱1k</button>
+            <button type="button" class="chip-btn" data-target-add="1000">+₱1k</button>
+            <button type="button" class="chip-btn" data-target-add="5000">+₱5k</button>
+            <button type="button" class="chip-btn" data-target-set="20000">₱20k Goal</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Preview Card -->
+        <div class="target-dynamic-preview" id="target-dynamic-preview">
+          <div class="preview-header">
+            <i class="fa-solid fa-flag-checkered"></i>
+            <span>Projected Target Outcome</span>
+          </div>
+          <div class="preview-metrics">
+            <div class="metric-row">
+              <span class="metric-label">Estimated Date:</span>
+              <span class="metric-val mono" id="proj-dialog-date" style="color: var(--accent-primary); font-weight: 700;">--</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Timeline:</span>
+              <span class="metric-val mono" id="proj-dialog-days">--</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Baon Needed:</span>
+              <span class="metric-val mono" id="proj-dialog-weeks">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 0.25rem;">
+          <button type="button" class="btn-modal-cancel" id="btn-cancel-proj-target">Cancel</button>
+          <button type="button" class="btn-primary" id="btn-save-proj-target">
+            Save Target
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 5: EDIT ACCOUNT BALANCE
+       ========================================================================== -->
+  <div id="modal-edit-wallet" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-wallet-title">
+    <div class="modal-dialog" style="max-width: 420px;">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-avatar-icon" id="wallet-modal-avatar">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div>
+            <h3 id="modal-edit-wallet-title" class="modal-title">Edit Account Balance</h3>
+            <span id="modal-edit-wallet-sub" style="font-size: 0.72rem; color: var(--text-muted);">Update available balance</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btn-close-wallet-modal" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <div class="modal-body" style="gap: 1.15rem;">
+        <div class="form-group">
+          <label class="form-label" for="wallet-modal-input">New Balance Amount (₱)</label>
+          <div class="currency-input-wrap">
+            <span class="currency-prefix">₱</span>
+            <input type="number" id="wallet-modal-input" class="form-input mono target-number-input" placeholder="0.00" step="any" autocomplete="off" />
+          </div>
+          <div class="target-quick-chips">
+            <button type="button" class="chip-btn" data-wallet-delta="100">+₱100</button>
+            <button type="button" class="chip-btn" data-wallet-delta="500">+₱500</button>
+            <button type="button" class="chip-btn" data-wallet-delta="1000">+₱1k</button>
+            <button type="button" class="chip-btn" data-wallet-set="0">₱0</button>
+          </div>
+          <span class="form-hint" id="wallet-modal-hint" style="margin-top: 0.35rem;">
+            Updates your actual available balance. In projected mode, future totals adjust automatically.
+          </span>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 0.25rem;">
+          <button type="button" class="btn-modal-cancel" id="btn-cancel-wallet-modal">Cancel</button>
+          <button type="button" class="btn-primary" id="btn-save-wallet-modal">
+            Save Balance
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 6: APP CONFIRMATION & ALERT DIALOG
+       ========================================================================== -->
+  <div id="modal-app-confirm" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
+    <div class="modal-dialog" style="max-width: 400px;">
+      <div class="modal-body" style="padding: 1.85rem 1.5rem 1.4rem; align-items: center; text-align: center; gap: 0.85rem;">
+        <div id="modal-confirm-icon-wrap" style="width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; margin-bottom: 0.15rem;">
+          <i id="modal-confirm-icon" class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="modal-confirm-title" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0;">Confirm Action</h3>
+        <div id="modal-confirm-msg" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+          Are you sure you want to proceed?
+        </div>
+        <div style="display: flex; gap: 0.65rem; width: 100%; justify-content: center; margin-top: 0.75rem;">
+          <button type="button" id="btn-app-confirm-cancel" class="btn-modal-cancel" style="flex: 1; padding: 0.7rem; justify-content: center; display: inline-flex;">Cancel</button>
+          <button type="button" id="btn-app-confirm-ok" class="btn-primary" style="flex: 1; padding: 0.7rem; font-weight: 700; justify-content: center;">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <!-- ==========================================================================
        APPLICATION LOGIC & EVENT CONTROLLERS
@@ -2713,53 +3046,198 @@
       };
     }
 
+    // ==========================================================================
+    // TOAST NOTIFICATIONS & APP MODAL UTILITIES
+    // ==========================================================================
+    window.showToast = function(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast is-${type}`;
+      let icon = 'fa-circle-info';
+      if (type === 'success') icon = 'fa-circle-check';
+      if (type === 'error') icon = 'fa-circle-exclamation';
+      
+      toast.innerHTML = `<i class="fa-solid ${icon} toast-icon"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.classList.add('is-visible');
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('is-visible');
+        setTimeout(() => toast.remove(), 260);
+      }, 3200);
+    };
+
+    window.showAppConfirm = function({
+      title = 'Confirm Action',
+      message = 'Are you sure you want to proceed?',
+      confirmText = 'Confirm',
+      cancelText = 'Cancel',
+      isDanger = false,
+      icon = 'fa-triangle-exclamation'
+    } = {}) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('modal-app-confirm');
+        const titleEl = document.getElementById('modal-confirm-title');
+        const msgEl = document.getElementById('modal-confirm-msg');
+        const iconEl = document.getElementById('modal-confirm-icon');
+        const iconWrap = document.getElementById('modal-confirm-icon-wrap');
+        const btnOk = document.getElementById('btn-app-confirm-ok');
+        const btnCancel = document.getElementById('btn-app-confirm-cancel');
+
+        titleEl.textContent = title;
+        msgEl.innerHTML = message;
+        iconEl.className = 'fa-solid ' + icon;
+        
+        if (isDanger) {
+          iconWrap.style.background = 'rgba(239, 68, 68, 0.15)';
+          iconWrap.style.color = 'var(--color-error)';
+          btnOk.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+          btnOk.style.borderColor = '#ef4444';
+          btnOk.style.color = '#ffffff';
+        } else {
+          iconWrap.style.background = 'rgba(249, 115, 22, 0.15)';
+          iconWrap.style.color = 'var(--accent-primary)';
+          btnOk.style.background = 'var(--accent-primary)';
+          btnOk.style.borderColor = 'var(--accent-primary)';
+          btnOk.style.color = '#ffffff';
+        }
+        btnOk.textContent = confirmText;
+        btnCancel.textContent = cancelText;
+
+        const cleanup = () => {
+          modal.classList.remove('is-active');
+          btnOk.removeEventListener('click', onOk);
+          btnCancel.removeEventListener('click', onCancel);
+          window.removeEventListener('keydown', onKey);
+        };
+
+        const onOk = () => {
+          cleanup();
+          resolve(true);
+        };
+        const onCancel = () => {
+          cleanup();
+          resolve(false);
+        };
+        const onKey = (e) => {
+          if (e.key === 'Escape') onCancel();
+          if (e.key === 'Enter') onOk();
+        };
+
+        btnOk.addEventListener('click', onOk);
+        btnCancel.addEventListener('click', onCancel);
+        window.addEventListener('keydown', onKey);
+
+        modal.classList.add('is-active');
+        btnOk.focus();
+      });
+    };
+
+    // PROJECTED TARGET MODAL CONTROLLER
+    function updateProjectedTargetPreview(targetVal) {
+      const plan = calculateTargetPlan(targetVal);
+      const dateEl = document.getElementById('proj-dialog-date');
+      const daysEl = document.getElementById('proj-dialog-days');
+      const weeksEl = document.getElementById('proj-dialog-weeks');
+
+      if (!dateEl || !daysEl || !weeksEl) return;
+
+      dateEl.textContent = plan.finalDateFormatted;
+
+      if (plan.neededWeeks > 0) {
+        const dates = getScheduleTuesdays(plan.neededWeeks);
+        const finalDateStr = dates[dates.length - 1];
+        const compDate = new Date(`${finalDateStr}T08:00:00+08:00`);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        compDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((compDate - today) / (1000 * 60 * 60 * 24));
+        daysEl.textContent = diffDays > 0 ? `${diffDays} days away` : 'Reached today!';
+        weeksEl.textContent = `${plan.neededWeeks} Tuesdays (${formatCurrency(plan.neededWeeks * 1000)})`;
+      } else {
+        daysEl.textContent = 'Target already met!';
+        weeksEl.textContent = '0 Tuesdays needed';
+      }
+    }
+
     window.editProjectedOverallMoney = function() {
       if (!isProjectedMode) return;
+      const modal = document.getElementById('modal-projected-target');
+      if (!modal) return;
+
       const projWallets = getProjectedWallets();
       const currentTotal = projWallets.cash + projWallets.maribank + projWallets.bdo + projWallets.gcash + projWallets.utang;
-      const input = prompt(
-        `Enter desired projected overall money (₱):\n(Currently: ${formatCurrency(currentTotal)}. Adding or lowering will automatically update the completion date)`,
-        Math.round(currentTotal)
-      );
-      if (input !== null) {
-        const parsed = parseFloat(input);
-        if (!isNaN(parsed) && parsed >= 0) {
-          const plan = calculateTargetPlan(parsed);
-          adjustProjectedBaon(plan.neededWeeks);
-        } else {
-          alert('Please enter a valid numeric amount.');
-        }
-      }
+      const actualLiquid = (Number(wallets.cash) || 0) + (Number(wallets.maribank) || 0) + (Number(wallets.bdo) || 0) + (Number(wallets.gcash) || 0) + (Number(wallets.utang) || 0);
+
+      document.getElementById('proj-dialog-actual').textContent = formatCurrency(actualLiquid);
+      document.getElementById('proj-dialog-current').textContent = formatCurrency(currentTotal);
+
+      const targetInput = document.getElementById('proj-target-input');
+      targetInput.value = Math.round(currentTotal);
+      updateProjectedTargetPreview(currentTotal);
+
+      modal.classList.add('is-active');
+      setTimeout(() => {
+        targetInput.focus();
+        targetInput.select();
+      }, 50);
     };
+
+    function closeProjectedTargetModal() {
+      const modal = document.getElementById('modal-projected-target');
+      if (modal) modal.classList.remove('is-active');
+    }
+
+    // WALLET BALANCE MODAL CONTROLLER
+    let currentEditWalletKey = null;
+
+    window.editWalletBalance = function(walletKey) {
+      currentEditWalletKey = walletKey;
+      const modal = document.getElementById('modal-edit-wallet');
+      if (!modal) return;
+
+      const walletConfig = {
+        cash: { name: 'Cash', icon: 'fa-money-bill-wave' },
+        maribank: { name: 'MariBank', icon: 'fa-building-columns' },
+        bdo: { name: 'BDO', icon: 'fa-credit-card' },
+        gcash: { name: 'GCash', icon: 'fa-mobile-screen-button' },
+        utang: { name: 'Utang', icon: 'fa-hand-holding-dollar' }
+      };
+
+      const cfg = walletConfig[walletKey] || { name: walletKey, icon: 'fa-wallet' };
+      const current = Number(wallets[walletKey]) || 0;
+
+      document.getElementById('modal-edit-wallet-title').textContent = `Update ${cfg.name} Balance`;
+      document.getElementById('modal-edit-wallet-sub').textContent = isProjectedMode
+        ? `Actual balance: ₱${current.toFixed(2)}. Projected total will update automatically.`
+        : `Enter current funds available in ${cfg.name}`;
+
+      const avatar = document.getElementById('wallet-modal-avatar');
+      if (avatar) avatar.innerHTML = `<i class="fa-solid ${cfg.icon}"></i>`;
+
+      const input = document.getElementById('wallet-modal-input');
+      input.value = current;
+
+      modal.classList.add('is-active');
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+    };
+
+    function closeWalletModal() {
+      currentEditWalletKey = null;
+      const modal = document.getElementById('modal-edit-wallet');
+      if (modal) modal.classList.remove('is-active');
+    }
 
     // ==========================================================================
     // ACTION CONTROLLERS & ACTIONS
     // ==========================================================================
-    window.editWalletBalance = function(walletKey) {
-      const names = {
-        cash: 'Cash',
-        maribank: 'MariBank',
-        bdo: 'BDO',
-        gcash: 'GCash',
-        utang: 'Utang'
-      };
-      const label = names[walletKey] || walletKey;
-      const current = Number(wallets[walletKey]) || 0;
-      const promptMsg = isProjectedMode
-        ? `Enter new actual balance in ${label} (₱):\n(Current actual: ₱${current.toFixed(2)}. Projected balance will adjust accordingly)`
-        : `Enter new amount left in ${label} (₱):`;
-      const input = prompt(promptMsg, current);
-      if (input !== null) {
-        const parsed = parseFloat(input);
-        if (!isNaN(parsed)) {
-          wallets[walletKey] = parsed;
-          saveStorage();
-          render();
-        } else {
-          alert('Please enter a valid numeric amount.');
-        }
-      }
-    };
 
     function updateProjectedModeUI(isProjected) {
       const labelWallet = document.getElementById('expense-account-label');
@@ -2900,12 +3378,20 @@
       document.getElementById('modal-expense').classList.add('is-active');
     };
 
-    window.deleteExpense = function(id) {
+    window.deleteExpense = async function(id) {
       const item = expenses.find(e => e.id === id);
       if (!item) return;
       const labelType = item.type === 'income' ? 'income' : 'expense';
-      const labelProj = item.isProjected ? 'projected ' : '';
-      if (!confirm(`Delete ${labelProj}${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) return;
+      const labelProj = item.isProjected ? 'Projected ' : '';
+      const ok = await showAppConfirm({
+        title: `Delete ${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)}?`,
+        message: `Delete <strong>${item.title}</strong> for <span style="color: var(--accent-primary); font-weight: 700;">${formatCurrency(item.amount)}</span>?<br><span style="font-size: 0.75rem; color: var(--text-muted);">This will remove it from your records and balance timeline.</span>`,
+        confirmText: 'Yes, Delete',
+        cancelText: 'Cancel',
+        isDanger: true,
+        icon: 'fa-trash-can'
+      });
+      if (!ok) return;
 
       if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
         if (item.type === 'income') {
@@ -2917,6 +3403,7 @@
       expenses = expenses.filter(e => e.id !== id);
       saveStorage();
       render();
+      showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted.`, 'info');
     };
 
     // ==========================================================================
@@ -2982,7 +3469,7 @@
         : Boolean(isProjectedMode);
 
       if (!title || isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid title and positive amount.');
+        showToast('Please enter a valid title and positive amount.', 'error');
         return;
       }
 
@@ -3075,18 +3562,28 @@
       saveStorage();
       render();
       closeExpenseModal();
+      showToast(isIncome ? 'Value added to account!' : 'Expense recorded successfully!', 'success');
     });
 
     const btnDeleteExp = document.getElementById('btn-delete-expense');
     if (btnDeleteExp) {
-      btnDeleteExp.addEventListener('click', () => {
+      btnDeleteExp.addEventListener('click', async () => {
         if (!currentEditExpenseId) return;
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (!item) return;
         const labelType = item.type === 'income' ? 'income' : 'expense';
-        const labelProj = item.isProjected ? 'projected ' : '';
+        const labelProj = item.isProjected ? 'Projected ' : '';
 
-        if (confirm(`Delete ${labelProj}${labelType} "${item.title}" for ${formatCurrency(item.amount)}?`)) {
+        const ok = await showAppConfirm({
+          title: `Delete ${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)}?`,
+          message: `Delete <strong>${item.title}</strong> for <span style="color: var(--accent-primary); font-weight: 700;">${formatCurrency(item.amount)}</span>?<br><span style="font-size: 0.75rem; color: var(--text-muted);">This action will update your balance timeline.</span>`,
+          confirmText: 'Yes, Delete',
+          cancelText: 'Cancel',
+          isDanger: true,
+          icon: 'fa-trash-can'
+        });
+
+        if (ok) {
           if (!item.isProjected && item.wallet && item.wallet !== 'none' && wallets[item.wallet] !== undefined) {
             if (item.type === 'income') {
               wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) - (Number(item.amount) || 0);
@@ -3098,6 +3595,7 @@
           saveStorage();
           render();
           closeExpenseModal();
+          showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted.`, 'info');
         }
       });
     }
@@ -3192,7 +3690,7 @@
     document.getElementById('btn-test-webhook').addEventListener('click', async () => {
       const url = document.getElementById('setting-webhook-url').value.trim();
       if (!url) {
-        alert('Please enter a Discord Webhook URL first.');
+        showToast('Please enter a Discord Webhook URL first.', 'error');
         return;
       }
       try {
@@ -3208,9 +3706,9 @@
             }]
           })
         });
-        alert('Test notification sent to Discord!');
+        showToast('Test notification sent to Discord!', 'success');
       } catch (e) {
-        alert('Failed to send webhook: ' + e.message);
+        showToast('Failed to send webhook: ' + e.message, 'error');
       }
     });
 
@@ -3232,6 +3730,7 @@
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
+      showToast('Backup file downloaded successfully!', 'success');
     });
 
     document.getElementById('input-import-file').addEventListener('change', (e) => {
@@ -3245,7 +3744,7 @@
             debts = imported;
             saveStorage();
             render();
-            alert(`Imported ${imported.length} debt records!`);
+            showToast(`Imported ${imported.length} debt records!`, 'success');
           } else if (imported && typeof imported === 'object') {
             if (Array.isArray(imported.debts)) debts = imported.debts;
             if (Array.isArray(imported.expenses)) expenses = imported.expenses;
@@ -3253,23 +3752,34 @@
             if (imported.settings) settings = { ...settings, ...imported.settings };
             saveStorage();
             render();
-            alert('Successfully restored backup data!');
+            showToast('Successfully restored backup data!', 'success');
           } else {
-            alert('Invalid backup file format.');
+            showToast('Invalid backup file format.', 'error');
           }
         } catch (err) {
-          alert('Failed to parse JSON file.');
+          showToast('Failed to parse JSON file.', 'error');
         }
       };
       reader.readAsText(file);
     });
 
-    document.getElementById('btn-clear-all').addEventListener('click', () => {
-      if (confirm('Are you sure you want to delete ALL expenses and debt records? This cannot be undone.')) {
+    document.getElementById('btn-clear-all').addEventListener('click', async () => {
+      const ok = await showAppConfirm({
+        title: 'Reset All Data?',
+        message: 'Are you sure you want to delete <strong>ALL expenses and records</strong>?<br><span style="color: var(--color-error); font-weight: 600;">This cannot be undone.</span>',
+        confirmText: 'Reset Everything',
+        cancelText: 'Cancel',
+        isDanger: true,
+        icon: 'fa-triangle-exclamation'
+      });
+      if (ok) {
         debts = [];
         expenses = [];
+        wallets = { cash: 0, maribank: 0, bdo: 0, gcash: 0, utang: 0 };
         saveStorage();
         render();
+        closeSettingsModal();
+        showToast('All financial records have been reset.', 'info');
       }
     });
 
@@ -3433,6 +3943,117 @@
           }
         });
       }
+
+      // Projected Target Modal Event Handlers
+      const targetInput = document.getElementById('proj-target-input');
+      if (targetInput) {
+        targetInput.addEventListener('input', (e) => {
+          updateProjectedTargetPreview(parseFloat(e.target.value) || 0);
+        });
+        targetInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-save-proj-target').click();
+          } else if (e.key === 'Escape') {
+            closeProjectedTargetModal();
+          }
+        });
+      }
+
+      document.querySelectorAll('[data-target-add]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const add = parseFloat(btn.getAttribute('data-target-add')) || 0;
+          const input = document.getElementById('proj-target-input');
+          const cur = parseFloat(input.value) || 0;
+          input.value = Math.max(0, cur + add);
+          updateProjectedTargetPreview(parseFloat(input.value) || 0);
+        });
+      });
+
+      document.querySelectorAll('[data-target-set]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const setVal = parseFloat(btn.getAttribute('data-target-set')) || 0;
+          const input = document.getElementById('proj-target-input');
+          input.value = setVal;
+          updateProjectedTargetPreview(setVal);
+        });
+      });
+
+      const btnSaveProjTarget = document.getElementById('btn-save-proj-target');
+      if (btnSaveProjTarget) {
+        btnSaveProjTarget.addEventListener('click', () => {
+          const input = document.getElementById('proj-target-input');
+          const parsed = parseFloat(input.value);
+          if (!isNaN(parsed) && parsed >= 0) {
+            const plan = calculateTargetPlan(parsed);
+            adjustProjectedBaon(plan.neededWeeks);
+            closeProjectedTargetModal();
+            showToast(`Target goal updated to ${formatCurrency(parsed)} (${plan.finalDateFormatted})`, 'success');
+          } else {
+            showToast('Please enter a valid numeric target amount.', 'error');
+          }
+        });
+      }
+
+      const btnCloseProjTarget = document.getElementById('btn-close-proj-target');
+      if (btnCloseProjTarget) btnCloseProjTarget.addEventListener('click', closeProjectedTargetModal);
+      const btnCancelProjTarget = document.getElementById('btn-cancel-proj-target');
+      if (btnCancelProjTarget) btnCancelProjTarget.addEventListener('click', closeProjectedTargetModal);
+
+      // Edit Wallet Balance Modal Event Handlers
+      const walletInput = document.getElementById('wallet-modal-input');
+      if (walletInput) {
+        walletInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-save-wallet-modal').click();
+          } else if (e.key === 'Escape') {
+            closeWalletModal();
+          }
+        });
+      }
+
+      document.querySelectorAll('[data-wallet-delta]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const delta = parseFloat(btn.getAttribute('data-wallet-delta')) || 0;
+          const input = document.getElementById('wallet-modal-input');
+          const cur = parseFloat(input.value) || 0;
+          input.value = (cur + delta).toFixed(2);
+        });
+      });
+
+      document.querySelectorAll('[data-wallet-set]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const setVal = parseFloat(btn.getAttribute('data-wallet-set')) || 0;
+          const input = document.getElementById('wallet-modal-input');
+          input.value = setVal.toFixed(2);
+        });
+      });
+
+      const btnSaveWalletModal = document.getElementById('btn-save-wallet-modal');
+      if (btnSaveWalletModal) {
+        btnSaveWalletModal.addEventListener('click', () => {
+          if (!currentEditWalletKey) return;
+          const input = document.getElementById('wallet-modal-input');
+          const parsed = parseFloat(input.value);
+          if (!isNaN(parsed)) {
+            const key = currentEditWalletKey;
+            wallets[key] = parsed;
+            saveStorage();
+            render();
+            closeWalletModal();
+            const names = { cash: 'Cash', maribank: 'MariBank', bdo: 'BDO', gcash: 'GCash', utang: 'Utang' };
+            showToast(`${names[key] || key} balance updated to ${formatCurrency(parsed)}`, 'success');
+          } else {
+            showToast('Please enter a valid numeric amount.', 'error');
+          }
+        });
+      }
+
+      const btnCloseWalletModal = document.getElementById('btn-close-wallet-modal');
+      if (btnCloseWalletModal) btnCloseWalletModal.addEventListener('click', closeWalletModal);
+      const btnCancelWalletModal = document.getElementById('btn-cancel-wallet-modal');
+      if (btnCancelWalletModal) btnCancelWalletModal.addEventListener('click', closeWalletModal);
 
       render();
       initFirebase();
