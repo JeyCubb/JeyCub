@@ -2238,7 +2238,6 @@
             <option value="utang">🤝 Utang</option>
             <option value="none">None / Don't Deduct</option>
           </select>
-          <span class="form-hint" id="expense-account-help">Selecting an account automatically deducts this expense from that account's balance.</span>
         </div>
 
         <!-- Date & Time -->
@@ -3364,7 +3363,6 @@
 
     function updateProjectedModeUI(isProjected) {
       const labelWallet = document.getElementById('expense-account-label');
-      const helpWallet = document.getElementById('expense-account-help');
       const submitBtn = document.getElementById('btn-submit-expense');
       const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
       const isIncome = rawAmount.startsWith('+');
@@ -3373,31 +3371,14 @@
         if (labelWallet) {
           labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later) *';
         }
-        if (helpWallet) {
-          helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
-        }
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
             ? (isIncome ? 'Save Changes (+ Projected)' : 'Save Changes (Projected)')
             : (isIncome ? '+ Add Projected Value' : 'Save Projected Expense');
         }
       } else {
-        const walletEl = document.getElementById('expense-input-wallet');
-        const isUtang = walletEl && walletEl.value === 'utang';
         if (labelWallet) {
-          labelWallet.textContent = isIncome ? (isUtang ? 'Add Debt To *' : 'Add To Account *') : (isUtang ? 'Repay Utang From *' : 'Deduct From Account *');
-        }
-        if (helpWallet) {
-          if (isUtang) {
-            helpWallet.innerHTML = isIncome
-              ? '<span style="color: var(--color-error); font-weight: 700;"><i class="fa-solid fa-hand-holding-dollar"></i> Adds to Utang (shows negative/red in timeline).</span>'
-              : '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-handshake"></i> Deducts from Utang (shows positive/green in timeline).</span>';
-          } else if (isIncome) {
-            helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
-          } else {
-            helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
-            helpWallet.style.color = '';
-          }
+          labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
         }
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
@@ -3409,7 +3390,6 @@
 
     function updateIncomeModeUI(isIncome) {
       const labelWallet = document.getElementById('expense-account-label');
-      const helpWallet = document.getElementById('expense-account-help');
       const toggleBtn = document.getElementById('btn-toggle-income');
       const toggleText = document.getElementById('btn-toggle-income-text');
       const submitBtn = document.getElementById('btn-submit-expense');
@@ -3417,8 +3397,6 @@
       const chkIncome = document.getElementById('checkbox-toggle-income');
       const toggleCtrl = document.getElementById('income-toggle-control');
       const toggleLbl = document.getElementById('income-toggle-label');
-      const walletEl = document.getElementById('expense-input-wallet');
-      const isUtang = walletEl && walletEl.value === 'utang';
       const isProjected = currentEditExpenseId 
         ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
         : Boolean(isProjectedMode);
@@ -3428,16 +3406,7 @@
       if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
 
       if (isIncome) {
-        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : (isUtang ? 'Add Debt To *' : 'Add To Account *');
-        if (helpWallet) {
-          if (isProjected) {
-            helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
-          } else if (isUtang) {
-            helpWallet.innerHTML = '<span style="color: var(--color-error); font-weight: 700;"><i class="fa-solid fa-hand-holding-dollar"></i> Adds to Utang (shows negative/red in timeline).</span>';
-          } else {
-            helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
-          }
-        }
+        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
         if (toggleBtn) {
           toggleBtn.style.borderColor = 'var(--color-success)';
           toggleBtn.style.color = 'var(--color-success)';
@@ -3454,17 +3423,7 @@
             : (isProjected ? 'Add Projected Value' : 'Add Value / Income');
         }
       } else {
-        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : (isUtang ? 'Repay Utang From *' : 'Deduct From Account *');
-        if (helpWallet) {
-          if (isProjected) {
-            helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
-          } else if (isUtang) {
-            helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-handshake"></i> Deducts from Utang (shows positive/green in timeline).</span>';
-          } else {
-            helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
-            helpWallet.style.color = '';
-          }
-        }
+        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : 'Deduct From Account *';
         if (toggleBtn) {
           toggleBtn.style.borderColor = '';
           toggleBtn.style.color = '';
