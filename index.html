@@ -586,17 +586,6 @@
       letter-spacing: 0.04em;
     }
 
-    .wallet-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .wallet-card[data-wallet="cash"] .wallet-dot { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
-    .wallet-card[data-wallet="maribank"] .wallet-dot { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.4); }
-    .wallet-card[data-wallet="bdo"] .wallet-dot { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
-    .wallet-card[data-wallet="gcash"] .wallet-dot { background: #0ea5e9; box-shadow: 0 0 8px rgba(14, 165, 233, 0.4); }
-    .wallet-card[data-wallet="utang"] .wallet-dot { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
 
 
     .wallet-amount {
@@ -1897,7 +1886,6 @@
         <div class="wallet-card" data-wallet="cash" onclick="editWalletBalance('cash')" title="Click to update Cash balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <span class="wallet-dot"></span>
               <i class="fa-solid fa-money-bill-wave"></i> Cash
             </span>
           </div>
@@ -1909,8 +1897,7 @@
         <div class="wallet-card" data-wallet="maribank" onclick="editWalletBalance('maribank')" title="Click to update MariBank balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <span class="wallet-dot"></span>
-              <i class="fa-solid fa-building-columns"></i> MariBank
+              <i class="fa-solid fa-credit-card"></i> MariBank
             </span>
           </div>
           <div class="wallet-amount mono" id="wallet-val-maribank">₱0.00</div>
@@ -1921,8 +1908,7 @@
         <div class="wallet-card" data-wallet="bdo" onclick="editWalletBalance('bdo')" title="Click to update BDO balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <span class="wallet-dot"></span>
-              <i class="fa-solid fa-credit-card"></i> BDO
+              <i class="fa-solid fa-building-columns"></i> BDO
             </span>
           </div>
           <div class="wallet-amount mono" id="wallet-val-bdo">₱0.00</div>
@@ -1933,7 +1919,6 @@
         <div class="wallet-card" data-wallet="gcash" onclick="editWalletBalance('gcash')" title="Click to update GCash balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <span class="wallet-dot"></span>
               <i class="fa-solid fa-mobile-screen-button"></i> GCash
             </span>
           </div>
@@ -1945,7 +1930,6 @@
         <div class="wallet-card" data-wallet="utang" onclick="editWalletBalance('utang')" title="Click to update Utang balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <span class="wallet-dot"></span>
               <i class="fa-solid fa-hand-holding-dollar"></i> Utang
             </span>
           </div>
@@ -3187,8 +3171,8 @@
 
       const walletConfig = {
         cash: { name: 'Cash', icon: 'fa-money-bill-wave' },
-        maribank: { name: 'MariBank', icon: 'fa-building-columns' },
-        bdo: { name: 'BDO', icon: 'fa-credit-card' },
+        maribank: { name: 'MariBank', icon: 'fa-credit-card' },
+        bdo: { name: 'BDO', icon: 'fa-building-columns' },
         gcash: { name: 'GCash', icon: 'fa-mobile-screen-button' },
         utang: { name: 'Utang', icon: 'fa-hand-holding-dollar' }
       };
