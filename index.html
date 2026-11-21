@@ -1837,6 +1837,15 @@
     .btn-save-actual:active {
       transform: scale(0.98);
     }
+    .btn-save-actual.is-revert {
+      background: rgba(245, 158, 11, 0.14);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .btn-save-actual.is-revert:hover {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: #f59e0b;
+    }
 
     .btn-modal-paid {
       background: rgba(16, 185, 129, 0.14);
@@ -2536,7 +2545,7 @@
             <button type="button" id="btn-toggle-income" style="display: none;"><span id="btn-toggle-income-text"></span></button>
           </div>
           <button type="button" id="btn-save-as-actual" class="btn-save-actual" style="display: none;">
-            <i class="fa-solid fa-circle-check"></i> <span id="btn-save-as-actual-text">Save as Actual Expense</span>
+            <i id="btn-save-as-actual-icon" class="fa-solid fa-circle-check"></i> <span id="btn-save-as-actual-text">Save as Actual Expense</span>
           </button>
           <button type="button" id="btn-mark-paid-utang" class="btn-modal-paid" style="display: none;">
             <i class="fa-solid fa-check-double"></i> <span id="btn-mark-paid-utang-text">Mark as Paid</span>
@@ -2956,6 +2965,17 @@
           wallets.cash = Math.abs(Number(wallets.cash) || 290);
           migrationApplied = true;
         }
+      }
+
+      // Deduplicate duplicate actual Baon entries
+      const actualBaons = expenses.filter(e => !e.isProjected && e.type === 'income' && e.title === 'Baon' && e.wallet === 'cash' && Number(e.amount) === 1000);
+      if (actualBaons.length > 1) {
+        const duplicatesToRemove = actualBaons.slice(1);
+        const dupIds = new Set(duplicatesToRemove.map(d => d.id));
+        expenses = expenses.filter(e => !dupIds.has(e.id));
+        const refundAmt = 1000 * duplicatesToRemove.length;
+        wallets.cash = Math.max(0, (Number(wallets.cash) || 0) - refundAmt);
+        migrationApplied = true;
       }
 
       // Synchronize Utang card balance with active unpaid Utangs
@@ -3872,10 +3892,38 @@
       }
 
       const btnSaveActual = document.getElementById('btn-save-as-actual');
+      const btnSaveActualText = document.getElementById('btn-save-as-actual-text');
+      const btnSaveActualIcon = document.getElementById('btn-save-as-actual-icon');
       const expModal = document.getElementById('modal-expense');
       const actExpense = document.getElementById('modal-actions-expense');
-      if (isProjected) {
-        if (btnSaveActual) btnSaveActual.style.display = 'inline-flex';
+      const walletSelect = document.getElementById('expense-input-wallet');
+      const isUtang = walletSelect && walletSelect.value === 'utang';
+
+      if (currentEditExpenseId) {
+        if (btnSaveActual) {
+          btnSaveActual.style.display = 'inline-flex';
+          if (isProjected) {
+            btnSaveActual.classList.remove('is-revert');
+            if (btnSaveActualIcon) btnSaveActualIcon.className = 'fa-solid fa-circle-check';
+            if (btnSaveActualText) {
+              if (isUtang) {
+                btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
+              } else {
+                btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+              }
+            }
+          } else {
+            btnSaveActual.classList.add('is-revert');
+            if (btnSaveActualIcon) btnSaveActualIcon.className = 'fa-solid fa-clock-rotate-left';
+            if (btnSaveActualText) {
+              if (isUtang) {
+                btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Borrowing' : 'Unsave to Projected Lending';
+              } else {
+                btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Income' : 'Unsave to Projected Expense';
+              }
+            }
+          }
+        }
         if (expModal) expModal.classList.add('has-save-actual');
         if (actExpense) actExpense.classList.add('has-save-actual');
       } else {
@@ -3897,6 +3945,8 @@
       const toggleCtrl = document.getElementById('income-toggle-control');
       const toggleLbl = document.getElementById('income-toggle-label');
       const btnSaveActualText = document.getElementById('btn-save-as-actual-text');
+      const btnSaveActualIcon = document.getElementById('btn-save-as-actual-icon');
+      const btnSaveActual = document.getElementById('btn-save-as-actual');
       const walletSelect = document.getElementById('expense-input-wallet');
       const isUtang = walletSelect && walletSelect.value === 'utang';
       const isProjected = currentEditExpenseId 
@@ -3908,13 +3958,32 @@
 
       if (isUtang) {
         if (toggleLbl) toggleLbl.textContent = isIncome ? 'Borrowing (You owe)' : 'Lending (They owe you)';
-        if (btnSaveActualText) {
-          btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
-        }
       } else {
         if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
-        if (btnSaveActualText) {
-          btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+      }
+
+      if (currentEditExpenseId && btnSaveActual) {
+        btnSaveActual.style.display = 'inline-flex';
+        if (isProjected) {
+          btnSaveActual.classList.remove('is-revert');
+          if (btnSaveActualIcon) btnSaveActualIcon.className = 'fa-solid fa-circle-check';
+          if (btnSaveActualText) {
+            if (isUtang) {
+              btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
+            } else {
+              btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+            }
+          }
+        } else {
+          btnSaveActual.classList.add('is-revert');
+          if (btnSaveActualIcon) btnSaveActualIcon.className = 'fa-solid fa-clock-rotate-left';
+          if (btnSaveActualText) {
+            if (isUtang) {
+              btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Borrowing' : 'Unsave to Projected Lending';
+            } else {
+              btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Income' : 'Unsave to Projected Expense';
+            }
+          }
         }
       }
       updateUtangWalletVisibility();
@@ -4265,6 +4334,11 @@
           item.date = date;
           item.isProjected = isProjected;
           item.isPaid = Boolean(item.isPaid);
+
+          // If turning projected baon into actual, assign a permanent id
+          if (!isProjected && item.id && String(item.id).startsWith('exp_proj_baon_')) {
+            item.id = 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+          }
         }
       } else {
         const newExpense = {
@@ -4362,10 +4436,87 @@
       handleSaveExpense(false);
     });
 
+    function handleUnsaveToProjected() {
+      if (!currentEditExpenseId) return;
+      const item = expenses.find(e => e.id === currentEditExpenseId);
+      if (!item) return;
+
+      const amt = Number(item.amount) || 0;
+      const wallet = item.wallet;
+      const utangWallet = item.utangWallet;
+      const isIncome = item.type === 'income';
+
+      // 1. Revert actual wallet transaction effect
+      if (wallet && wallet !== 'none' && wallet !== 'utang' && wallets[wallet] !== undefined) {
+        if (isIncome) {
+          wallets[wallet] = (Number(wallets[wallet]) || 0) - amt;
+        } else {
+          wallets[wallet] = (Number(wallets[wallet]) || 0) + amt;
+        }
+      }
+      if (wallet === 'utang' && utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
+        if (isIncome) {
+          wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amt;
+          if (item.isPaid && item.paidApplied) {
+            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amt;
+          }
+        } else {
+          wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amt;
+          if (item.isPaid && item.paidApplied) {
+            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amt;
+          }
+        }
+      }
+
+      // 2. Revert state to projected
+      item.isProjected = true;
+      item.isPaid = false;
+      item.paidApplied = false;
+
+      // 3. Synchronize balances, target plan, and storage
+      syncUtangWalletBalance();
+      saveStorage(true);
+      syncProjectedBaonToTarget();
+      render();
+      closeExpenseModal();
+
+      if (typeof sendDiscordNotification === 'function') {
+        const isUtang = item.wallet === 'utang';
+        sendDiscordNotification(
+          isUtang ? "🔮 Reverted Utang to Projected" : "🔮 Reverted to Projected",
+          `**${item.title}** (${formatCurrency(amt)}) was moved back to projected plan. Account balance reverted.`,
+          0xf59e0b,
+          [
+            { name: "Item", value: item.title, inline: true },
+            ...(item.debtor ? [{ name: "Person", value: item.debtor, inline: true }] : []),
+            { name: "Amount", value: formatCurrency(amt), inline: true },
+            { name: "Status", value: "Projected", inline: true }
+          ]
+        );
+      }
+
+      showToast(isIncome ? 'Unsaved to projected income!' : 'Unsaved to projected expense!', 'info');
+    }
+
     const btnSaveActualEl = document.getElementById('btn-save-as-actual');
     if (btnSaveActualEl) {
       btnSaveActualEl.addEventListener('click', () => {
-        handleSaveExpense(true);
+        if (btnSaveActualEl.disabled) return;
+        btnSaveActualEl.disabled = true;
+        setTimeout(() => { if (btnSaveActualEl) btnSaveActualEl.disabled = false; }, 600);
+
+        if (!currentEditExpenseId) {
+          handleSaveExpense(true);
+          return;
+        }
+        const item = expenses.find(e => e.id === currentEditExpenseId);
+        if (!item) return;
+
+        if (item.isProjected) {
+          handleSaveExpense(true);
+        } else {
+          handleUnsaveToProjected();
+        }
       });
     }
 
@@ -4865,6 +5016,17 @@
                 wallets.cash = Math.abs(Number(wallets.cash) || 290);
                 needsCloudHeal = true;
               }
+            }
+
+            // Deduplicate actual Baons if cloud sync has duplicates
+            const actualBaons = expenses.filter(e => !e.isProjected && e.type === 'income' && e.title === 'Baon' && e.wallet === 'cash' && Number(e.amount) === 1000);
+            if (actualBaons.length > 1) {
+              const duplicatesToRemove = actualBaons.slice(1);
+              const dupIds = new Set(duplicatesToRemove.map(d => d.id));
+              expenses = expenses.filter(e => !dupIds.has(e.id));
+              const refundAmt = 1000 * duplicatesToRemove.length;
+              wallets.cash = Math.max(0, (Number(wallets.cash) || 0) - refundAmt);
+              needsCloudHeal = true;
             }
 
             syncUtangWalletBalance();
