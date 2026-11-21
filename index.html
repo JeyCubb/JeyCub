@@ -2599,30 +2599,17 @@
           <div class="modal-avatar-icon" id="wallet-modal-avatar">
             <i class="fa-solid fa-wallet"></i>
           </div>
-          <div>
-            <h3 id="modal-edit-wallet-title" class="modal-title">Edit Account Balance</h3>
-            <span id="modal-edit-wallet-sub" style="font-size: 0.72rem; color: var(--text-muted);">Update available balance</span>
-          </div>
+          <h3 id="modal-edit-wallet-title" class="modal-title">Edit Account Balance</h3>
         </div>
         <button type="button" class="modal-close-btn" id="btn-close-wallet-modal" aria-label="Close dialog">&times;</button>
       </div>
 
       <div class="modal-body" style="gap: 0.85rem;">
         <div class="form-group">
-          <label class="form-label" for="wallet-modal-input">New Balance Amount (₱)</label>
           <div class="currency-input-wrap">
             <span class="currency-prefix">₱</span>
             <input type="number" id="wallet-modal-input" class="form-input mono target-number-input" placeholder="0" step="any" autocomplete="off" />
           </div>
-          <div class="target-quick-chips">
-            <button type="button" class="chip-btn" data-wallet-delta="100">+₱100</button>
-            <button type="button" class="chip-btn" data-wallet-delta="500">+₱500</button>
-            <button type="button" class="chip-btn" data-wallet-delta="1000">+₱1k</button>
-            <button type="button" class="chip-btn" data-wallet-set="0">₱0</button>
-          </div>
-          <span class="form-hint" id="wallet-modal-hint" style="margin-top: 0.35rem;">
-            Updates your actual available balance. In projected mode, future totals adjust automatically.
-          </span>
         </div>
 
         <div class="modal-actions" style="margin-top: 0.25rem;">
@@ -3488,9 +3475,12 @@
       const current = Number(wallets[walletKey]) || 0;
 
       document.getElementById('modal-edit-wallet-title').textContent = `Update ${cfg.name} Balance`;
-      document.getElementById('modal-edit-wallet-sub').textContent = isProjectedMode
-        ? `Actual balance: ${formatCurrency(current)}. Projected total will update automatically.`
-        : `Enter current funds available in ${cfg.name}`;
+      const sub = document.getElementById('modal-edit-wallet-sub');
+      if (sub) {
+        sub.textContent = isProjectedMode
+          ? `Actual balance: ${formatCurrency(current)}. Projected total will update automatically.`
+          : `Enter current funds available in ${cfg.name}`;
+      }
 
       const avatar = document.getElementById('wallet-modal-avatar');
       if (avatar) avatar.innerHTML = `<i class="fa-solid ${cfg.icon}"></i>`;
