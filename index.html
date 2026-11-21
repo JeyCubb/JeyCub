@@ -1723,6 +1723,16 @@
       margin-left: auto;
       flex-shrink: 0;
     }
+    .modal-actions-expense .btn-modal-cancel {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .modal-actions-expense .btn-primary {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
     .modal-actions-expense .btn-modal-delete {
       background: rgba(239, 68, 68, 0.12);
       color: #ef4444;
@@ -1747,32 +1757,48 @@
     }
 
     /* In Edit Mode: 2x2 perfectly balanced and symmetrical grid */
-    #modal-expense.is-edit-mode .modal-actions-expense {
-      flex-direction: column;
-      gap: 0.6rem;
+    #modal-expense.is-edit-mode .modal-actions-expense,
+    .modal-actions-expense.is-edit-mode,
+    .modal-actions-expense:has(#btn-delete-expense:not([style*="display: none"])) {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.6rem !important;
+      width: 100% !important;
     }
-    #modal-expense.is-edit-mode .modal-actions-left {
-      width: 100%;
-      justify-content: space-between;
-      gap: 0.5rem;
+    #modal-expense.is-edit-mode .modal-actions-left,
+    .modal-actions-expense.is-edit-mode .modal-actions-left,
+    .modal-actions-expense:has(#btn-delete-expense:not([style*="display: none"])) .modal-actions-left {
+      display: flex !important;
+      width: 100% !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
     }
-    #modal-expense.is-edit-mode .modal-actions-right {
-      width: 100%;
-      justify-content: space-between;
-      margin-left: 0;
-      gap: 0.5rem;
+    #modal-expense.is-edit-mode .modal-actions-right,
+    .modal-actions-expense.is-edit-mode .modal-actions-right,
+    .modal-actions-expense:has(#btn-delete-expense:not([style*="display: none"])) .modal-actions-right {
+      display: flex !important;
+      width: 100% !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      margin-left: 0 !important;
+      gap: 0.5rem !important;
     }
-    #modal-expense.is-edit-mode .modal-actions-right .btn-modal-cancel {
-      flex: 1;
-      justify-content: center;
-      text-align: center;
-      padding: 0.52rem 0.75rem;
+    #modal-expense.is-edit-mode .modal-actions-right .btn-modal-cancel,
+    .modal-actions-expense.is-edit-mode .modal-actions-right .btn-modal-cancel,
+    .modal-actions-expense:has(#btn-delete-expense:not([style*="display: none"])) .modal-actions-right .btn-modal-cancel {
+      flex: 1 !important;
+      justify-content: center !important;
+      text-align: center !important;
+      padding: 0.52rem 0.75rem !important;
     }
-    #modal-expense.is-edit-mode .modal-actions-right .btn-primary {
-      flex: 1.35;
-      justify-content: center;
-      text-align: center;
-      padding: 0.52rem 0.85rem;
+    #modal-expense.is-edit-mode .modal-actions-right .btn-primary,
+    .modal-actions-expense.is-edit-mode .modal-actions-right .btn-primary,
+    .modal-actions-expense:has(#btn-delete-expense:not([style*="display: none"])) .modal-actions-right .btn-primary {
+      flex: 1.35 !important;
+      justify-content: center !important;
+      text-align: center !important;
+      padding: 0.52rem 0.85rem !important;
     }
 
     /* Enhanced Modal, Input & Toast Styles */
@@ -2348,8 +2374,8 @@
             <button type="button" id="btn-toggle-income" style="display: none;"><span id="btn-toggle-income-text"></span></button>
           </div>
           <div class="modal-actions-right">
-            <button type="button" class="btn-modal-cancel" id="btn-cancel-expense" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; white-space: nowrap;">Cancel</button>
-            <button type="submit" id="btn-submit-expense" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">Save Expense</button>
+            <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
+            <button type="submit" id="btn-submit-expense" class="btn-primary">Save Expense</button>
           </div>
         </div>
       </form>
@@ -3597,9 +3623,13 @@
       updateProjectedModeUI(isProjected);
       updateUtangWalletVisibility();
       const expModal = document.getElementById('modal-expense');
+      const actExpense = document.getElementById('modal-actions-expense');
       if (expModal) {
         expModal.classList.add('is-edit-mode');
         expModal.classList.add('is-active');
+      }
+      if (actExpense) {
+        actExpense.classList.add('is-edit-mode');
       }
     };
 
@@ -3666,19 +3696,29 @@
       updateProjectedModeUI(Boolean(isProjectedMode));
       updateUtangWalletVisibility();
       const expModal = document.getElementById('modal-expense');
+      const actExpense = document.getElementById('modal-actions-expense');
       if (expModal) {
         expModal.classList.remove('is-edit-mode');
         expModal.classList.add('is-active');
+      }
+      if (actExpense) {
+        actExpense.classList.remove('is-edit-mode');
       }
       document.getElementById('expense-input-title').focus();
     };
 
     function closeExpenseModal() {
       currentEditExpenseId = null;
+      const btnDelete = document.getElementById('btn-delete-expense');
+      if (btnDelete) btnDelete.style.display = 'none';
       const expModal = document.getElementById('modal-expense');
+      const actExpense = document.getElementById('modal-actions-expense');
       if (expModal) {
         expModal.classList.remove('is-edit-mode');
         expModal.classList.remove('is-active');
+      }
+      if (actExpense) {
+        actExpense.classList.remove('is-edit-mode');
       }
     }
 
