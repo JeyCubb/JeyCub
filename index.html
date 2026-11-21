@@ -1484,7 +1484,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.25rem;
+      padding: 0.65rem;
       z-index: 2000;
       opacity: 0;
       visibility: hidden;
@@ -1555,7 +1555,7 @@
       background: var(--bg-input);
     }
     .modal-body {
-      padding: 0.95rem 1.15rem;
+      padding: 0.95rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.65rem;
@@ -1605,21 +1605,23 @@
     .modal-actions {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 0.65rem;
+      justify-content: space-between;
+      gap: 0.4rem;
       padding-top: 0.2rem;
       margin-top: 0.15rem;
+      flex-wrap: wrap;
     }
     .btn-modal-cancel {
       background: var(--bg-input);
       border: 1px solid var(--border-color);
       color: var(--text-secondary);
       border-radius: var(--radius-md);
-      padding: 0.55rem 1.05rem;
-      font-size: 0.82rem;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       transition: var(--transition);
+      white-space: nowrap;
     }
     .btn-modal-cancel:hover {
       background: var(--bg-card-hover);
@@ -1634,23 +1636,25 @@
       background: var(--bg-input);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 2.5px;
-      gap: 2.5px;
+      padding: 2px;
+      gap: 2px;
+      flex-shrink: 0;
     }
     .type-segment-btn {
       background: transparent;
       border: 1px solid transparent;
       color: var(--text-muted);
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       font-weight: 600;
-      padding: 0.36rem 0.65rem;
-      border-radius: calc(var(--radius-md) - 2.5px);
+      padding: 0.35rem 0.52rem;
+      border-radius: calc(var(--radius-md) - 2px);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.32rem;
+      gap: 0.28rem;
       transition: all 0.18s ease;
       line-height: 1;
+      white-space: nowrap;
     }
     .type-segment-btn:hover {
       color: var(--text-primary);
@@ -2217,26 +2221,26 @@
           <input type="datetime-local" id="expense-input-datetime" class="form-input" />
         </div>
 
-        <div class="modal-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
+        <div class="modal-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+          <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
             <div class="transaction-type-segment" id="transaction-type-segment">
               <button type="button" id="btn-mode-expense" class="type-segment-btn is-active" title="Record as Expense (deduct)">
-                <i class="fa-solid fa-arrow-down" style="font-size: 0.68rem;"></i>
+                <i class="fa-solid fa-arrow-down" style="font-size: 0.65rem;"></i>
                 <span>Expense</span>
               </button>
               <button type="button" id="btn-mode-income" class="type-segment-btn" title="Record as Add / Income">
-                <i class="fa-solid fa-plus" style="font-size: 0.68rem;"></i>
-                <span>Add Money</span>
+                <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i>
+                <span>Add</span>
               </button>
             </div>
-            <button type="button" id="btn-delete-expense" class="btn-modal-cancel" style="display: none; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.28); font-weight: 700; font-size: 0.78rem; padding: 0.45rem 0.75rem;">
+            <button type="button" id="btn-delete-expense" class="btn-modal-cancel" style="display: none; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.28); font-weight: 700; font-size: 0.76rem; padding: 0.42rem 0.65rem;">
               <i class="fa-solid fa-trash-can"></i> Delete
             </button>
             <button type="button" id="btn-toggle-income" style="display: none;"><span id="btn-toggle-income-text"></span></button>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.45rem; margin-left: auto;">
-            <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
-            <button type="submit" id="btn-submit-expense" class="btn-primary">Save Expense</button>
+          <div style="display: flex; align-items: center; gap: 0.35rem; margin-left: auto; flex-shrink: 0;">
+            <button type="button" class="btn-modal-cancel" id="btn-cancel-expense" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; white-space: nowrap;">Cancel</button>
+            <button type="submit" id="btn-submit-expense" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">Save</button>
           </div>
         </div>
       </form>
@@ -3409,9 +3413,7 @@
         }
         if (toggleText) toggleText.textContent = '+ Adding to Account';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId
-            ? (isProjected ? 'Save Changes (+ Projected)' : 'Save Changes (+ Add)')
-            : (isProjected ? '+ Add Projected Value' : '+ Add to Account');
+          submitBtn.textContent = currentEditExpenseId ? 'Save (+ Add)' : '+ Add';
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
         }
         if (titleModal) {
@@ -3436,9 +3438,7 @@
         }
         if (toggleText) toggleText.textContent = 'Type + to Add';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId
-            ? (isProjected ? 'Save Changes (Projected)' : 'Save Changes')
-            : (isProjected ? 'Save Projected Expense' : 'Save Expense');
+          submitBtn.textContent = 'Save';
           submitBtn.style.background = '';
         }
         if (titleModal) {
@@ -3473,7 +3473,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = isIncome ? 'Save Changes (+ Add)' : 'Save Changes';
+        btnSubmit.textContent = isIncome ? 'Save (+ Add)' : 'Save';
         btnSubmit.style.background = isIncome ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : '';
       }
 
@@ -3527,7 +3527,7 @@
 
       const btnSubmit = document.getElementById('btn-submit-expense');
       if (btnSubmit) {
-        btnSubmit.textContent = isProjectedMode ? 'Save Projected Expense' : 'Save Expense';
+        btnSubmit.textContent = 'Save';
         btnSubmit.style.background = '';
       }
 
