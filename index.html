@@ -2789,6 +2789,9 @@
       } catch (e) {
         console.error('Failed to load settings:', e);
       }
+      if (!settings.projectedTarget || Number(settings.projectedTarget) <= 0) {
+        settings.projectedTarget = 20000;
+      }
 
       try {
         const storedWallets = localStorage.getItem(WALLETS_KEY);
@@ -2960,7 +2963,11 @@
         localStorage.setItem(PROJECTED_MODE_KEY, isProjectedMode ? 'true' : 'false');
       } catch (e) {}
       settings.isProjectedMode = isProjectedMode;
-      render();
+      if (isProjectedMode) {
+        syncProjectedBaonToTarget();
+      } else {
+        render();
+      }
     }
 
     function render() {
@@ -3272,7 +3279,7 @@
     function adjustProjectedBaon(newCount) {
       newCount = Math.max(0, parseInt(newCount, 10) || 0);
 
-      const otherExpenses = expenses.filter(item => !(item.isProjected && item.title === 'Baon'));
+      const otherExpenses = expenses.filter(item => !(item.isProjected && item.type === 'income' && (item.title === 'Baon' || (item.id && String(item.id).startsWith('exp_proj_baon_')))));
       const dates = getScheduleTuesdays(newCount);
       const nowIso = new Date().toISOString();
 
@@ -3297,16 +3304,21 @@
     }
 
     function stepProjectedBaon(step) {
-      const currentBaonCount = expenses.filter(item => item.isProjected && item.title === 'Baon').length;
+      const currentBaonCount = expenses.filter(item => item.isProjected && item.type === 'income' && (item.title === 'Baon' || (item.id && String(item.id).startsWith('exp_proj_baon_')))).length;
       const nextCount = Math.max(0, currentBaonCount + step);
       adjustProjectedBaon(nextCount);
+      const projWallets = getProjectedWallets();
+      const newTotal = projWallets.cash + projWallets.maribank + projWallets.bdo + projWallets.gcash + projWallets.utang;
+      settings.projectedTarget = Math.round(newTotal);
+      saveStorage(true);
     }
 
     function calculateTargetPlan(desiredTarget) {
       const currentLiquid = (Number(wallets.cash) || 0) + (Number(wallets.maribank) || 0) + (Number(wallets.bdo) || 0) + (Number(wallets.gcash) || 0) + (Number(wallets.utang) || 0);
       let otherProjDiff = 0;
       for (const item of expenses) {
-        if (item.isProjected && item.title !== 'Baon') {
+        const isRecurringBaon = item.isProjected && item.type === 'income' && (item.title === 'Baon' || (item.id && String(item.id).startsWith('exp_proj_baon_')));
+        if (item.isProjected && !isRecurringBaon) {
           const amt = Number(item.amount) || 0;
           if (item.type === 'income') otherProjDiff += amt;
           else otherProjDiff -= amt;
@@ -3334,6 +3346,14 @@
         finalDateFormatted,
         projectedTotal
       };
+    }
+
+    function syncProjectedBaonToTarget() {
+      if (!isProjectedMode && !settings.projectedTarget) return;
+      const target = Number(settings.projectedTarget) || 20000;
+      if (target <= 0) return;
+      const plan = calculateTargetPlan(target);
+      adjustProjectedBaon(plan.neededWeeks);
     }
 
     // ==========================================================================
@@ -3467,8 +3487,9 @@
       document.getElementById('proj-dialog-current').textContent = formatCurrency(currentTotal);
 
       const targetInput = document.getElementById('proj-target-input');
-      targetInput.value = Math.round(currentTotal);
-      updateProjectedTargetPreview(currentTotal);
+      const currentTarget = Number(settings.projectedTarget) || 20000;
+      targetInput.value = Math.round(currentTarget);
+      updateProjectedTargetPreview(currentTarget);
 
       modal.classList.add('is-active');
       setTimeout(() => {
@@ -3792,9 +3813,14 @@
           wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + (Number(item.amount) || 0);
         }
       }
+      const wasProj = Boolean(item.isProjected);
       expenses = expenses.filter(e => e.id !== id);
       saveStorage();
-      render();
+      if (wasProj) {
+        syncProjectedBaonToTarget();
+      } else {
+        render();
+      }
       showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted.`, 'info');
     };
 
@@ -4025,7 +4051,11 @@
       }
 
       saveStorage();
-      render();
+      if (isProjected) {
+        syncProjectedBaonToTarget();
+      } else {
+        render();
+      }
       closeExpenseModal();
       showToast(isIncome ? 'Value added to account!' : 'Expense recorded successfully!', 'success');
     });
@@ -4063,9 +4093,14 @@
               wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + (Number(item.amount) || 0);
             }
           }
+          const wasProj = Boolean(item.isProjected);
           expenses = expenses.filter(e => e.id !== currentEditExpenseId);
           saveStorage();
-          render();
+          if (wasProj) {
+            syncProjectedBaonToTarget();
+          } else {
+            render();
+          }
           closeExpenseModal();
           showToast(`${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)} deleted.`, 'info');
         }
@@ -4516,9 +4551,11 @@
           const input = document.getElementById('proj-target-input');
           const parsed = parseFloat(input.value);
           if (!isNaN(parsed) && parsed >= 0) {
-            const plan = calculateTargetPlan(parsed);
-            adjustProjectedBaon(plan.neededWeeks);
+            settings.projectedTarget = parsed;
+            saveStorage(true);
+            syncProjectedBaonToTarget();
             closeProjectedTargetModal();
+            const plan = calculateTargetPlan(parsed);
             showToast(`Target goal updated to ${formatCurrency(parsed)} (${plan.finalDateFormatted})`, 'success');
           } else {
             showToast('Please enter a valid numeric target amount.', 'error');
@@ -4586,6 +4623,9 @@
       const btnCancelWalletModal = document.getElementById('btn-cancel-wallet-modal');
       if (btnCancelWalletModal) btnCancelWalletModal.addEventListener('click', closeWalletModal);
 
+      if (isProjectedMode) {
+        syncProjectedBaonToTarget();
+      }
       render();
       initFirebase();
     });
