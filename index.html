@@ -3627,8 +3627,9 @@
       const utangGroup = document.getElementById('group-utang-wallet');
       const utangLabel = document.getElementById('expense-utang-wallet-label');
       const utangPersonGroup = document.getElementById('group-utang-person');
+      const chk = document.getElementById('checkbox-toggle-income');
       const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
-      const isIncome = rawAmount.startsWith('+');
+      const isIncome = chk ? chk.checked : rawAmount.startsWith('+');
 
       if (!walletSelect) return;
 
@@ -3652,8 +3653,9 @@
     function updateProjectedModeUI(isProjected) {
       const labelWallet = document.getElementById('expense-account-label');
       const submitBtn = document.getElementById('btn-submit-expense');
+      const chk = document.getElementById('checkbox-toggle-income');
       const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
-      const isIncome = rawAmount.startsWith('+');
+      const isIncome = chk ? chk.checked : rawAmount.startsWith('+');
 
       if (isProjected) {
         if (labelWallet) {
@@ -3962,7 +3964,8 @@
     function handleSaveExpense(forceActual = false) {
       const title = document.getElementById('expense-input-title').value.trim();
       const rawAmount = document.getElementById('expense-input-amount').value.trim();
-      const isIncome = rawAmount.startsWith('+');
+      const chk = document.getElementById('checkbox-toggle-income');
+      const isIncome = chk ? chk.checked : rawAmount.startsWith('+');
       const cleanAmountStr = rawAmount.replace(/^[+\-\s]+/, '').trim();
       const amount = parseFloat(cleanAmountStr);
       const wallet = document.getElementById('expense-input-wallet').value;
@@ -4208,8 +4211,18 @@
     if (inputAmount) {
       inputAmount.addEventListener('input', (e) => {
         const val = e.target.value.trim();
-        const isInc = val.startsWith('+');
-        updateIncomeModeUI(isInc);
+        const chk = document.getElementById('checkbox-toggle-income');
+        if (val.startsWith('+')) {
+          if (chk && !chk.checked) {
+            chk.checked = true;
+            updateIncomeModeUI(true);
+          }
+        } else if (val.startsWith('-')) {
+          if (chk && chk.checked) {
+            chk.checked = false;
+            updateIncomeModeUI(false);
+          }
+        }
       });
     }
 
@@ -4218,8 +4231,10 @@
       selectWallet.addEventListener('change', () => {
         settings.lastUsedWallet = selectWallet.value;
         saveStorage(true);
+        const chk = document.getElementById('checkbox-toggle-income');
         const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
-        updateIncomeModeUI(rawAmount.startsWith('+'));
+        const isInc = chk ? chk.checked : rawAmount.startsWith('+');
+        updateIncomeModeUI(isInc);
         updateUtangWalletVisibility();
       });
     }
