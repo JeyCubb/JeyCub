@@ -3701,51 +3701,81 @@
       const toggleCtrl = document.getElementById('income-toggle-control');
       const toggleLbl = document.getElementById('income-toggle-label');
       const btnSaveActualText = document.getElementById('btn-save-as-actual-text');
+      const walletSelect = document.getElementById('expense-input-wallet');
+      const isUtang = walletSelect && walletSelect.value === 'utang';
       const isProjected = currentEditExpenseId 
         ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
         : Boolean(isProjectedMode);
 
       if (chkIncome) chkIncome.checked = Boolean(isIncome);
       if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
-      if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
-      if (btnSaveActualText) {
-        btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+
+      if (isUtang) {
+        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Borrowing' : 'Lending';
+        if (btnSaveActualText) {
+          btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
+        }
+      } else {
+        if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
+        if (btnSaveActualText) {
+          btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+        }
       }
       updateUtangWalletVisibility();
 
       if (isIncome) {
-        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
+        if (labelWallet) {
+          labelWallet.textContent = isProjected 
+            ? (isUtang ? 'Planned Account (+ Borrow Later)' : 'Planned Account (+ Add Later)') 
+            : 'Add To Account *';
+        }
         if (toggleBtn) {
           toggleBtn.style.borderColor = 'var(--color-success)';
           toggleBtn.style.color = 'var(--color-success)';
           toggleBtn.style.background = 'var(--color-success-bg)';
         }
-        if (toggleText) toggleText.textContent = '+ Adding to Account';
+        if (toggleText) toggleText.textContent = isUtang ? 'Borrowing (Money In)' : '+ Adding to Account';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : '+ Add Money';
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : (isUtang ? 'Save Borrowing' : '+ Add Money');
           submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
         }
         if (titleModal) {
-          titleModal.textContent = currentEditExpenseId 
-            ? (isProjected ? 'Edit Projected Value' : 'Edit Value / Income') 
-            : (isProjected ? 'Add Projected Value' : 'Add Value / Income');
+          if (isUtang) {
+            titleModal.textContent = currentEditExpenseId 
+              ? (isProjected ? 'Edit Projected Borrowing' : 'Edit Borrowing') 
+              : (isProjected ? 'Record Projected Borrowing' : 'Record Borrowing');
+          } else {
+            titleModal.textContent = currentEditExpenseId 
+              ? (isProjected ? 'Edit Projected Value' : 'Edit Value / Income') 
+              : (isProjected ? 'Add Projected Value' : 'Add Value / Income');
+          }
         }
       } else {
-        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : 'Deduct From Account *';
+        if (labelWallet) {
+          labelWallet.textContent = isProjected 
+            ? (isUtang ? 'Planned Account (Lend Later) *' : 'Planned Account (Deduct Later) *') 
+            : 'Deduct From Account *';
+        }
         if (toggleBtn) {
           toggleBtn.style.borderColor = '';
           toggleBtn.style.color = '';
           toggleBtn.style.background = '';
         }
-        if (toggleText) toggleText.textContent = 'Type + to Add';
+        if (toggleText) toggleText.textContent = isUtang ? 'Lending (Money Out)' : 'Type + to Add';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : 'Save Expense';
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : (isUtang ? 'Save Lending' : 'Save Expense');
           submitBtn.style.background = '';
         }
         if (titleModal) {
-          titleModal.textContent = currentEditExpenseId 
-            ? (isProjected ? 'Edit Projected Expense' : 'Edit Expense') 
-            : (isProjected ? 'Record Projected Expense' : 'Record Expense');
+          if (isUtang) {
+            titleModal.textContent = currentEditExpenseId 
+              ? (isProjected ? 'Edit Projected Lending' : 'Edit Lending') 
+              : (isProjected ? 'Record Projected Lending' : 'Record Lending');
+          } else {
+            titleModal.textContent = currentEditExpenseId 
+              ? (isProjected ? 'Edit Projected Expense' : 'Edit Expense') 
+              : (isProjected ? 'Record Projected Expense' : 'Record Expense');
+          }
         }
       }
     }
