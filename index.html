@@ -2384,6 +2384,23 @@
           </select>
         </div>
 
+        <!-- Debtor / Debtee for Utang (Person input + suggestions dropdown) -->
+        <div class="form-group" id="group-utang-person" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label class="form-label" for="expense-input-utang-person" id="expense-utang-person-label" style="margin-bottom: 0;">Debtor / Debtee Name *</label>
+            <span id="utang-suggested-badge" style="font-size: 0.68rem; color: var(--accent-primary); font-weight: 600; display: none;">
+              <i class="fa-solid fa-users"></i> Previous data found
+            </span>
+          </div>
+          <div id="utang-suggested-wrap" style="display: none;">
+            <select id="expense-select-utang-person" class="form-select" aria-label="Suggested Debtor or Debtee">
+              <option value="">👤 Suggested People (Choose to auto-fill)...</option>
+            </select>
+          </div>
+          <input type="text" id="expense-input-utang-person" class="form-input" placeholder="Enter debtor / debtee name..." autocomplete="off" list="utang-person-datalist" />
+          <datalist id="utang-person-datalist"></datalist>
+        </div>
+
         <!-- Date & Time -->
         <div class="form-group">
           <label class="form-label" for="expense-input-datetime">Date & Time</label>
@@ -2850,6 +2867,16 @@
       return '₱' + val.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     function calculateDaysPassed(dateString) {
       const past = new Date(dateString);
       const now = new Date();
@@ -3182,6 +3209,10 @@
       if (item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none') {
         walletLabel = `Utang (${walletNames[item.utangWallet] || item.utangWallet})`;
       }
+      let displaySubLabel = walletLabel;
+      if (item.wallet === 'utang' && item.debtor && item.debtor.toLowerCase() !== (item.title || '').trim().toLowerCase()) {
+        displaySubLabel = `${walletLabel} &bull; <span style="color: var(--accent-primary); font-weight: 700;">${escapeHtml(item.debtor)}</span>`;
+      }
       const isUtang = item.wallet === 'utang';
       // For Utang: expenses are green and positive (+), add money is red and negative (-)
       const showAsPositive = isUtang ? !isIncome : isIncome;
@@ -3199,7 +3230,7 @@
             <span class="${amountClass}">${amountPrefix}${formatCurrency(item.amount)}</span>
           </div>
           <div class="expense-line-2">
-            <span class="wallet-source-mini">${walletLabel}</span>
+            <span class="wallet-source-mini">${displaySubLabel}</span>
             <span>&bull;</span>
             <span>${dateStr}, ${timeStr}</span>
           </div>
@@ -3506,22 +3537,100 @@
     // ACTION CONTROLLERS & ACTIONS
     // ==========================================================================
 
+    function getPreviousUtangPeople() {
+      const namesSet = new Set();
+      
+      // 1. From expenses array
+      if (Array.isArray(expenses)) {
+        expenses.forEach(item => {
+          if (item && item.debtor && typeof item.debtor === 'string') {
+            const trimmed = item.debtor.trim();
+            if (trimmed && trimmed.toLowerCase() !== 'utang') namesSet.add(trimmed);
+          }
+          if (item && item.wallet === 'utang' && item.title && typeof item.title === 'string') {
+            const trimmed = item.title.trim();
+            if (trimmed && trimmed.toLowerCase() !== 'utang') {
+              namesSet.add(trimmed);
+            }
+          }
+        });
+      }
+
+      // 2. From debts array if available
+      if (Array.isArray(debts)) {
+        debts.forEach(d => {
+          const name = d.name || d.person || d.debtor || d.title;
+          if (name && typeof name === 'string') {
+            const trimmed = name.trim();
+            if (trimmed && trimmed.toLowerCase() !== 'utang') {
+              namesSet.add(trimmed);
+            }
+          }
+        });
+      }
+
+      return Array.from(namesSet).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+
+    function populateUtangPersonSuggestions() {
+      const select = document.getElementById('expense-select-utang-person');
+      const datalist = document.getElementById('utang-person-datalist');
+      const wrap = document.getElementById('utang-suggested-wrap');
+      const badge = document.getElementById('utang-suggested-badge');
+      const input = document.getElementById('expense-input-utang-person');
+
+      const people = getPreviousUtangPeople();
+
+      if (datalist) {
+        datalist.innerHTML = people.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+      }
+
+      if (!select || !wrap) return;
+
+      if (people.length > 0) {
+        const currentValue = input ? input.value.trim() : '';
+        select.innerHTML = `
+          <option value="">👤 Suggested People (${people.length} found - tap to choose)...</option>
+          ${people.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')}
+        `;
+        if (currentValue && people.some(p => p.toLowerCase() === currentValue.toLowerCase())) {
+          const match = people.find(p => p.toLowerCase() === currentValue.toLowerCase());
+          select.value = match;
+        } else {
+          select.value = '';
+        }
+        wrap.style.display = 'block';
+        if (badge) badge.style.display = 'inline-flex';
+      } else {
+        wrap.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+      }
+    }
+
     function updateUtangWalletVisibility() {
       const walletSelect = document.getElementById('expense-input-wallet');
       const utangGroup = document.getElementById('group-utang-wallet');
       const utangLabel = document.getElementById('expense-utang-wallet-label');
+      const utangPersonGroup = document.getElementById('group-utang-person');
       const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
       const isIncome = rawAmount.startsWith('+');
 
-      if (!walletSelect || !utangGroup) return;
+      if (!walletSelect) return;
 
-      if (walletSelect.value === 'utang') {
-        utangGroup.style.display = 'flex';
+      const isUtang = walletSelect.value === 'utang';
+
+      if (utangGroup) {
+        utangGroup.style.display = isUtang ? 'flex' : 'none';
         if (utangLabel) {
           utangLabel.textContent = isIncome ? 'Wallet to Add To *' : 'Wallet to Deduct From *';
         }
-      } else {
-        utangGroup.style.display = 'none';
+      }
+
+      if (utangPersonGroup) {
+        utangPersonGroup.style.display = isUtang ? 'flex' : 'none';
+        if (isUtang) {
+          populateUtangPersonSuggestions();
+        }
       }
     }
 
@@ -3626,6 +3735,14 @@
       if (elUtangWallet) {
         elUtangWallet.value = item.utangWallet || 'cash';
       }
+      const elUtangPerson = document.getElementById('expense-input-utang-person');
+      if (elUtangPerson) {
+        elUtangPerson.value = item.debtor || (item.wallet === 'utang' ? item.title : '');
+      }
+      const elUtangPersonSelect = document.getElementById('expense-select-utang-person');
+      if (elUtangPersonSelect) {
+        elUtangPersonSelect.value = item.debtor || '';
+      }
 
       const d = new Date(item.date || item.createdAt);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -3703,6 +3820,10 @@
 
       const elUtangWallet = document.getElementById('expense-input-utang-wallet');
       if (elUtangWallet) elUtangWallet.value = 'cash';
+      const elUtangPerson = document.getElementById('expense-input-utang-person');
+      if (elUtangPerson) elUtangPerson.value = '';
+      const elUtangPersonSelect = document.getElementById('expense-select-utang-person');
+      if (elUtangPersonSelect) elUtangPersonSelect.value = '';
 
       const btnDelete = document.getElementById('btn-delete-expense');
       if (btnDelete) btnDelete.style.display = 'none';
@@ -3769,14 +3890,21 @@
       const wallet = document.getElementById('expense-input-wallet').value;
       const utangWalletInput = document.getElementById('expense-input-utang-wallet');
       const utangWallet = (wallet === 'utang' && utangWalletInput) ? utangWalletInput.value : null;
+      const utangPersonInput = document.getElementById('expense-input-utang-person');
+      const debtor = (wallet === 'utang' && utangPersonInput) ? utangPersonInput.value.trim() : null;
       const dtInput = document.getElementById('expense-input-datetime').value;
       const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
       const isProjected = currentEditExpenseId 
         ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
         : Boolean(isProjectedMode);
 
-      if (!title || isNaN(amount) || amount <= 0) {
-        showToast('Please enter a valid title and positive amount.', 'error');
+      let finalTitle = title;
+      if (wallet === 'utang' && !finalTitle && debtor) {
+        finalTitle = debtor;
+      }
+
+      if (!finalTitle || isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid title/person and positive amount.', 'error');
         return;
       }
 
@@ -3821,22 +3949,24 @@
             }
           }
 
-          item.title = title;
+          item.title = finalTitle;
           item.amount = amount;
           item.type = isIncome ? 'income' : 'expense';
           item.wallet = wallet;
           item.utangWallet = utangWallet;
+          item.debtor = debtor;
           item.date = date;
           item.isProjected = isProjected;
         }
       } else {
         const newExpense = {
           id: 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          title: title,
+          title: finalTitle,
           amount: amount,
           type: isIncome ? 'income' : 'expense',
           wallet: wallet,
           utangWallet: utangWallet,
+          debtor: debtor,
           date: date,
           isProjected: isProjected,
           createdAt: new Date().toISOString()
@@ -3871,11 +4001,12 @@
               ? (isProjected ? "🔮 Projected Utang Borrowed" : "🤝 Utang Borrowed / Added")
               : (isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income"),
             isProjected
-              ? `Planned **${isUtang ? '-' : '+'}${formatCurrency(amount)}** for **${displayWallet}** (*${title}*) by ${new Date(date).toLocaleDateString()}.`
-              : `Added **${isUtang ? '-' : '+'}${formatCurrency(amount)}** to **${displayWallet}** (*${title}*).`,
+              ? `Planned **${isUtang ? '-' : '+'}${formatCurrency(amount)}** for **${displayWallet}** (*${finalTitle}*) by ${new Date(date).toLocaleDateString()}.`
+              : `Added **${isUtang ? '-' : '+'}${formatCurrency(amount)}** to **${displayWallet}** (*${finalTitle}*).`,
             isUtang ? 0xef4444 : 0x10b981,
             [
-              { name: "Item", value: title, inline: true },
+              { name: "Item", value: finalTitle, inline: true },
+              ...(debtor ? [{ name: "Debtor / Debtee", value: debtor, inline: true }] : []),
               { name: "Amount", value: `${isUtang ? '-' : '+'}${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
@@ -3887,11 +4018,12 @@
               ? (isProjected ? "🔮 Projected Utang Repayment Planned" : "🤝 Utang Repaid / Cleared")
               : (isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded"),
             isProjected
-              ? `Planned **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${displayWallet}** for ${new Date(date).toLocaleDateString()}.`
-              : `Spent **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${displayWallet}**.`,
+              ? `Planned **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${finalTitle}* via **${displayWallet}** for ${new Date(date).toLocaleDateString()}.`
+              : `Spent **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${finalTitle}* via **${displayWallet}**.`,
             isUtang ? 0x10b981 : (isProjected ? 0xf59e0b : 0xef4444),
             [
-              { name: "Item", value: title, inline: true },
+              { name: "Item", value: finalTitle, inline: true },
+              ...(debtor ? [{ name: "Debtor / Debtee", value: debtor, inline: true }] : []),
               { name: "Amount", value: `${isUtang ? '+' : ''}${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
@@ -3964,6 +4096,39 @@
         const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
         updateIncomeModeUI(rawAmount.startsWith('+'));
         updateUtangWalletVisibility();
+      });
+    }
+
+    const selUtangPerson = document.getElementById('expense-select-utang-person');
+    if (selUtangPerson) {
+      selUtangPerson.addEventListener('change', () => {
+        const inpUtangPerson = document.getElementById('expense-input-utang-person');
+        const inpTitle = document.getElementById('expense-input-title');
+        if (selUtangPerson.value) {
+          if (inpUtangPerson) inpUtangPerson.value = selUtangPerson.value;
+          if (inpTitle && (!inpTitle.value.trim() || inpTitle.value.trim().toLowerCase() === 'utang')) {
+            inpTitle.value = selUtangPerson.value;
+          }
+        }
+      });
+    }
+
+    const inpUtangPerson = document.getElementById('expense-input-utang-person');
+    if (inpUtangPerson) {
+      inpUtangPerson.addEventListener('input', () => {
+        const sel = document.getElementById('expense-select-utang-person');
+        const val = inpUtangPerson.value.trim().toLowerCase();
+        if (sel) {
+          const match = Array.from(sel.options).find(o => o.value.toLowerCase() === val);
+          sel.value = match ? match.value : '';
+        }
+      });
+      inpUtangPerson.addEventListener('blur', () => {
+        const inpTitle = document.getElementById('expense-input-title');
+        const val = inpUtangPerson.value.trim();
+        if (val && inpTitle && (!inpTitle.value.trim() || inpTitle.value.trim().toLowerCase() === 'utang')) {
+          inpTitle.value = val;
+        }
       });
     }
 
