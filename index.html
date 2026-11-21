@@ -2856,16 +2856,18 @@
       }
     }
 
-    // Synchronize Utang card balance with active unpaid Utangs
+    // Synchronize Utang card balance with active unpaid Utangs:
+    // Borrowing (Income) = you owe money -> negative liability (-amt)
+    // Lending (Expense) = someone owes you -> positive receivable (+amt)
     function syncUtangWalletBalance() {
       let totalUtang = 0;
       for (const item of expenses) {
         if (item.wallet === 'utang' && !item.isProjected && !item.isPaid) {
           const amt = Number(item.amount) || 0;
           if (item.type === 'income') {
-            totalUtang += amt;
+            totalUtang -= amt; // Borrowed: you owe this money
           } else {
-            totalUtang -= amt;
+            totalUtang += amt; // Lent: someone owes you this money
           }
         }
       }
@@ -2935,11 +2937,18 @@
         }
       });
 
-      // Fix PSU if it was classified as Borrowing instead of Lending, correcting Cash balance
-      const psuItem = expenses.find(e => e.wallet === 'utang' && (e.title === 'PSU' || (e.debtor && e.debtor.toLowerCase().includes('benedict'))));
+      // Ensure Bagoong is classified as Borrowing (Income / Positive in timeline)
+      const bagoongItem = expenses.find(e => e.wallet === 'utang' && (e.title || '').toLowerCase().includes('bagoong'));
+      if (bagoongItem && bagoongItem.type !== 'income') {
+        bagoongItem.type = 'income'; // Borrowed from Tita Jula
+        migrationApplied = true;
+      }
+
+      // Ensure PSU is classified as Lending (Expense / Negative in timeline)
+      const psuItem = expenses.find(e => e.wallet === 'utang' && ((e.title || '').toLowerCase() === 'psu' || (e.debtor && e.debtor.toLowerCase().includes('benedict'))));
       if (psuItem) {
-        if (psuItem.type === 'income') {
-          psuItem.type = 'expense'; // It was Lent to Benedict
+        if (psuItem.type !== 'expense') {
+          psuItem.type = 'expense'; // Lent to Benedict
           migrationApplied = true;
         }
         if (psuItem.isPaid && (Number(wallets.cash) || 0) < 0) {
@@ -4838,16 +4847,23 @@
               settings = { ...settings, ...remote.settings };
             }
 
-            // Heal legacy PSU / Cash mismatch from cloud data so it never reverts
+            // Heal legacy Bagoong & PSU Utang types from cloud data so it never reverts
             let needsCloudHeal = false;
-            const psuItem = expenses.find(e => e.wallet === 'utang' && (e.title === 'PSU' || (e.debtor && e.debtor.toLowerCase().includes('benedict'))));
-            if (psuItem && psuItem.type === 'income') {
-              psuItem.type = 'expense';
+            const bagoongItem = expenses.find(e => e.wallet === 'utang' && (e.title || '').toLowerCase().includes('bagoong'));
+            if (bagoongItem && bagoongItem.type !== 'income') {
+              bagoongItem.type = 'income'; // Borrowed from Tita Jula
               needsCloudHeal = true;
             }
-            if ((Number(wallets.cash) || 0) < 0 && psuItem && psuItem.isPaid) {
-              wallets.cash = Math.abs(Number(wallets.cash) || 290);
-              needsCloudHeal = true;
+            const psuItem = expenses.find(e => e.wallet === 'utang' && ((e.title || '').toLowerCase() === 'psu' || (e.debtor && e.debtor.toLowerCase().includes('benedict'))));
+            if (psuItem) {
+              if (psuItem.type !== 'expense') {
+                psuItem.type = 'expense'; // Lent to Benedict
+                needsCloudHeal = true;
+              }
+              if ((Number(wallets.cash) || 0) < 0 && psuItem.isPaid) {
+                wallets.cash = Math.abs(Number(wallets.cash) || 290);
+                needsCloudHeal = true;
+              }
             }
 
             syncUtangWalletBalance();
