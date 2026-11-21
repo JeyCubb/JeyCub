@@ -1949,23 +1949,6 @@
           <span class="form-hint" id="expense-account-help">Selecting an account automatically deducts this expense from that account's balance.</span>
         </div>
 
-        <!-- Category -->
-        <div class="form-group">
-          <label class="form-label" for="expense-input-category">Category</label>
-          <select id="expense-input-category" class="form-select">
-            <option value="Food & Drinks">🍔 Food & Drinks</option>
-            <option value="Transportation">🚗 Transportation / Fare</option>
-            <option value="Shopping">🛍️ Shopping & Supplies</option>
-            <option value="Bills & Utilities">💡 Bills & Utilities</option>
-            <option value="School / Academics">📚 School & Books</option>
-            <option value="Entertainment">🎮 Entertainment & Hobbies</option>
-            <option value="Personal">👤 Personal Care</option>
-            <option value="Income / Top-up">💰 Income / Top-up</option>
-            <option value="Utang">🤝 Utang (Lent / Borrowed)</option>
-            <option value="Other">✨ Other</option>
-          </select>
-        </div>
-
         <!-- Date & Time -->
         <div class="form-group">
           <label class="form-label" for="expense-input-datetime">Date & Time</label>
@@ -2619,8 +2602,6 @@
             <span class="${amountClass}">${amountPrefix}${formatCurrency(item.amount)}</span>
           </div>
           <div class="expense-line-2">
-            <span>${item.category || (isIncome ? 'Income / Top-up' : 'General')}</span>
-            <span>&bull;</span>
             <span class="wallet-source-mini">${walletLabel}</span>
             <span>&bull;</span>
             <span>${dateStr}, ${timeStr}</span>
@@ -2900,7 +2881,6 @@
       document.getElementById('expense-input-title').value = item.title || '';
       document.getElementById('expense-input-amount').value = (isIncome ? '+' : '') + (Number(item.amount) || '');
       document.getElementById('expense-input-wallet').value = item.wallet || 'none';
-      document.getElementById('expense-input-category').value = item.category || (isIncome ? 'Income / Top-up' : 'Food & Drinks');
 
       const d = new Date(item.date || item.createdAt);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -2991,8 +2971,7 @@
       e.preventDefault();
       const title = document.getElementById('expense-input-title').value.trim();
       const rawAmount = document.getElementById('expense-input-amount').value.trim();
-      const category = document.getElementById('expense-input-category').value;
-      const isIncome = rawAmount.startsWith('+') || category === 'Income / Top-up';
+      const isIncome = rawAmount.startsWith('+');
       const cleanAmountStr = rawAmount.replace(/^[+\-\s]+/, '').trim();
       const amount = parseFloat(cleanAmountStr);
       const wallet = document.getElementById('expense-input-wallet').value;
@@ -3036,7 +3015,6 @@
           item.amount = amount;
           item.type = isIncome ? 'income' : 'expense';
           item.wallet = wallet;
-          item.category = category;
           item.date = date;
           item.isProjected = isProjected;
         }
@@ -3047,7 +3025,6 @@
           amount: amount,
           type: isIncome ? 'income' : 'expense',
           wallet: wallet,
-          category: category,
           date: date,
           isProjected: isProjected,
           createdAt: new Date().toISOString()
@@ -3068,8 +3045,8 @@
           sendDiscordNotification(
             isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income",
             isProjected
-              ? `Planned **+${formatCurrency(amount)}** for **${wallet.toUpperCase()}** (*${title}* - ${category}) by ${new Date(date).toLocaleDateString()}.`
-              : `Added **+${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}* - ${category}).`,
+              ? `Planned **+${formatCurrency(amount)}** for **${wallet.toUpperCase()}** (*${title}*) by ${new Date(date).toLocaleDateString()}.`
+              : `Added **+${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}*).`,
             0x10b981,
             [
               { name: "Item", value: title, inline: true },
@@ -3082,8 +3059,8 @@
           sendDiscordNotification(
             isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded",
             isProjected
-              ? `Planned **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}** for ${new Date(date).toLocaleDateString()}.`
-              : `Spent **${formatCurrency(amount)}** on *${title}* (${category}) via **${wallet.toUpperCase()}**.`,
+              ? `Planned **${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}** for ${new Date(date).toLocaleDateString()}.`
+              : `Spent **${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}**.`,
             isProjected ? 0xf59e0b : 0xef4444,
             [
               { name: "Item", value: title, inline: true },
@@ -3130,24 +3107,8 @@
     if (inputAmount) {
       inputAmount.addEventListener('input', (e) => {
         const val = e.target.value.trim();
-        const catVal = document.getElementById('expense-input-category') ? document.getElementById('expense-input-category').value : '';
-        const isInc = val.startsWith('+') || catVal === 'Income / Top-up';
+        const isInc = val.startsWith('+');
         updateIncomeModeUI(isInc);
-      });
-    }
-
-    const selectExpCategory = document.getElementById('expense-input-category');
-    if (selectExpCategory) {
-      selectExpCategory.addEventListener('change', (e) => {
-        const isInc = e.target.value === 'Income / Top-up';
-        if (isInc) {
-          const amtInput = document.getElementById('expense-input-amount');
-          if (amtInput && !amtInput.value.trim().startsWith('+') && amtInput.value.trim()) {
-            amtInput.value = '+' + amtInput.value.trim();
-          }
-        }
-        const amtVal = document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value.trim() : '';
-        updateIncomeModeUI(isInc || amtVal.startsWith('+'));
       });
     }
 
