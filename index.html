@@ -2240,6 +2240,18 @@
           </select>
         </div>
 
+        <!-- Secondary Wallet for Utang (Pick which wallet to deduct/add) -->
+        <div class="form-group" id="group-utang-wallet" style="display: none;">
+          <label class="form-label" for="expense-input-utang-wallet" id="expense-utang-wallet-label">Wallet to Deduct From *</label>
+          <select id="expense-input-utang-wallet" class="form-select">
+            <option value="cash">💵 Cash</option>
+            <option value="maribank">💳 MariBank</option>
+            <option value="bdo">🏛️ BDO</option>
+            <option value="gcash">📱 GCash</option>
+            <option value="none">None / Utang Only</option>
+          </select>
+        </div>
+
         <!-- Date & Time -->
         <div class="form-group">
           <label class="form-label" for="expense-input-datetime">Date & Time</label>
@@ -2789,6 +2801,14 @@
             proj[item.wallet] -= amt;
           }
         }
+        if (item.isProjected && item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none' && proj[item.utangWallet] !== undefined) {
+          const amt = Number(item.amount) || 0;
+          if (item.type === 'income') {
+            proj[item.utangWallet] += amt;
+          } else {
+            proj[item.utangWallet] -= amt;
+          }
+        }
       }
       return proj;
     }
@@ -3039,7 +3059,10 @@
         utang: 'Utang',
         none: 'None'
       };
-      const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
+      let walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
+      if (item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none') {
+        walletLabel = `Utang (${walletNames[item.utangWallet] || item.utangWallet})`;
+      }
       const isUtang = item.wallet === 'utang';
       // For Utang: expenses are green and positive (+), add money is red and negative (-)
       const showAsPositive = isUtang ? !isIncome : isIncome;
@@ -3361,6 +3384,25 @@
     // ACTION CONTROLLERS & ACTIONS
     // ==========================================================================
 
+    function updateUtangWalletVisibility() {
+      const walletSelect = document.getElementById('expense-input-wallet');
+      const utangGroup = document.getElementById('group-utang-wallet');
+      const utangLabel = document.getElementById('expense-utang-wallet-label');
+      const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
+      const isIncome = rawAmount.startsWith('+');
+
+      if (!walletSelect || !utangGroup) return;
+
+      if (walletSelect.value === 'utang') {
+        utangGroup.style.display = 'flex';
+        if (utangLabel) {
+          utangLabel.textContent = isIncome ? 'Wallet to Add To *' : 'Wallet to Deduct From *';
+        }
+      } else {
+        utangGroup.style.display = 'none';
+      }
+    }
+
     function updateProjectedModeUI(isProjected) {
       const labelWallet = document.getElementById('expense-account-label');
       const submitBtn = document.getElementById('btn-submit-expense');
@@ -3386,6 +3428,7 @@
             : (isIncome ? '+ Add Money' : 'Save Expense');
         }
       }
+      updateUtangWalletVisibility();
     }
 
     function updateIncomeModeUI(isIncome) {
@@ -3404,6 +3447,7 @@
       if (chkIncome) chkIncome.checked = Boolean(isIncome);
       if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
       if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
+      updateUtangWalletVisibility();
 
       if (isIncome) {
         if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
@@ -3456,6 +3500,10 @@
       document.getElementById('expense-input-title').value = item.title || '';
       document.getElementById('expense-input-amount').value = (isIncome ? '+' : '') + (Number(item.amount) || '');
       document.getElementById('expense-input-wallet').value = item.wallet || 'none';
+      const elUtangWallet = document.getElementById('expense-input-utang-wallet');
+      if (elUtangWallet) {
+        elUtangWallet.value = item.utangWallet || 'cash';
+      }
 
       const d = new Date(item.date || item.createdAt);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -3472,6 +3520,7 @@
 
       updateIncomeModeUI(isIncome);
       updateProjectedModeUI(isProjected);
+      updateUtangWalletVisibility();
       document.getElementById('modal-expense').classList.add('is-active');
     };
 
@@ -3497,6 +3546,13 @@
           wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
         }
       }
+      if (!item.isProjected && item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
+        if (item.type === 'income') {
+          wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) - (Number(item.amount) || 0);
+        } else {
+          wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + (Number(item.amount) || 0);
+        }
+      }
       expenses = expenses.filter(e => e.id !== id);
       saveStorage();
       render();
@@ -3515,6 +3571,9 @@
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
       document.getElementById('expense-input-datetime').value = now.toISOString().slice(0, 16);
 
+      const elUtangWallet = document.getElementById('expense-input-utang-wallet');
+      if (elUtangWallet) elUtangWallet.value = 'cash';
+
       const btnDelete = document.getElementById('btn-delete-expense');
       if (btnDelete) btnDelete.style.display = 'none';
 
@@ -3526,6 +3585,7 @@
 
       updateIncomeModeUI(false);
       updateProjectedModeUI(Boolean(isProjectedMode));
+      updateUtangWalletVisibility();
       document.getElementById('modal-expense').classList.add('is-active');
       document.getElementById('expense-input-title').focus();
     };
@@ -3559,6 +3619,8 @@
       const cleanAmountStr = rawAmount.replace(/^[+\-\s]+/, '').trim();
       const amount = parseFloat(cleanAmountStr);
       const wallet = document.getElementById('expense-input-wallet').value;
+      const utangWalletInput = document.getElementById('expense-input-utang-wallet');
+      const utangWallet = (wallet === 'utang' && utangWalletInput) ? utangWalletInput.value : null;
       const dtInput = document.getElementById('expense-input-datetime').value;
       const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
       const isProjected = currentEditExpenseId 
@@ -3574,6 +3636,7 @@
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (item) {
           const oldWallet = item.wallet;
+          const oldUtangWallet = item.utangWallet;
           const oldAmount = Number(item.amount) || 0;
           const oldIsIncome = item.type === 'income';
           const oldIsProjected = Boolean(item.isProjected);
@@ -3586,6 +3649,14 @@
               wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
             }
           }
+          if (!oldIsProjected && oldWallet === 'utang' && oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
+            if (oldIsIncome) {
+              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmount;
+            } else {
+              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmount;
+            }
+          }
+
           // 2. Apply new transaction effect if it is NOT projected
           if (!isProjected && wallet && wallet !== 'none' && wallets[wallet] !== undefined) {
             if (isIncome) {
@@ -3594,11 +3665,19 @@
               wallets[wallet] = (Number(wallets[wallet]) || 0) - amount;
             }
           }
+          if (!isProjected && wallet === 'utang' && utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
+            if (isIncome) {
+              wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amount;
+            } else {
+              wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amount;
+            }
+          }
 
           item.title = title;
           item.amount = amount;
           item.type = isIncome ? 'income' : 'expense';
           item.wallet = wallet;
+          item.utangWallet = utangWallet;
           item.date = date;
           item.isProjected = isProjected;
         }
@@ -3609,6 +3688,7 @@
           amount: amount,
           type: isIncome ? 'income' : 'expense',
           wallet: wallet,
+          utangWallet: utangWallet,
           date: date,
           isProjected: isProjected,
           createdAt: new Date().toISOString()
@@ -3622,23 +3702,34 @@
             wallets[wallet] = (Number(wallets[wallet]) || 0) - amount;
           }
         }
+        if (!isProjected && wallet === 'utang' && utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
+          if (isIncome) {
+            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amount;
+          } else {
+            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amount;
+          }
+        }
 
         expenses.unshift(newExpense);
 
         const isUtang = wallet === 'utang';
+        const displayWallet = (isUtang && utangWallet && utangWallet !== 'none')
+          ? `UTANG (${utangWallet.toUpperCase()})`
+          : wallet.toUpperCase();
+
         if (isIncome) {
           sendDiscordNotification(
             isUtang
               ? (isProjected ? "🔮 Projected Utang Borrowed" : "🤝 Utang Borrowed / Added")
               : (isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income"),
             isProjected
-              ? `Planned **${isUtang ? '-' : '+'}${formatCurrency(amount)}** for **${wallet.toUpperCase()}** (*${title}*) by ${new Date(date).toLocaleDateString()}.`
-              : `Added **${isUtang ? '-' : '+'}${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}*).`,
+              ? `Planned **${isUtang ? '-' : '+'}${formatCurrency(amount)}** for **${displayWallet}** (*${title}*) by ${new Date(date).toLocaleDateString()}.`
+              : `Added **${isUtang ? '-' : '+'}${formatCurrency(amount)}** to **${displayWallet}** (*${title}*).`,
             isUtang ? 0xef4444 : 0x10b981,
             [
               { name: "Item", value: title, inline: true },
               { name: "Amount", value: `${isUtang ? '-' : '+'}${formatCurrency(amount)}`, inline: true },
-              { name: "Account", value: wallet.toUpperCase(), inline: true },
+              { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
           );
@@ -3648,13 +3739,13 @@
               ? (isProjected ? "🔮 Projected Utang Repayment Planned" : "🤝 Utang Repaid / Cleared")
               : (isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded"),
             isProjected
-              ? `Planned **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}** for ${new Date(date).toLocaleDateString()}.`
-              : `Spent **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}**.`,
+              ? `Planned **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${displayWallet}** for ${new Date(date).toLocaleDateString()}.`
+              : `Spent **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${displayWallet}**.`,
             isUtang ? 0x10b981 : (isProjected ? 0xf59e0b : 0xef4444),
             [
               { name: "Item", value: title, inline: true },
               { name: "Amount", value: `${isUtang ? '+' : ''}${formatCurrency(amount)}`, inline: true },
-              { name: "Account", value: wallet.toUpperCase(), inline: true },
+              { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
           );
@@ -3693,6 +3784,13 @@
               wallets[item.wallet] = (Number(wallets[item.wallet]) || 0) + (Number(item.amount) || 0);
             }
           }
+          if (!item.isProjected && item.wallet === 'utang' && item.utangWallet && item.utangWallet !== 'none' && wallets[item.utangWallet] !== undefined) {
+            if (item.type === 'income') {
+              wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) - (Number(item.amount) || 0);
+            } else {
+              wallets[item.utangWallet] = (Number(wallets[item.utangWallet]) || 0) + (Number(item.amount) || 0);
+            }
+          }
           expenses = expenses.filter(e => e.id !== currentEditExpenseId);
           saveStorage();
           render();
@@ -3717,6 +3815,7 @@
       selectWallet.addEventListener('change', () => {
         const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
         updateIncomeModeUI(rawAmount.startsWith('+'));
+        updateUtangWalletVisibility();
       });
     }
 
