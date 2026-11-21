@@ -1787,9 +1787,37 @@
       transform: scale(0.96);
     }
 
-    /* In Edit Mode: 2x2 perfectly balanced and symmetrical grid */
+    .btn-save-actual {
+      background: rgba(16, 185, 129, 0.14);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.48rem 0.85rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.42rem;
+      transition: var(--transition);
+      white-space: nowrap;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .btn-save-actual:hover {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: #10b981;
+    }
+    .btn-save-actual:active {
+      transform: scale(0.98);
+    }
+
+    /* In Edit Mode or Save Actual Mode: perfectly balanced layout */
     #modal-expense.is-edit-mode .modal-actions-expense,
-    .modal-actions-expense.is-edit-mode {
+    .modal-actions-expense.is-edit-mode,
+    #modal-expense.has-save-actual .modal-actions-expense,
+    .modal-actions-expense.has-save-actual {
       display: flex !important;
       flex-direction: column !important;
       gap: 0.55rem !important;
@@ -1797,7 +1825,9 @@
       box-sizing: border-box !important;
     }
     #modal-expense.is-edit-mode .modal-actions-left,
-    .modal-actions-expense.is-edit-mode .modal-actions-left {
+    .modal-actions-expense.is-edit-mode .modal-actions-left,
+    #modal-expense.has-save-actual .modal-actions-left,
+    .modal-actions-expense.has-save-actual .modal-actions-left {
       display: flex !important;
       width: 100% !important;
       justify-content: space-between !important;
@@ -1806,7 +1836,9 @@
       box-sizing: border-box !important;
     }
     #modal-expense.is-edit-mode .modal-actions-right,
-    .modal-actions-expense.is-edit-mode .modal-actions-right {
+    .modal-actions-expense.is-edit-mode .modal-actions-right,
+    #modal-expense.has-save-actual .modal-actions-right,
+    .modal-actions-expense.has-save-actual .modal-actions-right {
       display: flex !important;
       width: 100% !important;
       justify-content: space-between !important;
@@ -1816,7 +1848,9 @@
       box-sizing: border-box !important;
     }
     #modal-expense.is-edit-mode .modal-actions-right .btn-modal-cancel,
-    .modal-actions-expense.is-edit-mode .modal-actions-right .btn-modal-cancel {
+    .modal-actions-expense.is-edit-mode .modal-actions-right .btn-modal-cancel,
+    #modal-expense.has-save-actual .modal-actions-right .btn-modal-cancel,
+    .modal-actions-expense.has-save-actual .modal-actions-right .btn-modal-cancel {
       flex: 1 1 0 !important;
       min-width: 0 !important;
       width: 0 !important;
@@ -1826,7 +1860,9 @@
       box-sizing: border-box !important;
     }
     #modal-expense.is-edit-mode .modal-actions-right .btn-primary,
-    .modal-actions-expense.is-edit-mode .modal-actions-right .btn-primary {
+    .modal-actions-expense.is-edit-mode .modal-actions-right .btn-primary,
+    #modal-expense.has-save-actual .modal-actions-right .btn-primary,
+    .modal-actions-expense.has-save-actual .modal-actions-right .btn-primary {
       flex: 1.3 1 0 !important;
       min-width: 0 !important;
       width: 0 !important;
@@ -2383,7 +2419,10 @@
 
         <!-- Date & Time -->
         <div class="form-group">
-          <label class="form-label" for="expense-input-datetime">Date & Time</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label class="form-label" for="expense-input-datetime" style="margin-bottom: 0;">Date & Time</label>
+            <button type="button" id="btn-set-datetime-now" style="background: none; border: none; font-size: 0.72rem; font-weight: 600; color: var(--accent-primary); cursor: pointer; padding: 0.1rem 0.3rem;">Set to Now</button>
+          </div>
           <input type="datetime-local" id="expense-input-datetime" class="form-input" />
         </div>
 
@@ -2401,6 +2440,9 @@
             </button>
             <button type="button" id="btn-toggle-income" style="display: none;"><span id="btn-toggle-income-text"></span></button>
           </div>
+          <button type="button" id="btn-save-as-actual" class="btn-save-actual" style="display: none;">
+            <i class="fa-solid fa-circle-check"></i> <span id="btn-save-as-actual-text">Save as Actual Expense</span>
+          </button>
           <div class="modal-actions-right">
             <button type="button" class="btn-modal-cancel" id="btn-cancel-expense">Cancel</button>
             <button type="submit" id="btn-submit-expense" class="btn-primary">Save Expense</button>
@@ -3628,6 +3670,20 @@
             : (isIncome ? '+ Add Money' : 'Save Expense');
         }
       }
+
+      const btnSaveActual = document.getElementById('btn-save-as-actual');
+      const expModal = document.getElementById('modal-expense');
+      const actExpense = document.getElementById('modal-actions-expense');
+      if (isProjected) {
+        if (btnSaveActual) btnSaveActual.style.display = 'inline-flex';
+        if (expModal) expModal.classList.add('has-save-actual');
+        if (actExpense) actExpense.classList.add('has-save-actual');
+      } else {
+        if (btnSaveActual) btnSaveActual.style.display = 'none';
+        if (expModal) expModal.classList.remove('has-save-actual');
+        if (actExpense) actExpense.classList.remove('has-save-actual');
+      }
+
       updateUtangWalletVisibility();
     }
 
@@ -3640,6 +3696,7 @@
       const chkIncome = document.getElementById('checkbox-toggle-income');
       const toggleCtrl = document.getElementById('income-toggle-control');
       const toggleLbl = document.getElementById('income-toggle-label');
+      const btnSaveActualText = document.getElementById('btn-save-as-actual-text');
       const isProjected = currentEditExpenseId 
         ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
         : Boolean(isProjectedMode);
@@ -3647,6 +3704,9 @@
       if (chkIncome) chkIncome.checked = Boolean(isIncome);
       if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
       if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
+      if (btnSaveActualText) {
+        btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+      }
       updateUtangWalletVisibility();
 
       if (isIncome) {
@@ -3827,14 +3887,18 @@
       currentEditExpenseId = null;
       const btnDelete = document.getElementById('btn-delete-expense');
       if (btnDelete) btnDelete.style.display = 'none';
+      const btnSaveActual = document.getElementById('btn-save-as-actual');
+      if (btnSaveActual) btnSaveActual.style.display = 'none';
       const expModal = document.getElementById('modal-expense');
       const actExpense = document.getElementById('modal-actions-expense');
       if (expModal) {
         expModal.classList.remove('is-edit-mode');
+        expModal.classList.remove('has-save-actual');
         expModal.classList.remove('is-active');
       }
       if (actExpense) {
         actExpense.classList.remove('is-edit-mode');
+        actExpense.classList.remove('has-save-actual');
       }
     }
 
@@ -3853,9 +3917,8 @@
       document.getElementById('modal-settings').classList.remove('is-active');
     }
 
-    // Expense Form Submit (Add or Edit)
-    document.getElementById('form-add-expense').addEventListener('submit', (e) => {
-      e.preventDefault();
+    // Expense Form Submit & Actual Save Handler
+    function handleSaveExpense(forceActual = false) {
       const title = document.getElementById('expense-input-title').value.trim();
       const rawAmount = document.getElementById('expense-input-amount').value.trim();
       const isIncome = rawAmount.startsWith('+');
@@ -3867,10 +3930,17 @@
       const utangPersonInput = document.getElementById('expense-input-utang-person');
       const debtor = (wallet === 'utang' && utangPersonInput) ? utangPersonInput.value.trim() : null;
       const dtInput = document.getElementById('expense-input-datetime').value;
-      const date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
-      const isProjected = currentEditExpenseId 
-        ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
-        : Boolean(isProjectedMode);
+      let date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
+
+      if (forceActual && new Date(date) > new Date()) {
+        date = new Date().toISOString();
+      }
+
+      const isProjected = forceActual 
+        ? false 
+        : (currentEditExpenseId 
+            ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
+            : Boolean(isProjectedMode));
 
       let finalTitle = title;
       if (wallet === 'utang' && !finalTitle && debtor) {
@@ -3882,6 +3952,8 @@
         return;
       }
 
+      let wasProj = false;
+
       if (currentEditExpenseId) {
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (item) {
@@ -3890,6 +3962,7 @@
           const oldAmount = Number(item.amount) || 0;
           const oldIsIncome = item.type === 'income';
           const oldIsProjected = Boolean(item.isProjected);
+          wasProj = oldIsProjected;
 
           // 1. Revert old transaction effect if it was NOT projected
           if (!oldIsProjected && oldWallet && oldWallet !== 'none' && wallets[oldWallet] !== undefined) {
@@ -4007,14 +4080,36 @@
       }
 
       saveStorage();
-      if (isProjected) {
+      if (wasProj || isProjected) {
         syncProjectedBaonToTarget();
-      } else {
-        render();
       }
+      render();
       closeExpenseModal();
-      showToast(isIncome ? 'Value added to account!' : 'Expense recorded successfully!', 'success');
+      showToast(forceActual 
+        ? (isIncome ? 'Saved as actual income!' : 'Saved as actual expense!') 
+        : (isIncome ? 'Value added to account!' : 'Expense recorded successfully!'), 'success');
+    }
+
+    document.getElementById('form-add-expense').addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleSaveExpense(false);
     });
+
+    const btnSaveActualEl = document.getElementById('btn-save-as-actual');
+    if (btnSaveActualEl) {
+      btnSaveActualEl.addEventListener('click', () => {
+        handleSaveExpense(true);
+      });
+    }
+
+    const btnSetNowEl = document.getElementById('btn-set-datetime-now');
+    if (btnSetNowEl) {
+      btnSetNowEl.addEventListener('click', () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('expense-input-datetime').value = now.toISOString().slice(0, 16);
+      });
+    }
 
     const btnDeleteExp = document.getElementById('btn-delete-expense');
     if (btnDeleteExp) {
