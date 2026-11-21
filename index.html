@@ -3371,8 +3371,8 @@
       }
       const isUtang = item.wallet === 'utang';
       const isPaid = Boolean(item.isPaid);
-      // For Utang: expenses are green and positive (+), add money is red and negative (-)
-      const showAsPositive = isUtang ? !isIncome : isIncome;
+      // Expenses and Lending are negative (-), Income and Borrowing are positive (+)
+      const showAsPositive = isIncome;
       const amountPrefix = showAsPositive ? '+' : '-';
       const amountClass = showAsPositive ? 'expense-item-amount is-income mono' : 'expense-item-amount mono';
       const paidClass = isPaid ? 'is-paid' : '';
@@ -4300,13 +4300,13 @@
               ? (isProjected ? "🔮 Projected Utang Borrowed" : "🤝 Utang Borrowed / Added")
               : (isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income"),
             isProjected
-              ? `Planned **${isUtang ? '-' : '+'}${formatCurrency(amount)}** for **${displayWallet}** (*${finalTitle}*) by ${new Date(date).toLocaleDateString()}.`
-              : `Added **${isUtang ? '-' : '+'}${formatCurrency(amount)}** to **${displayWallet}** (*${finalTitle}*).`,
-            isUtang ? 0xef4444 : 0x10b981,
+              ? `Planned **+${formatCurrency(amount)}** for **${displayWallet}** (*${finalTitle}*) by ${new Date(date).toLocaleDateString()}.`
+              : `Added **+${formatCurrency(amount)}** to **${displayWallet}** (*${finalTitle}*).`,
+            0x10b981,
             [
               { name: "Item", value: finalTitle, inline: true },
               ...(debtor ? [{ name: "Person", value: debtor, inline: true }] : []),
-              { name: "Amount", value: `${isUtang ? '-' : '+'}${formatCurrency(amount)}`, inline: true },
+              { name: "Amount", value: `+${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
@@ -4314,16 +4314,16 @@
         } else {
           sendDiscordNotification(
             isUtang
-              ? (isProjected ? "🔮 Projected Utang Repayment Planned" : "🤝 Utang Repaid / Cleared")
+              ? (isProjected ? "🔮 Projected Utang Lent" : "🤝 Utang Lent")
               : (isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded"),
             isProjected
-              ? `Planned **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${finalTitle}* via **${displayWallet}** for ${new Date(date).toLocaleDateString()}.`
-              : `Spent **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${finalTitle}* via **${displayWallet}**.`,
-            isUtang ? 0x10b981 : (isProjected ? 0xf59e0b : 0xef4444),
+              ? `Planned **-${formatCurrency(amount)}** on *${finalTitle}* via **${displayWallet}** for ${new Date(date).toLocaleDateString()}.`
+              : `Lent **-${formatCurrency(amount)}** on *${finalTitle}* via **${displayWallet}**.`,
+            isProjected ? 0xf59e0b : 0xef4444,
             [
               { name: "Item", value: finalTitle, inline: true },
               ...(debtor ? [{ name: "Person", value: debtor, inline: true }] : []),
-              { name: "Amount", value: `${isUtang ? '+' : ''}${formatCurrency(amount)}`, inline: true },
+              { name: "Amount", value: `-${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: displayWallet, inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
