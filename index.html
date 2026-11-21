@@ -3041,8 +3041,11 @@
         none: 'None'
       };
       const walletLabel = walletNames[item.wallet] || item.wallet || 'Cash';
-      const amountPrefix = isIncome ? '+' : '-';
-      const amountClass = isIncome ? 'expense-item-amount is-income mono' : 'expense-item-amount mono';
+      const isUtang = item.wallet === 'utang';
+      // For Utang: expenses are green and positive (+), add money is red and negative (-)
+      const showAsPositive = isUtang ? !isIncome : isIncome;
+      const amountPrefix = showAsPositive ? '+' : '-';
+      const amountClass = showAsPositive ? 'expense-item-amount is-income mono' : 'expense-item-amount mono';
       const rowClass = isProjected ? 'expense-row is-projected-item' : 'expense-row';
 
       return `
@@ -3379,11 +3382,17 @@
             : (isIncome ? '+ Add Projected Value' : 'Save Projected Expense');
         }
       } else {
+        const walletEl = document.getElementById('expense-input-wallet');
+        const isUtang = walletEl && walletEl.value === 'utang';
         if (labelWallet) {
-          labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
+          labelWallet.textContent = isIncome ? (isUtang ? 'Add Debt To *' : 'Add To Account *') : (isUtang ? 'Repay Utang From *' : 'Deduct From Account *');
         }
         if (helpWallet) {
-          if (isIncome) {
+          if (isUtang) {
+            helpWallet.innerHTML = isIncome
+              ? '<span style="color: var(--color-error); font-weight: 700;"><i class="fa-solid fa-hand-holding-dollar"></i> Adds to Utang (shows negative/red in timeline).</span>'
+              : '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-handshake"></i> Deducts from Utang (shows positive/green in timeline).</span>';
+          } else if (isIncome) {
             helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
           } else {
             helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
@@ -3408,6 +3417,8 @@
       const chkIncome = document.getElementById('checkbox-toggle-income');
       const toggleCtrl = document.getElementById('income-toggle-control');
       const toggleLbl = document.getElementById('income-toggle-label');
+      const walletEl = document.getElementById('expense-input-wallet');
+      const isUtang = walletEl && walletEl.value === 'utang';
       const isProjected = currentEditExpenseId 
         ? Boolean(expenses.find(e => e.id === currentEditExpenseId)?.isProjected) 
         : Boolean(isProjectedMode);
@@ -3417,10 +3428,12 @@
       if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
 
       if (isIncome) {
-        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : 'Add To Account *';
+        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (+ Add Later)' : (isUtang ? 'Add Debt To *' : 'Add To Account *');
         if (helpWallet) {
           if (isProjected) {
             helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
+          } else if (isUtang) {
+            helpWallet.innerHTML = '<span style="color: var(--color-error); font-weight: 700;"><i class="fa-solid fa-hand-holding-dollar"></i> Adds to Utang (shows negative/red in timeline).</span>';
           } else {
             helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-plus-circle"></i> Selecting an account will ADD this value to that account\'s balance.</span>';
           }
@@ -3441,10 +3454,12 @@
             : (isProjected ? 'Add Projected Value' : 'Add Value / Income');
         }
       } else {
-        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : 'Deduct From Account *';
+        if (labelWallet) labelWallet.textContent = isProjected ? 'Planned Account (Deduct Later) *' : (isUtang ? 'Repay Utang From *' : 'Deduct From Account *');
         if (helpWallet) {
           if (isProjected) {
             helpWallet.innerHTML = '<span style="color: var(--accent-primary); font-weight: 600;"><i class="fa-solid fa-clock"></i> Projected: Balance will NOT change now until realized.</span>';
+          } else if (isUtang) {
+            helpWallet.innerHTML = '<span style="color: var(--color-success); font-weight: 700;"><i class="fa-solid fa-handshake"></i> Deducts from Utang (shows positive/green in timeline).</span>';
           } else {
             helpWallet.textContent = "Selecting an account automatically deducts this expense from that account's balance.";
             helpWallet.style.color = '';
@@ -3653,30 +3668,35 @@
 
         expenses.unshift(newExpense);
 
+        const isUtang = wallet === 'utang';
         if (isIncome) {
           sendDiscordNotification(
-            isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income",
+            isUtang
+              ? (isProjected ? "🔮 Projected Utang Borrowed" : "🤝 Utang Borrowed / Added")
+              : (isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income"),
             isProjected
-              ? `Planned **+${formatCurrency(amount)}** for **${wallet.toUpperCase()}** (*${title}*) by ${new Date(date).toLocaleDateString()}.`
-              : `Added **+${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}*).`,
-            0x10b981,
+              ? `Planned **${isUtang ? '-' : '+'}${formatCurrency(amount)}** for **${wallet.toUpperCase()}** (*${title}*) by ${new Date(date).toLocaleDateString()}.`
+              : `Added **${isUtang ? '-' : '+'}${formatCurrency(amount)}** to **${wallet.toUpperCase()}** (*${title}*).`,
+            isUtang ? 0xef4444 : 0x10b981,
             [
               { name: "Item", value: title, inline: true },
-              { name: "Amount", value: `+${formatCurrency(amount)}`, inline: true },
+              { name: "Amount", value: `${isUtang ? '-' : '+'}${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: wallet.toUpperCase(), inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
           );
         } else {
           sendDiscordNotification(
-            isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded",
+            isUtang
+              ? (isProjected ? "🔮 Projected Utang Repayment Planned" : "🤝 Utang Repaid / Cleared")
+              : (isProjected ? "🔮 Projected Expense Planned" : "💸 Expense Recorded"),
             isProjected
-              ? `Planned **${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}** for ${new Date(date).toLocaleDateString()}.`
-              : `Spent **${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}**.`,
-            isProjected ? 0xf59e0b : 0xef4444,
+              ? `Planned **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}** for ${new Date(date).toLocaleDateString()}.`
+              : `Spent **${isUtang ? '+' : ''}${formatCurrency(amount)}** on *${title}* via **${wallet.toUpperCase()}**.`,
+            isUtang ? 0x10b981 : (isProjected ? 0xf59e0b : 0xef4444),
             [
               { name: "Item", value: title, inline: true },
-              { name: "Amount", value: formatCurrency(amount), inline: true },
+              { name: "Amount", value: `${isUtang ? '+' : ''}${formatCurrency(amount)}`, inline: true },
               { name: "Account", value: wallet.toUpperCase(), inline: true },
               { name: "Status", value: isProjected ? "Projected" : "Actual", inline: true }
             ]
@@ -3732,6 +3752,14 @@
         const val = e.target.value.trim();
         const isInc = val.startsWith('+');
         updateIncomeModeUI(isInc);
+      });
+    }
+
+    const selectWallet = document.getElementById('expense-input-wallet');
+    if (selectWallet) {
+      selectWallet.addEventListener('change', () => {
+        const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
+        updateIncomeModeUI(rawAmount.startsWith('+'));
       });
     }
 
