@@ -2419,10 +2419,7 @@
 
         <!-- Date & Time -->
         <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-            <label class="form-label" for="expense-input-datetime" style="margin-bottom: 0;">Date & Time</label>
-            <button type="button" id="btn-set-datetime-now" style="background: none; border: none; font-size: 0.72rem; font-weight: 600; color: var(--accent-primary); cursor: pointer; padding: 0.1rem 0.3rem;">Set to Now</button>
-          </div>
+          <label class="form-label" for="expense-input-datetime">Date & Time</label>
           <input type="datetime-local" id="expense-input-datetime" class="form-input" />
         </div>
 
@@ -4147,15 +4144,6 @@
     if (btnSaveActualEl) {
       btnSaveActualEl.addEventListener('click', () => {
         handleSaveExpense(true);
-      });
-    }
-
-    const btnSetNowEl = document.getElementById('btn-set-datetime-now');
-    if (btnSetNowEl) {
-      btnSetNowEl.addEventListener('click', () => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('expense-input-datetime').value = now.toISOString().slice(0, 16);
       });
     }
 
