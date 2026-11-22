@@ -2970,10 +2970,31 @@
         }
       }
 
-      // Deduplicate duplicate actual Baon entries
-      const actualBaons = expenses.filter(e => !e.isProjected && e.type === 'income' && e.title === 'Baon' && e.wallet === 'cash' && Number(e.amount) === 1000);
-      if (actualBaons.length > 1) {
-        const duplicatesToRemove = actualBaons.slice(1);
+      // Heal any actual Baon erroneously created on Nov 22 due to the previous forceActual date override
+      expenses.forEach(e => {
+        if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon') && e.wallet === 'cash' && e.date && e.date.startsWith('2026-11-22')) {
+          e.date = '2026-12-01T08:00:00+08:00';
+          e.wasProjected = true;
+          e.wasProjectedBaon = true;
+          e.convertedFromProjected = true;
+          migrationApplied = true;
+        }
+      });
+
+      // Deduplicate accidental duplicate actual Baon entries for the EXACT same date
+      const seenBaonDays = new Set();
+      const duplicatesToRemove = [];
+      expenses.forEach(e => {
+        if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon') && e.wallet === 'cash' && e.date) {
+          const dayKey = e.date.slice(0, 10);
+          if (seenBaonDays.has(dayKey)) {
+            duplicatesToRemove.push(e);
+          } else {
+            seenBaonDays.add(dayKey);
+          }
+        }
+      });
+      if (duplicatesToRemove.length > 0) {
         const dupIds = new Set(duplicatesToRemove.map(d => d.id));
         expenses = expenses.filter(e => !dupIds.has(e.id));
         const refundAmt = 1000 * duplicatesToRemove.length;
@@ -3444,6 +3465,16 @@
       const tuesdays = [];
       let curr = new Date('2026-12-01T08:00:00+08:00');
 
+      // Check which Tuesdays already have an actual Baon fulfilled
+      const actualBaonDates = new Set();
+      if (Array.isArray(expenses)) {
+        expenses.forEach(e => {
+          if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon' || e.wasProjectedBaon || e.convertedFromProjected) && e.wallet === 'cash' && e.date) {
+            actualBaonDates.add(e.date.slice(0, 10));
+          }
+        });
+      }
+
       while (tuesdays.length < count) {
         const y = curr.getFullYear();
         const m = curr.getMonth() + 1;
@@ -3465,7 +3496,7 @@
           isBreak = true;
         }
 
-        if (!isBreak) {
+        if (!isBreak && !actualBaonDates.has(dateStr)) {
           tuesdays.push(dateStr);
         }
         curr.setDate(curr.getDate() + 7);
@@ -3885,7 +3916,7 @@
       const curItem = currentEditExpenseId ? expenses.find(e => e.id === currentEditExpenseId) : null;
       const canShowSaveActual = Boolean(
         currentEditExpenseId && 
-        (isProjected || (curItem && (curItem.wasProjected || curItem.convertedFromProjected || String(curItem.id).startsWith('exp_proj_baon_'))))
+        (isProjected || (curItem && (curItem.wasProjected || curItem.convertedFromProjected || curItem.wasProjectedBaon || String(curItem.id).startsWith('exp_proj_baon_'))))
       );
 
       if (canShowSaveActual) {
@@ -4134,7 +4165,7 @@
       expenses = expenses.filter(e => e.id !== item.id);
       syncUtangWalletBalance();
       saveStorage(true);
-      if (isProj) {
+      if (isProj || item.wasProjected || item.convertedFromProjected || item.wasProjectedBaon || (item.title || '').trim().toLowerCase() === 'baon') {
         syncProjectedBaonToTarget();
       } else {
         render();
@@ -4268,10 +4299,6 @@
       const dtInput = document.getElementById('expense-input-datetime').value;
       let date = dtInput ? new Date(dtInput).toISOString() : new Date().toISOString();
 
-      if (forceActual && new Date(date) > new Date()) {
-        date = new Date().toISOString();
-      }
-
       const isProjected = forceActual 
         ? false 
         : (currentEditExpenseId 
@@ -4367,11 +4394,16 @@
           if (oldIsProjected || item.wasProjected) {
             item.wasProjected = true;
           }
+          if (forceActual) {
+            item.convertedFromProjected = true;
+          }
           item.isPaid = Boolean(item.isPaid);
 
           // If turning projected baon into actual, assign a permanent id
-          if (!isProjected && item.id && String(item.id).startsWith('exp_proj_baon_')) {
+          if (!isProjected && item.id && (String(item.id).startsWith('exp_proj_baon_') || (item.title || '').trim().toLowerCase() === 'baon')) {
             item.id = 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            item.wasProjectedBaon = true;
+            item.convertedFromProjected = true;
           }
         }
       } else {
@@ -4550,7 +4582,7 @@
 
         if (item.isProjected) {
           handleSaveExpense(true);
-        } else if (item.wasProjected || item.convertedFromProjected || String(item.id).startsWith('exp_proj_baon_')) {
+        } else if (item.wasProjected || item.convertedFromProjected || item.wasProjectedBaon || String(item.id).startsWith('exp_proj_baon_')) {
           handleUnsaveToProjected();
         }
       });
@@ -5028,13 +5060,34 @@
               }
             }
 
-            // Deduplicate actual Baons if cloud sync has duplicates
-            const actualBaons = expenses.filter(e => !e.isProjected && e.type === 'income' && e.title === 'Baon' && e.wallet === 'cash' && Number(e.amount) === 1000);
-            if (actualBaons.length > 1) {
-              const duplicatesToRemove = actualBaons.slice(1);
-              const dupIds = new Set(duplicatesToRemove.map(d => d.id));
+            // Heal any actual Baon erroneously created on Nov 22 due to the previous forceActual date override
+            expenses.forEach(e => {
+              if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon') && e.wallet === 'cash' && e.date && e.date.startsWith('2026-11-22')) {
+                e.date = '2026-12-01T08:00:00+08:00';
+                e.wasProjected = true;
+                e.wasProjectedBaon = true;
+                e.convertedFromProjected = true;
+                needsCloudHeal = true;
+              }
+            });
+
+            // Deduplicate accidental duplicate actual Baons for the exact same date
+            const seenBaonDaysCloud = new Set();
+            const duplicatesToRemoveCloud = [];
+            expenses.forEach(e => {
+              if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon') && e.wallet === 'cash' && e.date) {
+                const dayKey = e.date.slice(0, 10);
+                if (seenBaonDaysCloud.has(dayKey)) {
+                  duplicatesToRemoveCloud.push(e);
+                } else {
+                  seenBaonDaysCloud.add(dayKey);
+                }
+              }
+            });
+            if (duplicatesToRemoveCloud.length > 0) {
+              const dupIds = new Set(duplicatesToRemoveCloud.map(d => d.id));
               expenses = expenses.filter(e => !dupIds.has(e.id));
-              const refundAmt = 1000 * duplicatesToRemove.length;
+              const refundAmt = 1000 * duplicatesToRemoveCloud.length;
               wallets.cash = Math.max(0, (Number(wallets.cash) || 0) - refundAmt);
               needsCloudHeal = true;
             }
