@@ -2930,6 +2930,9 @@
       // Ensure secondary wallet balance adjustments for any legacy paid items
       let migrationApplied = false;
       expenses.forEach(item => {
+        if (item.isProjected) {
+          item.wasProjected = true;
+        }
         if (item.wallet === 'utang' && item.isPaid && !item.paidApplied && !item.isProjected) {
           const amt = Number(item.amount) || 0;
           const secWallet = item.utangWallet;
@@ -3488,6 +3491,7 @@
           category: 'Income / Top-up',
           date: `${dStr}T08:00:00+08:00`,
           isProjected: true,
+          wasProjected: true,
           createdAt: nowIso
         };
       });
@@ -3871,42 +3875,20 @@
       }
     }
 
-    function updateProjectedModeUI(isProjected) {
-      const labelWallet = document.getElementById('expense-account-label');
-      const submitBtn = document.getElementById('btn-submit-expense');
-      const chk = document.getElementById('checkbox-toggle-income');
-      const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
-      const isIncome = chk ? chk.checked : rawAmount.startsWith('+');
-
-      if (isProjected) {
-        if (labelWallet) {
-          labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later) *';
-        }
-        if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId
-            ? 'Save Changes'
-            : (isIncome ? '+ Add Money' : 'Save Expense');
-        }
-      } else {
-        if (labelWallet) {
-          labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
-        }
-        if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId
-            ? 'Save Changes'
-            : (isIncome ? '+ Add Money' : 'Save Expense');
-        }
-      }
-
+    function updateSaveActualButtonUI(isProjected, isIncome, isUtang) {
       const btnSaveActual = document.getElementById('btn-save-as-actual');
       const btnSaveActualText = document.getElementById('btn-save-as-actual-text');
       const btnSaveActualIcon = document.getElementById('btn-save-as-actual-icon');
       const expModal = document.getElementById('modal-expense');
       const actExpense = document.getElementById('modal-actions-expense');
-      const walletSelect = document.getElementById('expense-input-wallet');
-      const isUtang = walletSelect && walletSelect.value === 'utang';
 
-      if (currentEditExpenseId) {
+      const curItem = currentEditExpenseId ? expenses.find(e => e.id === currentEditExpenseId) : null;
+      const canShowSaveActual = Boolean(
+        currentEditExpenseId && 
+        (isProjected || (curItem && (curItem.wasProjected || curItem.convertedFromProjected || String(curItem.id).startsWith('exp_proj_baon_'))))
+      );
+
+      if (canShowSaveActual) {
         if (btnSaveActual) {
           btnSaveActual.style.display = 'inline-flex';
           if (isProjected) {
@@ -3938,7 +3920,38 @@
         if (expModal) expModal.classList.remove('has-save-actual');
         if (actExpense) actExpense.classList.remove('has-save-actual');
       }
+    }
 
+    function updateProjectedModeUI(isProjected) {
+      const labelWallet = document.getElementById('expense-account-label');
+      const submitBtn = document.getElementById('btn-submit-expense');
+      const chk = document.getElementById('checkbox-toggle-income');
+      const rawAmount = (document.getElementById('expense-input-amount') ? document.getElementById('expense-input-amount').value : '').trim();
+      const isIncome = chk ? chk.checked : rawAmount.startsWith('+');
+      const walletSelect = document.getElementById('expense-input-wallet');
+      const isUtang = walletSelect && walletSelect.value === 'utang';
+
+      if (isProjected) {
+        if (labelWallet) {
+          labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later) *';
+        }
+        if (submitBtn) {
+          submitBtn.textContent = currentEditExpenseId
+            ? 'Save Changes'
+            : (isIncome ? '+ Add Money' : 'Save Expense');
+        }
+      } else {
+        if (labelWallet) {
+          labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
+        }
+        if (submitBtn) {
+          submitBtn.textContent = currentEditExpenseId
+            ? 'Save Changes'
+            : (isIncome ? '+ Add Money' : 'Save Expense');
+        }
+      }
+
+      updateSaveActualButtonUI(isProjected, isIncome, isUtang);
       updateUtangWalletVisibility();
     }
 
@@ -3951,9 +3964,6 @@
       const chkIncome = document.getElementById('checkbox-toggle-income');
       const toggleCtrl = document.getElementById('income-toggle-control');
       const toggleLbl = document.getElementById('income-toggle-label');
-      const btnSaveActualText = document.getElementById('btn-save-as-actual-text');
-      const btnSaveActualIcon = document.getElementById('btn-save-as-actual-icon');
-      const btnSaveActual = document.getElementById('btn-save-as-actual');
       const walletSelect = document.getElementById('expense-input-wallet');
       const isUtang = walletSelect && walletSelect.value === 'utang';
       const isProjected = currentEditExpenseId 
@@ -3969,30 +3979,7 @@
         if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
       }
 
-      if (currentEditExpenseId && btnSaveActual) {
-        btnSaveActual.style.display = 'inline-flex';
-        if (isProjected) {
-          btnSaveActual.classList.remove('is-revert');
-          if (btnSaveActualIcon) btnSaveActualIcon.className = 'fa-solid fa-circle-check';
-          if (btnSaveActualText) {
-            if (isUtang) {
-              btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
-            } else {
-              btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
-            }
-          }
-        } else {
-          btnSaveActual.classList.add('is-revert');
-          if (btnSaveActualIcon) btnSaveActualIcon.className = 'fa-solid fa-clock-rotate-left';
-          if (btnSaveActualText) {
-            if (isUtang) {
-              btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Borrowing' : 'Unsave to Projected Lending';
-            } else {
-              btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Income' : 'Unsave to Projected Expense';
-            }
-          }
-        }
-      }
+      updateSaveActualButtonUI(isProjected, isIncome, isUtang);
       updateUtangWalletVisibility();
 
       if (isIncome) {
@@ -4377,6 +4364,9 @@
           item.debtor = debtor;
           item.date = date;
           item.isProjected = isProjected;
+          if (oldIsProjected || item.wasProjected) {
+            item.wasProjected = true;
+          }
           item.isPaid = Boolean(item.isPaid);
 
           // If turning projected baon into actual, assign a permanent id
@@ -4395,6 +4385,7 @@
           debtor: debtor,
           date: date,
           isProjected: isProjected,
+          wasProjected: Boolean(isProjected),
           isPaid: false,
           createdAt: new Date().toISOString()
         };
@@ -4514,6 +4505,7 @@
 
       // 2. Revert state to projected
       item.isProjected = true;
+      item.wasProjected = true;
       item.isPaid = false;
       item.paidApplied = false;
 
@@ -4558,7 +4550,7 @@
 
         if (item.isProjected) {
           handleSaveExpense(true);
-        } else {
+        } else if (item.wasProjected || item.convertedFromProjected || String(item.id).startsWith('exp_proj_baon_')) {
           handleUnsaveToProjected();
         }
       });
@@ -5004,6 +4996,11 @@
           try {
             if (Array.isArray(remote.expenses)) {
               expenses = remote.expenses;
+              expenses.forEach(item => {
+                if (item.isProjected) {
+                  item.wasProjected = true;
+                }
+              });
             }
             if (remote.wallets && typeof remote.wallets === 'object') {
               wallets = { ...wallets, ...remote.wallets };
