@@ -383,8 +383,10 @@
 
     /* Overall Hero Money & Overview */
     .hero-overview-card {
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(26, 22, 19, 0.95) 100%);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(26, 22, 19, 0.65) 100%);
       border: 1px solid rgba(249, 115, 22, 0.3);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border-radius: var(--radius-md);
       padding: 0.28rem 0.65rem;
       display: flex;
@@ -399,7 +401,7 @@
       box-sizing: border-box;
     }
     [data-theme="light"] .hero-overview-card {
-      background: linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, #ffffff 100%);
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, rgba(255, 255, 255, 0.75) 100%);
       border: 1px solid rgba(234, 88, 12, 0.25);
     }
 
@@ -439,11 +441,13 @@
     /* Projected Mode Hero Card Styles */
     .hero-overview-card.is-projected-mode {
       border-color: var(--accent-primary) !important;
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(26, 22, 19, 0.98) 100%) !important;
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.22) 0%, rgba(26, 22, 19, 0.68) 100%) !important;
       box-shadow: 0 0 16px var(--accent-glow) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
     }
     [data-theme="light"] .hero-overview-card.is-projected-mode {
-      background: linear-gradient(135deg, rgba(234, 88, 12, 0.16) 0%, #ffffff 100%) !important;
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.16) 0%, rgba(255, 255, 255, 0.8) 100%) !important;
     }
 
     .hero-label-row {
@@ -1297,15 +1301,18 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.5rem;
-      background: var(--bg-card) !important;
+      background: rgba(22, 20, 18, 0.72) !important;
       border: 1px solid var(--border-color) !important;
       border-radius: var(--radius-md) !important;
       box-shadow: var(--shadow-sm) !important;
-      backdrop-filter: blur(12px) !important;
-      -webkit-backdrop-filter: blur(12px) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
       padding: 0.25rem 0.55rem !important;
       min-height: 42px;
       box-sizing: border-box !important;
+    }
+    [data-theme="light"] .bottom-panel-inner {
+      background: rgba(255, 255, 255, 0.8) !important;
     }
 
     .brand-nav-wrapper {
@@ -2115,11 +2122,11 @@
       max-width: 400px;
     }
     .toast {
-      background: rgba(22, 18, 16, 0.94);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(249, 115, 22, 0.12);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(22, 18, 16, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 15px rgba(249, 115, 22, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       padding: 0.75rem 1rem;
       border-radius: var(--radius-md);
       color: var(--text-primary);
@@ -2135,8 +2142,9 @@
       transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
     [data-theme="light"] .toast {
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      background: rgba(255, 255, 255, 0.68);
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
     .toast.is-visible {
       transform: translateY(0);
@@ -2147,22 +2155,40 @@
       flex-shrink: 0;
     }
     .toast.is-success {
-      border-color: rgba(16, 185, 129, 0.5);
+      background: rgba(10, 36, 24, 0.58);
+      border-color: rgba(16, 185, 129, 0.45);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(16, 185, 129, 0.15);
     }
     .toast.is-success .toast-icon {
       color: var(--color-success);
     }
     .toast.is-error {
-      border-color: rgba(239, 68, 68, 0.5);
+      background: rgba(45, 16, 16, 0.58);
+      border-color: rgba(239, 68, 68, 0.45);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(239, 68, 68, 0.15);
     }
     .toast.is-error .toast-icon {
       color: var(--color-error);
     }
     .toast.is-info {
-      border-color: rgba(249, 115, 22, 0.5);
+      background: rgba(38, 20, 10, 0.58);
+      border-color: rgba(249, 115, 22, 0.45);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(249, 115, 22, 0.15);
     }
     .toast.is-info .toast-icon {
       color: var(--accent-primary);
+    }
+    [data-theme="light"] .toast.is-success {
+      background: rgba(236, 253, 245, 0.78);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    [data-theme="light"] .toast.is-error {
+      background: rgba(254, 242, 242, 0.78);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    [data-theme="light"] .toast.is-info {
+      background: rgba(255, 247, 237, 0.78);
+      border-color: rgba(249, 115, 22, 0.4);
     }
 
     .settings-section-card {
