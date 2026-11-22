@@ -2964,8 +2964,8 @@
           psuItem.type = 'expense'; // Lent to Benedict
           migrationApplied = true;
         }
-        if (psuItem.isPaid && (Number(wallets.cash) || 0) < 0) {
-          wallets.cash = Math.abs(Number(wallets.cash) || 290);
+        if ((Number(wallets.cash) || 0) < 0) {
+          wallets.cash = 0;
           migrationApplied = true;
         }
       }
@@ -3002,9 +3002,8 @@
         migrationApplied = true;
       }
 
-      // Ensure Cash balance does not keep orphaned income if actual Baon was deleted
-      const actualCashIncomes = expenses.filter(e => !e.isProjected && (e.type === 'income' || (e.title || '').toLowerCase() === 'baon') && e.wallet === 'cash');
-      if (actualCashIncomes.length === 0 && Number(wallets.cash) > 0) {
+      // Prevent negative physical cash balance
+      if ((Number(wallets.cash) || 0) < 0) {
         wallets.cash = 0;
         migrationApplied = true;
       }
@@ -4633,7 +4632,8 @@
               }
             } else {
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-                wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
+                const updated = (Number(wallets[secWallet]) || 0) - amt;
+                wallets[secWallet] = secWallet === 'cash' ? Math.max(0, updated) : updated;
               }
             }
           }
@@ -5066,8 +5066,8 @@
                 psuItem.type = 'expense'; // Lent to Benedict
                 needsCloudHeal = true;
               }
-              if ((Number(wallets.cash) || 0) < 0 && psuItem.isPaid) {
-                wallets.cash = Math.abs(Number(wallets.cash) || 290);
+              if ((Number(wallets.cash) || 0) < 0) {
+                wallets.cash = 0;
                 needsCloudHeal = true;
               }
             }
@@ -5104,12 +5104,10 @@
               needsCloudHeal = true;
             }
 
-            // Ensure Cash balance does not keep orphaned income if actual Baon was deleted
-            const actualCashIncomes = expenses.filter(e => !e.isProjected && (e.type === 'income' || (e.title || '').toLowerCase() === 'baon') && e.wallet === 'cash');
-            if (actualCashIncomes.length === 0 && Number(wallets.cash) > 0) {
-              wallets.cash = 0;
-              needsCloudHeal = true;
-            }
+              if ((Number(wallets.cash) || 0) < 0) {
+                wallets.cash = 0;
+                needsCloudHeal = true;
+              }
 
             syncUtangWalletBalance();
             saveStorage(false);
