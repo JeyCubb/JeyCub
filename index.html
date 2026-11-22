@@ -3494,7 +3494,7 @@
       const actualBaonDates = new Set();
       if (Array.isArray(expenses)) {
         expenses.forEach(e => {
-          if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon' || e.wasProjectedBaon || e.convertedFromProjected) && e.wallet === 'cash' && e.date) {
+          if (!e.isProjected && e.type === 'income' && ((e.title || '').trim().toLowerCase() === 'baon' || e.wasProjectedBaon || e.convertedFromProjected) && e.date) {
             actualBaonDates.add(e.date.slice(0, 10));
           }
         });
@@ -3532,11 +3532,37 @@
     function adjustProjectedBaon(newCount) {
       newCount = Math.max(0, parseInt(newCount, 10) || 0);
 
-      const otherExpenses = expenses.filter(item => !(item.isProjected && item.type === 'income' && (item.title === 'Baon' || (item.id && String(item.id).startsWith('exp_proj_baon_')))));
+      const isBaonPredicate = item => (
+        item.isProjected && item.type === 'income' && (
+          ((item.title || '').trim().toLowerCase() === 'baon') ||
+          Boolean(item.wasProjectedBaon) ||
+          (item.id && String(item.id).startsWith('exp_proj_baon_'))
+        )
+      );
+
+      const existingBaons = expenses.filter(isBaonPredicate);
+      const otherExpenses = expenses.filter(item => !isBaonPredicate(item));
+
+      // Index existing baons by date (YYYY-MM-DD)
+      const existingBaonByDate = new Map();
+      existingBaons.forEach(item => {
+        const d = item.date ? item.date.slice(0, 10) : '';
+        if (d && !existingBaonByDate.has(d)) {
+          existingBaonByDate.set(d, item);
+        }
+      });
+
       const dates = getScheduleTuesdays(newCount);
       const nowIso = new Date().toISOString();
+      const usedExistingIds = new Set();
 
       const newBaonItems = dates.map((dStr, idx) => {
+        const existing = existingBaonByDate.get(dStr);
+        if (existing) {
+          usedExistingIds.add(existing.id);
+          return existing; // Preserve user-edited amount, title, wallet, and date/time
+        }
+
         const ts = new Date(`${dStr}T08:00:00+08:00`).getTime();
         return {
           id: `exp_proj_baon_${idx + 1}_${ts}`,
@@ -3552,13 +3578,31 @@
         };
       });
 
-      expenses = [...newBaonItems, ...otherExpenses];
+      // Preserve any user-customized baons whose dates were outside the auto-generated Tuesday list
+      const extraCustomizedBaons = existingBaons.filter(item =>
+        !usedExistingIds.has(item.id) && (
+          item.isCustomized ||
+          item.wasProjectedBaon ||
+          (item.title || '').trim().toLowerCase() !== 'baon' ||
+          item.amount !== 1000 ||
+          item.wallet !== 'cash'
+        )
+      );
+
+      expenses = [...newBaonItems, ...extraCustomizedBaons, ...otherExpenses];
       saveStorage(true);
       render();
     }
 
     function stepProjectedBaon(step) {
-      const currentBaonCount = expenses.filter(item => item.isProjected && item.type === 'income' && (item.title === 'Baon' || (item.id && String(item.id).startsWith('exp_proj_baon_')))).length;
+      const isBaonPredicate = item => (
+        item.isProjected && item.type === 'income' && (
+          ((item.title || '').trim().toLowerCase() === 'baon') ||
+          Boolean(item.wasProjectedBaon) ||
+          (item.id && String(item.id).startsWith('exp_proj_baon_'))
+        )
+      );
+      const currentBaonCount = expenses.filter(isBaonPredicate).length;
       const nextCount = Math.max(0, currentBaonCount + step);
       adjustProjectedBaon(nextCount);
       const projWallets = getProjectedWallets();
@@ -3571,7 +3615,11 @@
       const currentLiquid = (Number(wallets.cash) || 0) + (Number(wallets.maribank) || 0) + (Number(wallets.bdo) || 0) + (Number(wallets.gcash) || 0) + (Number(wallets.utang) || 0);
       let otherProjDiff = 0;
       for (const item of expenses) {
-        const isRecurringBaon = item.isProjected && item.type === 'income' && (item.title === 'Baon' || (item.id && String(item.id).startsWith('exp_proj_baon_')));
+        const isRecurringBaon = item.isProjected && item.type === 'income' && (
+          ((item.title || '').trim().toLowerCase() === 'baon') ||
+          Boolean(item.wasProjectedBaon) ||
+          (item.id && String(item.id).startsWith('exp_proj_baon_'))
+        );
         if (item.isProjected && !isRecurringBaon) {
           const amt = Number(item.amount) || 0;
           if (item.type === 'income') otherProjDiff += amt;
@@ -4435,10 +4483,13 @@
             item.convertedFromProjected = true;
           }
           item.isPaid = Boolean(item.isPaid);
+          item.isCustomized = true;
 
           // If turning projected baon into actual, assign a permanent id
-          if (!isProjected && item.id && (String(item.id).startsWith('exp_proj_baon_') || (item.title || '').trim().toLowerCase() === 'baon')) {
-            item.id = 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+          if (!isProjected && item.id && (String(item.id).startsWith('exp_proj_baon_') || (item.title || '').trim().toLowerCase() === 'baon' || item.wasProjectedBaon)) {
+            if (String(item.id).startsWith('exp_proj_baon_')) {
+              item.id = 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            }
             item.wasProjectedBaon = true;
             item.convertedFromProjected = true;
           }
@@ -4545,40 +4596,70 @@
       const item = expenses.find(e => e.id === currentEditExpenseId);
       if (!item) return;
 
-      const amt = Number(item.amount) || 0;
-      const wallet = item.wallet;
-      const utangWallet = item.utangWallet;
-      const isIncome = item.type === 'income';
+      // 1. Revert actual wallet transaction effect based on current stored item values
+      if (!item.isProjected) {
+        const oldAmt = Number(item.amount) || 0;
+        const oldWallet = item.wallet;
+        const oldUtangWallet = item.utangWallet;
+        const oldIsIncome = item.type === 'income';
 
-      // 1. Revert actual wallet transaction effect
-      if (wallet && wallet !== 'none' && wallet !== 'utang' && wallets[wallet] !== undefined) {
-        if (isIncome) {
-          wallets[wallet] = (Number(wallets[wallet]) || 0) - amt;
-        } else {
-          wallets[wallet] = (Number(wallets[wallet]) || 0) + amt;
-        }
-      }
-      if (wallet === 'utang' && utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
-        if (isIncome) {
-          wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amt;
-          if (item.isPaid && item.paidApplied) {
-            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amt;
-          }
-        } else {
-          wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amt;
-          if (item.isPaid && item.paidApplied) {
-            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amt;
+        if (oldWallet && oldWallet !== 'none' && oldWallet !== 'utang' && wallets[oldWallet] !== undefined) {
+          if (oldIsIncome) {
+            wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) - oldAmt;
+          } else {
+            wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmt;
           }
         }
+        if (oldWallet === 'utang' && oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
+          if (oldIsIncome) {
+            wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmt;
+            if (item.isPaid && item.paidApplied) {
+              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmt;
+            }
+          } else {
+            wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmt;
+            if (item.isPaid && item.paidApplied) {
+              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmt;
+            }
+          }
+        }
       }
 
-      // 2. Revert state to projected
+      // 2. Read any edits currently in the modal fields to preserve user changes
+      const rawTitle = (document.getElementById('expense-input-title')?.value || '').trim();
+      const rawAmountStr = (document.getElementById('expense-input-amount')?.value || '').trim();
+      const cleanAmountStr = rawAmountStr.replace(/^[+-]/, '').trim();
+      const parsedAmount = parseFloat(cleanAmountStr);
+      const newAmount = !isNaN(parsedAmount) ? parsedAmount : (Number(item.amount) || 0);
+      const newWallet = document.getElementById('expense-input-wallet')?.value || item.wallet || 'cash';
+      const newUtangWallet = document.getElementById('expense-input-utang-wallet')?.value || item.utangWallet || null;
+      const newDebtor = document.getElementById('expense-input-utang-person')?.value?.trim() || item.debtor || null;
+      const dateVal = document.getElementById('expense-input-datetime')?.value;
+      const newDate = dateVal ? new Date(dateVal).toISOString() : (item.date || new Date().toISOString());
+      const chkIncome = document.getElementById('checkbox-toggle-income');
+      const newIsIncome = chkIncome ? chkIncome.checked : (rawAmountStr.startsWith('+') || item.type === 'income');
+
+      if (rawTitle) {
+        item.title = rawTitle;
+      }
+      item.amount = newAmount;
+      item.type = newIsIncome ? 'income' : 'expense';
+      item.wallet = newWallet;
+      item.utangWallet = newUtangWallet;
+      item.debtor = newDebtor;
+      item.date = newDate;
+
+      // 3. Mark state as projected and customized
       item.isProjected = true;
       item.wasProjected = true;
+      item.isCustomized = true;
       item.isPaid = false;
       item.paidApplied = false;
+      if ((item.title || '').trim().toLowerCase() === 'baon' || item.wasProjectedBaon || (item.id && String(item.id).startsWith('exp_proj_baon_'))) {
+        item.wasProjectedBaon = true;
+      }
 
-      // 3. Synchronize balances, target plan, and storage
+      // 4. Synchronize balances, target plan, and storage
       syncUtangWalletBalance();
       saveStorage(true);
       syncProjectedBaonToTarget();
@@ -4589,18 +4670,18 @@
         const isUtang = item.wallet === 'utang';
         sendDiscordNotification(
           isUtang ? "🔮 Reverted Utang to Projected" : "🔮 Reverted to Projected",
-          `**${item.title}** (${formatCurrency(amt)}) was moved back to projected plan. Account balance reverted.`,
+          `**${item.title}** (${formatCurrency(item.amount)}) was moved back to projected plan. Account balance reverted.`,
           0xf59e0b,
           [
             { name: "Item", value: item.title, inline: true },
             ...(item.debtor ? [{ name: "Person", value: item.debtor, inline: true }] : []),
-            { name: "Amount", value: formatCurrency(amt), inline: true },
+            { name: "Amount", value: formatCurrency(item.amount), inline: true },
             { name: "Status", value: "Projected", inline: true }
           ]
         );
       }
 
-      showToast(isIncome ? 'Unsaved to projected income!' : 'Unsaved to projected expense!', 'info');
+      showToast(item.type === 'income' ? 'Unsaved to projected income!' : 'Unsaved to projected expense!', 'info');
     }
 
     const btnSaveActualEl = document.getElementById('btn-save-as-actual');
