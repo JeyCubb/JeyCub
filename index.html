@@ -2487,7 +2487,7 @@
           <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
           <div style="position: relative;">
             <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
-            <input type="text" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required autocomplete="off" />
+            <input type="text" inputmode="decimal" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required autocomplete="off" />
           </div>
         </div>
 
@@ -2586,23 +2586,23 @@
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; padding-top: 0.2rem;">
             <div>
               <label class="form-label" for="setting-wallet-cash">Cash (₱)</label>
-              <input type="number" step="any" id="setting-wallet-cash" class="form-input mono" placeholder="0" />
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-cash" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-maribank">MariBank (₱)</label>
-              <input type="number" step="any" id="setting-wallet-maribank" class="form-input mono" placeholder="0" />
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-maribank" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-bdo">BDO (₱)</label>
-              <input type="number" step="any" id="setting-wallet-bdo" class="form-input mono" placeholder="0" />
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-bdo" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-gcash">GCash (₱)</label>
-              <input type="number" step="any" id="setting-wallet-gcash" class="form-input mono" placeholder="0" />
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-gcash" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-utang">Utang (₱)</label>
-              <input type="number" step="any" id="setting-wallet-utang" class="form-input mono" placeholder="0" />
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-utang" class="form-input mono" placeholder="0" />
             </div>
           </div>
         </div>
@@ -2693,7 +2693,7 @@
           <label class="form-label" for="proj-target-input">Desired Target Money (₱)</label>
           <div class="currency-input-wrap">
             <span class="currency-prefix">₱</span>
-            <input type="number" id="proj-target-input" class="form-input mono target-number-input" placeholder="20000" step="500" min="0" autocomplete="off" />
+            <input type="text" inputmode="decimal" id="proj-target-input" class="form-input mono target-number-input" placeholder="20000" autocomplete="off" />
           </div>
         </div>
 
@@ -2726,7 +2726,7 @@
         <div class="form-group">
           <div class="currency-input-wrap">
             <span class="currency-prefix">₱</span>
-            <input type="number" id="wallet-modal-input" class="form-input mono target-number-input" placeholder="0" step="any" autocomplete="off" />
+            <input type="text" inputmode="decimal" id="wallet-modal-input" class="form-input mono target-number-input" placeholder="0" autocomplete="off" />
           </div>
         </div>
 
@@ -3721,9 +3721,15 @@
       updateProjectedTargetPreview(currentTarget);
 
       modal.classList.add('is-active');
+      targetInput.focus();
+      try {
+        targetInput.select();
+      } catch (e) {}
       setTimeout(() => {
         targetInput.focus();
-        targetInput.select();
+        try {
+          targetInput.select();
+        } catch (e) {}
       }, 50);
     };
 
@@ -3766,9 +3772,15 @@
       input.value = current;
 
       modal.classList.add('is-active');
+      input.focus();
+      try {
+        input.select();
+      } catch (e) {}
       setTimeout(() => {
         input.focus();
-        input.select();
+        try {
+          input.select();
+        } catch (e) {}
       }, 50);
     };
 
