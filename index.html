@@ -5067,7 +5067,7 @@
         ? (isIncome ? 'Edit Projected Value' : 'Edit Projected Expense')
         : (isIncome ? 'Edit Value / Income' : 'Edit Expense');
       document.getElementById('expense-input-title').value = item.title || '';
-      document.getElementById('expense-input-amount').value = (isIncome ? '+' : '') + (Number(item.amount) || '');
+      document.getElementById('expense-input-amount').value = (isIncome ? '+' : '-') + (Number(item.amount) || '');
       document.getElementById('expense-input-wallet').value = (item.wallet && item.wallet !== 'none') ? item.wallet : 'cash';
       const elUtangWallet = document.getElementById('expense-input-utang-wallet');
       if (elUtangWallet) {
@@ -5802,9 +5802,9 @@
         if (!input) return;
         let val = input.value.trim();
         if (e.target.checked) {
-          val = '+' + val.replace(/^\++\s*/, '');
+          val = '+' + val.replace(/^[+-]\s*/, '');
         } else {
-          val = val.replace(/^\++\s*/, '');
+          val = '-' + val.replace(/^[+-]\s*/, '');
         }
         input.value = val;
         input.focus();
