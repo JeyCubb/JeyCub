@@ -4979,11 +4979,17 @@
       if (chkIncome) chkIncome.checked = Boolean(isIncome);
       if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
 
+      const incomeSwitchEl = toggleCtrl ? toggleCtrl.querySelector('.income-switch') : null;
+      if (incomeSwitchEl) {
+        incomeSwitchEl.style.display = isUtang ? 'none' : '';
+      }
+
       if (isUtang) {
         if (toggleLbl) {
+          const btnStyle = 'display:inline-flex;align-items:center;padding:0.28rem 0.65rem;border-radius:8px;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);color:#ef4444;font-weight:700;cursor:pointer;margin-right:0.35rem;';
           toggleLbl.innerHTML = isIncome
-            ? '<span style="color: #ef4444; font-weight: 700;">Borrowing</span> (You owe)'
-            : '<span style="color: #ef4444; font-weight: 700;">Lending</span> (They owe you)';
+            ? `<span style="${btnStyle}">Borrowing</span> (You owe)`
+            : `<span style="${btnStyle}">Lending</span> (They owe you)`;
         }
       } else {
         if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
