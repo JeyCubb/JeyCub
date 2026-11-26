@@ -94,6 +94,7 @@
   <style>
     /* Design System & Design Tokens */
     :root {
+      color-scheme: dark;
       --bg-main: #0e0d0c;
       --bg-header: rgba(26, 22, 19, 0.95);
       --bg-card: #1a1613;
@@ -133,6 +134,7 @@
     }
 
     [data-theme="light"] {
+      color-scheme: light;
       --bg-main: #ffffff;
       --bg-header: rgba(255, 255, 255, 0.98);
       --bg-card: #ffffff;
@@ -1646,9 +1648,26 @@
       appearance: none;
       box-sizing: border-box !important;
       min-height: 38px;
+      cursor: pointer;
     }
     input[type="datetime-local"]::-webkit-date-and-time-value {
       text-align: left;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.85;
+      padding: 4px;
+      margin-right: -2px;
+      border-radius: 4px;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+    label[for="expense-input-datetime"] {
+      cursor: pointer;
+      user-select: none;
     }
     .form-input:focus, .form-select:focus {
       border-color: var(--accent-primary);
@@ -5605,6 +5624,34 @@
           performDeleteExpense(item);
         }
       });
+    }
+
+    // Date & Time Picker Prompt (Prompt native calendar on desktop click/press)
+    const inputDatetime = document.getElementById('expense-input-datetime');
+    if (inputDatetime) {
+      const openCalendarPicker = () => {
+        try {
+          if (typeof inputDatetime.showPicker === 'function') {
+            inputDatetime.showPicker();
+          }
+        } catch (_) {}
+      };
+
+      inputDatetime.addEventListener('click', openCalendarPicker);
+      inputDatetime.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'F4') {
+          openCalendarPicker();
+        }
+      });
+
+      const labelDatetime = document.querySelector('label[for="expense-input-datetime"]');
+      if (labelDatetime) {
+        labelDatetime.addEventListener('click', (e) => {
+          e.preventDefault();
+          inputDatetime.focus();
+          openCalendarPicker();
+        });
+      }
     }
 
     // Amount Input Live Listener & Toggle Button
