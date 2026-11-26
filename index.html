@@ -3158,7 +3158,16 @@
           <label class="form-label" for="proj-target-input">Desired Target Money (₱)</label>
           <div class="currency-input-wrap">
             <span class="currency-prefix">₱</span>
-            <input type="text" inputmode="decimal" id="proj-target-input" class="form-input mono target-number-input" placeholder="20000" autocomplete="off" />
+            <input type="text" inputmode="decimal" id="proj-target-input" class="form-input mono target-number-input" placeholder="0" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Monthly Baon Input with Currency Prefix -->
+        <div class="form-group">
+          <label class="form-label" for="proj-baon-input">Monthly Baon (₱)</label>
+          <div class="currency-input-wrap">
+            <span class="currency-prefix">₱</span>
+            <input type="text" inputmode="decimal" id="proj-baon-input" class="form-input mono target-number-input" placeholder="1000" autocomplete="off" />
           </div>
         </div>
 
@@ -3389,7 +3398,8 @@
       activeTab: 'expenses', // 'expenses' | 'debts'
       expenseFilter: 'all', // 'all' | 'today' | 'month'
       isProjectedMode: false,
-      projectedTarget: 20000
+      projectedTarget: 0,
+      projectedBaon: 1000
     };
 
     let debts = [];
@@ -3747,8 +3757,17 @@
         console.error('Failed to load settings:', e);
         settings = { ...DEFAULT_SETTINGS };
       }
-      if (!settings.projectedTarget || Number(settings.projectedTarget) <= 0) {
-        settings.projectedTarget = 20000;
+      if (user === 'JeyCub') {
+        if (settings.projectedTarget === undefined || settings.projectedTarget === null) {
+          settings.projectedTarget = 16000;
+        }
+      } else {
+        if (settings.projectedTarget === undefined || settings.projectedTarget === null) {
+          settings.projectedTarget = 0;
+        }
+      }
+      if (settings.projectedBaon === undefined || Number(settings.projectedBaon) <= 0) {
+        settings.projectedBaon = 1000;
       }
       if (!settings.lastUsedWallet && expenses.length > 0) {
         const lastExp = expenses.find(e => e.wallet && e.wallet !== 'none');
@@ -4020,7 +4039,7 @@
     function toggleProjectedMode() {
       isProjectedMode = !isProjectedMode;
       try {
-        localStorage.setItem(PROJECTED_MODE_KEY, isProjectedMode ? 'true' : 'false');
+        localStorage.setItem(getProjectedModeKey(activeUser), isProjectedMode ? 'true' : 'false');
       } catch (e) {}
       settings.isProjectedMode = isProjectedMode;
       if (isProjectedMode) {
@@ -4113,23 +4132,27 @@
       const elCompletionSub = document.getElementById('hero-completion-subtext');
 
       if (isProjectedMode) {
-        const targetVal = Number(settings.projectedTarget) || 20000;
-        const plan = calculateTargetPlan(targetVal);
+        const targetVal = Number(settings.projectedTarget) || 0;
+        if (targetVal > 0) {
+          const plan = calculateTargetPlan(targetVal);
 
-        if (elCompletionDate) elCompletionDate.textContent = plan.finalDateFormatted;
-        if (elCompletionStat) elCompletionStat.style.display = 'inline-flex';
+          if (elCompletionDate) elCompletionDate.textContent = plan.finalDateFormatted;
+          if (elCompletionStat) elCompletionStat.style.display = 'inline-flex';
 
-        if (elCompletionSub) {
-          const now = new Date();
-          const compDate = plan.completionDate || new Date();
-          const diffMs = compDate - now;
-          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-          if (diffDays > 0) {
-            if (elCompletionStat) elCompletionStat.title = `Projected Completion: ${plan.finalDateFormatted} (${diffDays} days away)`;
-          } else {
-            if (elCompletionStat) elCompletionStat.title = `Projected Completion: ${plan.finalDateFormatted}`;
+          if (elCompletionSub) {
+            const now = new Date();
+            const compDate = plan.completionDate || new Date();
+            const diffMs = compDate - now;
+            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            if (diffDays > 0) {
+              if (elCompletionStat) elCompletionStat.title = `Projected Completion: ${plan.finalDateFormatted} (${diffDays} days away)`;
+            } else {
+              if (elCompletionStat) elCompletionStat.title = `Projected Completion: ${plan.finalDateFormatted}`;
+            }
+            elCompletionSub.style.display = 'none';
           }
-          elCompletionSub.style.display = 'none';
+        } else {
+          if (elCompletionStat) elCompletionStat.style.display = 'none';
         }
       } else {
         if (elCompletionStat) elCompletionStat.style.display = 'none';
@@ -4296,7 +4319,6 @@
         item.type === 'income' &&
         String(item.id).startsWith('exp_proj_baon_') &&
         !item.isCustomized &&
-        Number(item.amount) === 1000 &&
         item.wallet === 'cash' &&
         (item.title || '').trim().toLowerCase() === 'baon'
       );
@@ -4356,6 +4378,7 @@
 
     function adjustProjectedBaon(newCount) {
       newCount = Math.max(0, parseInt(newCount, 10) || 0);
+      const baonAmount = Number(settings.projectedBaon) > 0 ? Number(settings.projectedBaon) : 1000;
 
       // Separate auto-generated Baons from user-created/customized items
       const existingAutoBaons = expenses.filter(isAutoGeneratedBaon);
@@ -4366,6 +4389,7 @@
       existingAutoBaons.forEach(item => {
         const d = item.date ? item.date.slice(0, 10) : '';
         if (d && !existingAutoBaonByDate.has(d)) {
+          item.amount = baonAmount;
           existingAutoBaonByDate.set(d, item);
         }
       });
@@ -4376,6 +4400,7 @@
       const newAutoBaonItems = dates.map((dStr, idx) => {
         const existing = existingAutoBaonByDate.get(dStr);
         if (existing) {
+          existing.amount = baonAmount;
           return existing;
         }
 
@@ -4383,7 +4408,7 @@
         return {
           id: `exp_proj_baon_${idx + 1}_${ts}`,
           title: 'Baon',
-          amount: 1000,
+          amount: baonAmount,
           type: 'income',
           wallet: 'cash',
           category: 'Income / Top-up',
@@ -4409,8 +4434,12 @@
       saveStorage(true);
     }
 
-    function calculateTargetPlan(desiredTarget) {
-      desiredTarget = Number(desiredTarget) || 20000;
+    function calculateTargetPlan(desiredTarget, customBaon = null) {
+      desiredTarget = Number(desiredTarget) || 0;
+      const baonAmount = (customBaon !== null && Number(customBaon) > 0)
+        ? Number(customBaon)
+        : (Number(settings.projectedBaon) > 0 ? Number(settings.projectedBaon) : 1000);
+
       const currentLiquid = (Number(wallets.cash) || 0) + 
                             (Number(wallets.maribank) || 0) + 
                             (Number(wallets.bdo) || 0) + 
@@ -4429,8 +4458,22 @@
       }
 
       const base = currentLiquid + fixedProjDiff;
+
+      if (desiredTarget <= 0) {
+        return {
+          neededWeeks: 0,
+          finalDateStr: null,
+          finalDateFormatted: '',
+          completionDate: null,
+          projectedTotal: base,
+          desiredTarget: 0,
+          base,
+          neededFromAutoBaon: 0
+        };
+      }
+
       const neededFromAutoBaon = Math.max(0, desiredTarget - base);
-      const neededWeeks = Math.ceil(neededFromAutoBaon / 1000);
+      const neededWeeks = Math.ceil(neededFromAutoBaon / baonAmount);
       const dates = getScheduleTuesdays(neededWeeks);
       const finalDateStr = dates.length > 0 ? dates[dates.length - 1] : null;
 
@@ -4444,7 +4487,7 @@
           day: 'numeric',
           year: 'numeric'
         });
-      } else if (neededWeeks === 0 && currentLiquid < desiredTarget) {
+      } else if (neededWeeks === 0 && base < desiredTarget) {
         const manualProjItems = expenses
           .filter(item => item.isProjected && !isAutoGeneratedBaon(item))
           .sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt));
@@ -4470,20 +4513,26 @@
         }
       }
 
-      const projectedTotal = base + (neededWeeks * 1000);
+      const projectedTotal = base + (neededWeeks * baonAmount);
       return {
         neededWeeks,
         finalDateStr,
         finalDateFormatted,
         completionDate: compDate,
-        projectedTotal
+        projectedTotal,
+        desiredTarget,
+        base,
+        neededFromAutoBaon
       };
     }
 
     function syncProjectedBaonToTarget() {
       if (!isProjectedMode && !settings.projectedTarget) return;
-      const target = Number(settings.projectedTarget) || 20000;
-      if (target <= 0) return;
+      const target = Number(settings.projectedTarget) || 0;
+      if (target <= 0) {
+        adjustProjectedBaon(0);
+        return;
+      }
       const plan = calculateTargetPlan(target);
       adjustProjectedBaon(plan.neededWeeks);
     }
@@ -4581,12 +4630,20 @@
 
     // PROJECTED TARGET MODAL CONTROLLER
     function updateProjectedTargetPreview(targetVal) {
-      const plan = calculateTargetPlan(targetVal);
+      const baonVal = parseFloat(document.getElementById('proj-baon-input')?.value) || Number(settings.projectedBaon) || 1000;
+      const plan = calculateTargetPlan(targetVal, baonVal);
       const dateEl = document.getElementById('proj-dialog-date');
       const daysEl = document.getElementById('proj-dialog-days');
       const weeksEl = document.getElementById('proj-dialog-weeks');
 
       if (!dateEl || !daysEl || !weeksEl) return;
+
+      if (targetVal <= 0) {
+        dateEl.textContent = 'None';
+        daysEl.textContent = 'Target is 0';
+        weeksEl.textContent = '0 Baons needed';
+        return;
+      }
 
       dateEl.textContent = plan.finalDateFormatted;
 
@@ -4598,7 +4655,7 @@
         compDay.setHours(0, 0, 0, 0);
         const diffDays = Math.ceil((compDay - today) / (1000 * 60 * 60 * 24));
         daysEl.textContent = diffDays > 0 ? `${diffDays} days away` : 'Reached today!';
-        weeksEl.textContent = `${plan.neededWeeks} Tuesdays (${formatCurrency(plan.neededWeeks * 1000)})`;
+        weeksEl.textContent = `${plan.neededWeeks} Tuesdays (${formatCurrency(plan.neededWeeks * baonVal)})`;
       } else {
         daysEl.textContent = 'Target already met!';
         weeksEl.textContent = '0 Tuesdays needed';
@@ -4618,8 +4675,12 @@
       document.getElementById('proj-dialog-current').textContent = formatCurrency(currentTotal);
 
       const targetInput = document.getElementById('proj-target-input');
-      const currentTarget = Number(settings.projectedTarget) || 20000;
+      const baonInput = document.getElementById('proj-baon-input');
+      const currentTarget = Number(settings.projectedTarget) || 0;
       targetInput.value = Math.round(currentTarget);
+      if (baonInput) {
+        baonInput.value = Math.round(Number(settings.projectedBaon) || 1000);
+      }
       updateProjectedTargetPreview(currentTarget);
 
       modal.classList.add('is-active');
@@ -7230,6 +7291,22 @@
         });
       }
 
+      const baonInput = document.getElementById('proj-baon-input');
+      if (baonInput) {
+        baonInput.addEventListener('input', () => {
+          const curTarget = parseFloat(document.getElementById('proj-target-input')?.value) || 0;
+          updateProjectedTargetPreview(curTarget);
+        });
+        baonInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-save-proj-target').click();
+          } else if (e.key === 'Escape') {
+            closeProjectedTargetModal();
+          }
+        });
+      }
+
       document.querySelectorAll('[data-target-add]').forEach(btn => {
         btn.addEventListener('click', () => {
           const add = parseFloat(btn.getAttribute('data-target-add')) || 0;
@@ -7253,14 +7330,23 @@
       if (btnSaveProjTarget) {
         btnSaveProjTarget.addEventListener('click', () => {
           const input = document.getElementById('proj-target-input');
+          const baonInp = document.getElementById('proj-baon-input');
           const parsed = parseFloat(input.value);
+          const parsedBaon = parseFloat(baonInp ? baonInp.value : '1000');
           if (!isNaN(parsed) && parsed >= 0) {
             settings.projectedTarget = parsed;
+            if (!isNaN(parsedBaon) && parsedBaon > 0) {
+              settings.projectedBaon = parsedBaon;
+            }
             saveStorage(true);
             syncProjectedBaonToTarget();
             closeProjectedTargetModal();
             const plan = calculateTargetPlan(parsed);
-            showToast(`Target goal updated to ${formatCurrency(parsed)} (${plan.finalDateFormatted})`, 'success');
+            if (parsed > 0 && plan.finalDateFormatted) {
+              showToast(`Target goal updated to ${formatCurrency(parsed)} (${plan.finalDateFormatted})`, 'success');
+            } else {
+              showToast(`Target goal updated to ${formatCurrency(parsed)}`, 'success');
+            }
           } else {
             showToast('Please enter a valid numeric target amount.', 'error');
           }
