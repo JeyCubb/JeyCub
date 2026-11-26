@@ -4980,7 +4980,11 @@
       if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
 
       if (isUtang) {
-        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Borrowing (You owe)' : 'Lending (They owe you)';
+        if (toggleLbl) {
+          toggleLbl.innerHTML = isIncome
+            ? '<span style="color: #ef4444; font-weight: 700;">Borrowing</span> (You owe)'
+            : '<span style="color: #ef4444; font-weight: 700;">Lending</span> (They owe you)';
+        }
       } else {
         if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
       }
