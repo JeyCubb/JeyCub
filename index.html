@@ -6030,6 +6030,11 @@
 
     function bindFirebaseListener() {
       if (!firebaseDb) return;
+
+      // Reset cloud-sync state for the new profile before binding
+      hasReceivedInitialCloudData = false;
+      isCloudUpdating = false;
+
       if (currentFirebaseRef) {
         try { currentFirebaseRef.off(); } catch (_) {}
       }
@@ -7340,6 +7345,7 @@
             }
             saveStorage(true);
             syncProjectedBaonToTarget();
+            render();
             closeProjectedTargetModal();
             const plan = calculateTargetPlan(parsed);
             if (parsed > 0 && plan.finalDateFormatted) {
