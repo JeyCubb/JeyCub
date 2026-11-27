@@ -39,8 +39,8 @@
         return;
       }
 
-      // 2. Identify scrollable container (e.g. timeline or modal body)
-      const scrollable = e.target.closest('.timeline-container, .modal-body, .debts-list');
+      // 2. Identify scrollable container (e.g. timeline, time picker column, or modal body)
+      const scrollable = e.target.closest('.dt-time-col, .timeline-container, .modal-body, .debts-list');
       if (!scrollable) {
         // Any drag on headers, cards, buttons, or page background is blocked
         e.preventDefault();
@@ -67,7 +67,7 @@
 
     // Block wheel bouncing on non-overflowing elements
     document.addEventListener('wheel', function(e) {
-      const scrollable = e.target.closest('.timeline-container, .modal-body, .debts-list');
+      const scrollable = e.target.closest('.dt-time-col, .timeline-container, .modal-body, .debts-list');
       if (!scrollable || scrollable.scrollHeight <= scrollable.clientHeight) {
         e.preventDefault();
       }
