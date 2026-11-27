@@ -5493,7 +5493,7 @@
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
             ? 'Save Changes'
-            : (isIncome ? '+ Add Money' : 'Save Expense');
+            : (isIncome ? 'Save Money' : 'Save Expense');
         }
       } else {
         if (labelWallet) {
@@ -5502,7 +5502,7 @@
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
             ? 'Save Changes'
-            : (isIncome ? '+ Add Money' : 'Save Expense');
+            : (isIncome ? 'Save Money' : 'Save Expense');
         }
       }
 
@@ -5558,7 +5558,7 @@
         }
         if (toggleText) toggleText.textContent = isUtang ? 'Borrowing (You owe them)' : '+ Adding to Account';
         if (submitBtn) {
-          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : (isUtang ? 'Save Borrowing' : '+ Add Money');
+          submitBtn.textContent = currentEditExpenseId ? 'Save Changes' : (isUtang ? 'Save Borrowing' : 'Save Money');
           submitBtn.style.background = '';
           submitBtn.classList.add('is-income-submit');
           submitBtn.classList.remove('is-expense-submit');
