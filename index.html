@@ -1649,6 +1649,21 @@
       position: relative;
       width: 100%;
     }
+    .custom-select-wrap.is-compact {
+      width: auto;
+    }
+    .custom-select-wrap.is-compact .custom-select-trigger {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.32rem 0.55rem;
+      gap: 0.4rem;
+    }
+    .custom-select-menu.is-compact .custom-select-option {
+      font-size: 0.82rem;
+      padding: 0.4rem 0.58rem;
+    }
     .custom-select-native {
       position: absolute !important;
       width: 1px !important;
@@ -1722,8 +1737,13 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       box-sizing: border-box;
       transform-origin: top center;
+    }
+    .custom-select-menu::-webkit-scrollbar {
+      display: none;
     }
     .custom-select-menu.is-open {
       display: flex;
@@ -6559,12 +6579,13 @@
         });
       };
 
-      document.querySelectorAll('select.form-select').forEach((selectEl) => {
+      document.querySelectorAll('select.form-select, select.dt-cal-select').forEach((selectEl) => {
         if (selectEl.dataset.customSelectInit === 'true') return;
         selectEl.dataset.customSelectInit = 'true';
+        const isCompact = selectEl.classList.contains('dt-cal-select');
 
         const wrap = document.createElement('div');
-        wrap.className = 'custom-select-wrap';
+        wrap.className = 'custom-select-wrap' + (isCompact ? ' is-compact' : '');
         selectEl.parentNode.insertBefore(wrap, selectEl);
         wrap.appendChild(selectEl);
         selectEl.classList.add('custom-select-native');
@@ -6581,7 +6602,7 @@
 
         const valueSpan = trigger.querySelector('.custom-select-value');
         const menu = document.createElement('div');
-        menu.className = 'custom-select-menu';
+        menu.className = 'custom-select-menu' + (isCompact ? ' is-compact' : '');
         menu.setAttribute('role', 'listbox');
         document.body.appendChild(menu);
 
@@ -6622,8 +6643,10 @@
 
         const positionMenu = () => {
           const rect = trigger.getBoundingClientRect();
-          menu.style.left = `${rect.left}px`;
-          menu.style.width = `${rect.width}px`;
+          const menuWidth = isCompact ? Math.max(rect.width, 108) : rect.width;
+          const leftPos = Math.min(rect.left, window.innerWidth - menuWidth - 8);
+          menu.style.left = `${Math.max(8, leftPos)}px`;
+          menu.style.width = `${menuWidth}px`;
 
           const menuHeight = Math.min(menu.scrollHeight || 220, 230);
           const spaceBelow = window.innerHeight - rect.bottom - 10;
@@ -6642,6 +6665,7 @@
           renderOptions();
           menu.classList.add('is-open');
           positionMenu();
+          menu.querySelector('.is-selected')?.scrollIntoView({ block: 'nearest' });
           trigger.classList.add('is-open');
           trigger.setAttribute('aria-expanded', 'true');
         };
