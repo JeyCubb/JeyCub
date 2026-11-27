@@ -5533,7 +5533,10 @@
 
       if (isUtang) {
         if (toggleLbl) {
-          const btnStyle = 'display:inline-flex;align-items:center;padding:0.28rem 0.65rem;border-radius:8px;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);color:#ef4444;font-weight:700;cursor:pointer;margin-right:0.35rem;';
+          const pillColors = isIncome
+            ? 'background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.35);color:#10b981;'
+            : 'background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.4);color:#ef4444;';
+          const btnStyle = `display:inline-flex;align-items:center;padding:0.28rem 0.65rem;border-radius:8px;${pillColors}font-weight:700;cursor:pointer;margin-right:0.35rem;`;
           toggleLbl.innerHTML = isIncome
             ? `<span style="${btnStyle}">Borrowing</span> (You owe)`
             : `<span style="${btnStyle}">Lending</span> (They owe you)`;
