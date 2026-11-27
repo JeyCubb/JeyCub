@@ -3404,7 +3404,7 @@
 
         <div class="modal-actions-expense" id="modal-actions-expense">
           <div class="modal-actions-left">
-            <label class="income-toggle-control" id="income-toggle-control" title="Toggle between Expense and Income">
+            <label class="income-toggle-control" id="income-toggle-control" title="Toggle between Expense and Saving">
               <input type="checkbox" id="checkbox-toggle-income" />
               <span class="income-toggle-label" id="income-toggle-label">Expense</span>
             </label>
@@ -5453,7 +5453,7 @@
               if (isUtang) {
                 btnSaveActualText.textContent = isIncome ? 'Save as Actual Borrowing' : 'Save as Actual Lending';
               } else {
-                btnSaveActualText.textContent = isIncome ? 'Save as Actual Income' : 'Save as Actual Expense';
+                btnSaveActualText.textContent = isIncome ? 'Save as Actual Saving' : 'Save as Actual Expense';
               }
             }
           } else {
@@ -5463,7 +5463,7 @@
               if (isUtang) {
                 btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Borrowing' : 'Unsave to Projected Lending';
               } else {
-                btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Income' : 'Unsave to Projected Expense';
+                btnSaveActualText.textContent = isIncome ? 'Unsave to Projected Saving' : 'Unsave to Projected Expense';
               }
             }
           }
@@ -5542,7 +5542,7 @@
             : `<span style="${btnStyle}">Lending</span> (They owe you)`;
         }
       } else {
-        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Income' : 'Expense';
+        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Saving' : 'Expense';
       }
 
       updateSaveActualButtonUI(isProjected, isIncome, isUtang);
@@ -5573,8 +5573,8 @@
               : (isProjected ? 'Record Projected Borrowing' : 'Record Borrowing');
           } else {
             titleModal.textContent = currentEditExpenseId 
-              ? (isProjected ? 'Edit Projected Value' : 'Edit Value / Income') 
-              : (isProjected ? 'Add Projected Value' : 'Add Value / Income');
+              ? (isProjected ? 'Edit Projected Value' : 'Edit Value / Saving') 
+              : (isProjected ? 'Add Projected Value' : 'Add Value / Saving');
           }
         }
       } else {
@@ -5621,7 +5621,7 @@
       if (titleModal) {
         titleModal.textContent = isProjected
           ? (isIncome ? 'Edit Projected Value' : 'Edit Projected Expense')
-          : (isIncome ? 'Edit Value / Income' : 'Edit Expense');
+          : (isIncome ? 'Edit Value / Saving' : 'Edit Expense');
       }
       document.getElementById('expense-input-title').value = item.title || '';
       document.getElementById('expense-input-amount').value = (isIncome ? '+' : '-') + (Number(item.amount) || '');
@@ -5673,7 +5673,7 @@
       const wKey = (item.wallet || 'cash').toLowerCase();
       const utangKey = item.utangWallet ? item.utangWallet.toLowerCase() : 'cash';
       const isProj = Boolean(item.isProjected);
-      const labelType = isIncome ? 'income' : 'expense';
+      const labelType = isIncome ? 'saving' : 'expense';
       const labelProj = isProj ? 'Projected ' : '';
 
       if (!isProj) {
@@ -5707,7 +5707,7 @@
         ((item.title || '').trim().toLowerCase() === 'baon') ||
         (String(item.amount).startsWith('+'));
       const amt = Math.abs(Number(item.amount)) || 0;
-      const labelType = isIncome ? 'income' : 'expense';
+      const labelType = isIncome ? 'saving' : 'expense';
       const labelProj = item.isProjected ? 'Projected ' : '';
       const ok = await showAppConfirm({
         title: `Delete ${labelProj}${labelType.charAt(0).toUpperCase() + labelType.slice(1)}?`,
@@ -5944,7 +5944,7 @@
           sendDiscordNotification(
             isUtang
               ? (isProjected ? "🔮 Projected Utang Borrowed" : "🤝 Utang Borrowed / Added")
-              : (isProjected ? "🔮 Projected Value / Income Planned" : "💰 Value Added / Income"),
+              : (isProjected ? "🔮 Projected Value / Saving Planned" : "💰 Value Added / Saving"),
             isProjected
               ? `Planned **+${formatCurrency(amount)}** for **${displayWallet}** (*${finalTitle}*) by ${new Date(date).toLocaleDateString()}.`
               : `Added **+${formatCurrency(amount)}** to **${displayWallet}** (*${finalTitle}*).`,
@@ -5987,7 +5987,7 @@
       render();
       closeExpenseModal();
       showToast(forceActual 
-        ? (isIncome ? 'Saved as actual income!' : 'Saved as actual expense!') 
+        ? (isIncome ? 'Saved as actual saving!' : 'Saved as actual expense!') 
         : (isIncome ? 'Value added to account!' : 'Expense recorded successfully!'), 'success');
     }
 
@@ -6185,7 +6185,7 @@
           ((item.title || '').trim().toLowerCase() === 'baon') ||
           (String(item.amount).startsWith('+'));
         const amt = Math.abs(Number(item.amount)) || 0;
-        const labelType = isIncome ? 'income' : 'expense';
+        const labelType = isIncome ? 'saving' : 'expense';
         const labelProj = item.isProjected ? 'Projected ' : '';
 
         const ok = await showAppConfirm({
