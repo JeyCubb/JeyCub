@@ -3152,7 +3152,7 @@
   <!-- Main Content Layout -->
   <main class="app-layout">
 
-    <!-- 1. Account Balances: Cash, MariBank, BDO, GCash -->
+    <!-- 1. Account Balances: Cash, GCash, BDO, MariBank, Utang -->
     <section class="wallets-section" aria-label="Available Funds by Account">
       <div class="wallets-grid">
         <!-- Cash -->
@@ -3166,15 +3166,15 @@
           <div class="wallet-label-hint">Physical Cash Left</div>
         </div>
 
-        <!-- MariBank -->
-        <div class="wallet-card" data-wallet="maribank" onclick="editWalletBalance('maribank')" title="Click to update MariBank balance">
+        <!-- GCash -->
+        <div class="wallet-card" data-wallet="gcash" onclick="editWalletBalance('gcash')" title="Click to update GCash balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <i class="fa-solid fa-credit-card"></i> MariBank
+              <i class="fa-solid fa-mobile-screen-button"></i> GCash
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-maribank">₱0</div>
-          <div class="wallet-label-hint">Digital Bank Left</div>
+          <div class="wallet-amount mono" id="wallet-val-gcash">₱0</div>
+          <div class="wallet-label-hint">GCash Wallet Left</div>
         </div>
 
         <!-- BDO -->
@@ -3188,15 +3188,15 @@
           <div class="wallet-label-hint">BDO Savings Left</div>
         </div>
 
-        <!-- GCash -->
-        <div class="wallet-card" data-wallet="gcash" onclick="editWalletBalance('gcash')" title="Click to update GCash balance">
+        <!-- MariBank -->
+        <div class="wallet-card" data-wallet="maribank" onclick="editWalletBalance('maribank')" title="Click to update MariBank balance">
           <div class="wallet-top">
             <span class="wallet-brand">
-              <i class="fa-solid fa-mobile-screen-button"></i> GCash
+              <i class="fa-solid fa-credit-card"></i> MariBank
             </span>
           </div>
-          <div class="wallet-amount mono" id="wallet-val-gcash">₱0</div>
-          <div class="wallet-label-hint">GCash Wallet Left</div>
+          <div class="wallet-amount mono" id="wallet-val-maribank">₱0</div>
+          <div class="wallet-label-hint">Digital Bank Left</div>
         </div>
 
         <!-- Utang -->
@@ -3363,9 +3363,9 @@
             <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account *</label>
             <select id="expense-input-wallet" class="form-select">
               <option value="cash">💵 Cash</option>
-              <option value="maribank">💳 MariBank</option>
-              <option value="bdo">🏛️ BDO</option>
               <option value="gcash">📱 GCash</option>
+              <option value="bdo">🏛️ BDO</option>
+              <option value="maribank">💳 MariBank</option>
               <option value="utang">🤝 Utang</option>
             </select>
           </div>
@@ -3376,9 +3376,9 @@
           <label class="form-label" for="expense-input-utang-wallet" id="expense-utang-wallet-label">Wallet to Deduct From *</label>
           <select id="expense-input-utang-wallet" class="form-select">
             <option value="cash">💵 Cash</option>
-            <option value="maribank">💳 MariBank</option>
-            <option value="bdo">🏛️ BDO</option>
             <option value="gcash">📱 GCash</option>
+            <option value="bdo">🏛️ BDO</option>
+            <option value="maribank">💳 MariBank</option>
             <option value="none">None / Utang Only</option>
           </select>
         </div>
@@ -3458,16 +3458,16 @@
               <input type="number" step="any" inputmode="decimal" id="setting-wallet-cash" class="form-input mono" placeholder="0" />
             </div>
             <div>
-              <label class="form-label" for="setting-wallet-maribank">MariBank (₱)</label>
-              <input type="number" step="any" inputmode="decimal" id="setting-wallet-maribank" class="form-input mono" placeholder="0" />
+              <label class="form-label" for="setting-wallet-gcash">GCash (₱)</label>
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-gcash" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-bdo">BDO (₱)</label>
               <input type="number" step="any" inputmode="decimal" id="setting-wallet-bdo" class="form-input mono" placeholder="0" />
             </div>
             <div>
-              <label class="form-label" for="setting-wallet-gcash">GCash (₱)</label>
-              <input type="number" step="any" inputmode="decimal" id="setting-wallet-gcash" class="form-input mono" placeholder="0" />
+              <label class="form-label" for="setting-wallet-maribank">MariBank (₱)</label>
+              <input type="number" step="any" inputmode="decimal" id="setting-wallet-maribank" class="form-input mono" placeholder="0" />
             </div>
             <div>
               <label class="form-label" for="setting-wallet-utang">Utang (₱)</label>
@@ -3655,9 +3655,9 @@
           <label class="form-label" for="utang-paid-wallet-select" id="utang-paid-wallet-label">Wallet *</label>
           <select id="utang-paid-wallet-select" class="form-select">
             <option value="cash">💵 Cash</option>
-            <option value="maribank">💳 MariBank</option>
-            <option value="bdo">🏛️ BDO</option>
             <option value="gcash">📱 GCash</option>
+            <option value="bdo">🏛️ BDO</option>
+            <option value="maribank">💳 MariBank</option>
             <option value="none">None / Utang Only</option>
           </select>
         </div>
