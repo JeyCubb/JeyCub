@@ -6843,6 +6843,30 @@
       });
     });
 
+    // Close/cancel topmost active modal on Escape
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      // Sub-modals & confirm dialogs handle their own Escape
+      if (
+        document.getElementById('modal-datetime-picker')?.classList.contains('is-active') ||
+        document.getElementById('modal-utang-paid-wallet')?.classList.contains('is-active') ||
+        document.getElementById('modal-app-confirm')?.classList.contains('is-active')
+      ) {
+        return;
+      }
+      const expenseModal = document.getElementById('modal-expense');
+      if (expenseModal && expenseModal.classList.contains('is-active')) {
+        const cancelBtn = document.getElementById('btn-cancel-expense');
+        if (cancelBtn) cancelBtn.click();
+        else expenseModal.classList.remove('is-active');
+        return;
+      }
+      const activeOverlays = Array.from(document.querySelectorAll('.modal-overlay.is-active'));
+      if (activeOverlays.length > 0) {
+        activeOverlays[activeOverlays.length - 1].classList.remove('is-active');
+      }
+    });
+
     // Search and Filter Listeners for Expenses (if present)
     const expenseSearchInput = document.getElementById('expense-search-input');
     if (expenseSearchInput) {
