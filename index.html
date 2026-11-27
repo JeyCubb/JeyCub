@@ -3343,7 +3343,7 @@
       <form id="form-add-expense" class="modal-body" style="padding-top: 1rem;">
         <!-- Title / Description -->
         <div class="form-group">
-          <label class="form-label" for="expense-input-title">Expense Title *</label>
+          <label class="form-label" for="expense-input-title">Expense Title</label>
           <input type="text" id="expense-input-title" class="form-input" required autocomplete="off" />
         </div>
 
@@ -3351,7 +3351,7 @@
         <div class="form-row-2">
           <!-- Amount -->
           <div class="form-group">
-            <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
+            <label class="form-label" for="expense-input-amount">Amount</label>
             <div style="position: relative;">
               <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
               <input type="text" inputmode="decimal" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required autocomplete="off" />
@@ -3360,7 +3360,7 @@
 
           <!-- Paid From (Account / Wallet) -->
           <div class="form-group">
-            <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account *</label>
+            <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account</label>
             <select id="expense-input-wallet" class="form-select">
               <option value="cash">💵 Cash</option>
               <option value="gcash">📱 GCash</option>
@@ -3373,7 +3373,7 @@
 
         <!-- Secondary Wallet for Utang (Pick which wallet to deduct/add) -->
         <div class="form-group" id="group-utang-wallet" style="display: none;">
-          <label class="form-label" for="expense-input-utang-wallet" id="expense-utang-wallet-label">Wallet to Deduct From *</label>
+          <label class="form-label" for="expense-input-utang-wallet" id="expense-utang-wallet-label">Wallet to Deduct From</label>
           <select id="expense-input-utang-wallet" class="form-select">
             <option value="cash">💵 Cash</option>
             <option value="gcash">📱 GCash</option>
@@ -3385,7 +3385,7 @@
 
         <!-- Person for Utang (input + live suggestions popup) -->
         <div class="form-group" id="group-utang-person" style="display: none;">
-          <label class="form-label" for="expense-input-utang-person" id="expense-utang-person-label">Person *</label>
+          <label class="form-label" for="expense-input-utang-person" id="expense-utang-person-label">Person</label>
           <div class="autocomplete-wrapper">
             <input type="text" id="expense-input-utang-person" class="form-input" autocomplete="off" placeholder="Enter person name..." />
             <div id="utang-person-suggestions" class="autocomplete-dropdown" style="display: none;"></div>
@@ -3652,7 +3652,7 @@
           <div id="utang-paid-wallet-msg" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;"></div>
         </div>
         <div class="form-group" style="margin: 0.2rem 0 0;">
-          <label class="form-label" for="utang-paid-wallet-select" id="utang-paid-wallet-label">Wallet *</label>
+          <label class="form-label" for="utang-paid-wallet-select" id="utang-paid-wallet-label">Wallet</label>
           <select id="utang-paid-wallet-select" class="form-select">
             <option value="cash">💵 Cash</option>
             <option value="gcash">📱 GCash</option>
@@ -5150,7 +5150,7 @@
           msgEl.innerHTML = `Which wallet should <span style="color: #10b981; font-weight: 700;">+${formatCurrency(amt)}</span> be <strong>added to</strong> for <strong>${safeTitle}</strong>?`;
         }
 
-        labelEl.textContent = isBorrowing ? 'Wallet to Subtract From *' : 'Wallet to Add To *';
+        labelEl.textContent = isBorrowing ? 'Wallet to Subtract From' : 'Wallet to Add To';
         const defaultWallet = item.utangWallet || 'cash';
         selectEl.value = Array.from(selectEl.options).some(o => o.value === defaultWallet) ? defaultWallet : 'cash';
 
@@ -5400,7 +5400,7 @@
       if (utangGroup) {
         utangGroup.style.display = isUtang ? 'flex' : 'none';
         if (utangLabel) {
-          utangLabel.textContent = isIncome ? 'Wallet to Add To *' : 'Wallet to Deduct From *';
+          utangLabel.textContent = isIncome ? 'Wallet to Add To' : 'Wallet to Deduct From';
         }
       }
 
@@ -5488,7 +5488,7 @@
 
       if (isProjected) {
         if (labelWallet) {
-          labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later) *';
+          labelWallet.textContent = isIncome ? 'Planned Account (+ Add Later)' : 'Planned Account (Deduct Later)';
         }
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
@@ -5497,7 +5497,7 @@
         }
       } else {
         if (labelWallet) {
-          labelWallet.textContent = isIncome ? 'Add To Account *' : 'Deduct From Account *';
+          labelWallet.textContent = isIncome ? 'Add To Account' : 'Deduct From Account';
         }
         if (submitBtn) {
           submitBtn.textContent = currentEditExpenseId
@@ -5552,7 +5552,7 @@
         if (labelWallet) {
           labelWallet.textContent = isProjected 
             ? (isUtang ? 'Planned Account (+ Borrow Later)' : 'Planned Account (+ Add Later)') 
-            : 'Add To Account *';
+            : 'Add To Account';
         }
         if (toggleBtn) {
           toggleBtn.style.borderColor = 'var(--color-success)';
@@ -5580,8 +5580,8 @@
       } else {
         if (labelWallet) {
           labelWallet.textContent = isProjected 
-            ? (isUtang ? 'Planned Account (Lend Later) *' : 'Planned Account (Deduct Later) *') 
-            : 'Deduct From Account *';
+            ? (isUtang ? 'Planned Account (Lend Later)' : 'Planned Account (Deduct Later)') 
+            : 'Deduct From Account';
         }
         if (toggleBtn) {
           toggleBtn.style.borderColor = '';
