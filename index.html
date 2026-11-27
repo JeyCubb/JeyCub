@@ -2023,6 +2023,22 @@
       font-weight: 700;
       box-shadow: 0 3px 10px rgba(249, 115, 22, 0.3);
     }
+    .dt-time-input {
+      width: 100%;
+      padding: 0.4rem 0.2rem;
+      border-radius: 8px;
+      border: 1px solid var(--accent-primary);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
     .dt-picker-footer {
       display: flex;
       align-items: center;
@@ -6427,6 +6443,100 @@
         state.ampm = btn.dataset.ampm;
         renderTimeColumns(false);
       });
+
+      const attachInlineTimeEdit = (colEl, type) => {
+        const startEdit = (btn) => {
+          if (!btn || colEl.querySelector('.dt-time-input')) return;
+          const initialVal = type === 'hour' ? btn.dataset.hour : btn.dataset.min;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.inputMode = 'numeric';
+          input.maxLength = 2;
+          input.className = 'dt-time-input mono';
+          input.value = String(initialVal).padStart(2, '0');
+          input.setAttribute('aria-label', type === 'hour' ? 'Type hour' : 'Type minute');
+
+          let finished = false;
+          const commit = () => {
+            if (finished) return;
+            finished = true;
+            const raw = input.value.trim();
+            const n = parseInt(raw, 10);
+            if (!isNaN(n)) {
+              if (type === 'hour') {
+                if (n === 0) {
+                  state.hour12 = 12;
+                  state.ampm = 'AM';
+                } else if (n >= 13 && n <= 23) {
+                  state.hour12 = n - 12;
+                  state.ampm = 'PM';
+                } else {
+                  state.hour12 = Math.max(1, Math.min(12, n));
+                }
+              } else {
+                state.minute = Math.max(0, Math.min(59, n));
+              }
+            }
+            renderTimeColumns(true);
+          };
+
+          const cancel = () => {
+            if (finished) return;
+            finished = true;
+            renderTimeColumns(false);
+          };
+
+          input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/g, '').slice(0, 2);
+          });
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              e.stopPropagation();
+              cancel();
+            }
+          });
+          input.addEventListener('blur', commit);
+
+          btn.replaceWith(input);
+          input.focus();
+          input.select();
+        };
+
+        colEl.addEventListener('dblclick', (e) => {
+          const btn = e.target.closest('.dt-time-opt');
+          if (btn) startEdit(btn);
+        });
+
+        // Mobile double-tap support
+        let lastTapTime = 0;
+        let lastTapVal = null;
+        let touchMoved = false;
+        colEl.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
+        colEl.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+        colEl.addEventListener('touchend', (e) => {
+          if (touchMoved) return;
+          const btn = e.target.closest('.dt-time-opt');
+          if (!btn) return;
+          const val = type === 'hour' ? btn.dataset.hour : btn.dataset.min;
+          const now = Date.now();
+          if (lastTapVal === val && now - lastTapTime < 340) {
+            e.preventDefault();
+            lastTapTime = 0;
+            lastTapVal = null;
+            startEdit(btn);
+          } else {
+            lastTapTime = now;
+            lastTapVal = val;
+          }
+        });
+      };
+
+      attachInlineTimeEdit(colHour, 'hour');
+      attachInlineTimeEdit(colMinute, 'minute');
 
       monthSelect.addEventListener('change', () => {
         state.viewMonth = parseInt(monthSelect.value, 10);
