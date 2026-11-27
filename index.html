@@ -3236,6 +3236,37 @@
   </div>
 
   <!-- ==========================================================================
+       MODAL 6B: UTANG MARK AS PAID WALLET PROMPT
+       ========================================================================== -->
+  <div id="modal-utang-paid-wallet" class="modal-overlay" style="z-index: 2100;" role="dialog" aria-modal="true" aria-labelledby="modal-utang-paid-title">
+    <div class="modal-dialog" style="max-width: 400px;">
+      <div class="modal-body" style="padding: 1.75rem 1.5rem 1.4rem; gap: 0.9rem;">
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.6rem;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+          <h3 id="modal-utang-paid-title" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0;">Mark as Paid</h3>
+          <div id="utang-paid-wallet-msg" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;"></div>
+        </div>
+        <div class="form-group" style="margin: 0.2rem 0 0;">
+          <label class="form-label" for="utang-paid-wallet-select" id="utang-paid-wallet-label">Wallet *</label>
+          <select id="utang-paid-wallet-select" class="form-select">
+            <option value="cash">💵 Cash</option>
+            <option value="maribank">💳 MariBank</option>
+            <option value="bdo">🏛️ BDO</option>
+            <option value="gcash">📱 GCash</option>
+            <option value="none">None / Utang Only</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.65rem; width: 100%; justify-content: center; margin-top: 0.35rem;">
+          <button type="button" id="btn-utang-paid-cancel" class="btn-modal-cancel" style="flex: 1; padding: 0.7rem; justify-content: center; display: inline-flex;">Cancel</button>
+          <button type="button" id="btn-utang-paid-confirm" class="btn-primary" style="flex: 1; padding: 0.7rem; font-weight: 700; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #10b981; color: #ffffff;">Mark as Paid</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
        PROFILE MODAL SYSTEM (Selector, Lock, Confirm)
        ========================================================================== -->
   <!-- Profile Password Modal (Set / Unlock) -->
@@ -3794,7 +3825,7 @@
         }
         if (item.wallet === 'utang' && item.isPaid && !item.paidApplied && !item.isProjected) {
           const amt = Number(item.amount) || 0;
-          const secWallet = item.utangWallet;
+          const secWallet = item.paidWallet || item.utangWallet;
           if (item.type === 'income') {
             if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
               wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
@@ -4628,6 +4659,73 @@
       });
     };
 
+    window.showUtangPaidWalletPrompt = function(item) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('modal-utang-paid-wallet');
+        const titleEl = document.getElementById('modal-utang-paid-title');
+        const msgEl = document.getElementById('utang-paid-wallet-msg');
+        const labelEl = document.getElementById('utang-paid-wallet-label');
+        const selectEl = document.getElementById('utang-paid-wallet-select');
+        const btnOk = document.getElementById('btn-utang-paid-confirm');
+        const btnCancel = document.getElementById('btn-utang-paid-cancel');
+
+        const isBorrowing = item.type === 'income';
+        const amt = Number(item.amount) || 0;
+        const safeTitle = escapeHtml(item.title || 'this item');
+
+        titleEl.textContent = isBorrowing ? 'Mark Borrowing as Paid' : 'Mark Lending as Paid';
+        if (item.isProjected) {
+          msgEl.innerHTML = `Mark projected <strong>${safeTitle}</strong> (${formatCurrency(amt)}) as paid?<br><span style="font-size: 0.75rem; color: var(--text-muted);">Projected items do not modify actual wallet balances.</span>`;
+        } else if (isBorrowing) {
+          msgEl.innerHTML = `Which wallet should <span style="color: var(--color-error); font-weight: 700;">-${formatCurrency(amt)}</span> be <strong>subtracted from</strong> to pay <strong>${safeTitle}</strong>?`;
+        } else {
+          msgEl.innerHTML = `Which wallet should <span style="color: #10b981; font-weight: 700;">+${formatCurrency(amt)}</span> be <strong>added to</strong> for <strong>${safeTitle}</strong>?`;
+        }
+
+        labelEl.textContent = isBorrowing ? 'Wallet to Subtract From *' : 'Wallet to Add To *';
+        const defaultWallet = item.utangWallet || 'cash';
+        selectEl.value = Array.from(selectEl.options).some(o => o.value === defaultWallet) ? defaultWallet : 'cash';
+
+        const cleanup = () => {
+          modal.classList.remove('is-active');
+          btnOk.removeEventListener('click', onOk);
+          btnCancel.removeEventListener('click', onCancel);
+          modal.removeEventListener('click', onBackdrop);
+          window.removeEventListener('keydown', onKey);
+        };
+
+        const onOk = () => {
+          const val = selectEl.value;
+          cleanup();
+          resolve(val);
+        };
+        const onCancel = () => {
+          cleanup();
+          resolve(null);
+        };
+        const onBackdrop = (e) => {
+          if (e.target === modal) onCancel();
+        };
+        const onKey = (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          } else if (e.key === 'Enter' && document.activeElement !== btnCancel) {
+            e.preventDefault();
+            onOk();
+          }
+        };
+
+        btnOk.addEventListener('click', onOk);
+        btnCancel.addEventListener('click', onCancel);
+        modal.addEventListener('click', onBackdrop);
+        window.addEventListener('keydown', onKey);
+
+        modal.classList.add('is-active');
+        selectEl.focus();
+      });
+    };
+
     // PROJECTED TARGET MODAL CONTROLLER
     function updateProjectedTargetPreview(targetVal) {
       const baonVal = parseFloat(document.getElementById('proj-baon-input')?.value) || Number(settings.projectedBaon) || 1000;
@@ -5130,14 +5228,16 @@
         if (wKey === 'utang' && utangKey && utangKey !== 'none' && wallets[utangKey] !== undefined) {
           if (isIncome) {
             wallets[utangKey] = (Number(wallets[utangKey]) || 0) - amt;
-            if (item.isPaid && item.paidApplied) {
-              wallets[utangKey] = (Number(wallets[utangKey]) || 0) + amt;
-            }
           } else {
             wallets[utangKey] = (Number(wallets[utangKey]) || 0) + amt;
-            if (item.isPaid && item.paidApplied) {
-              wallets[utangKey] = (Number(wallets[utangKey]) || 0) - amt;
-            }
+          }
+        }
+        const paidKey = (item.paidWallet || item.utangWallet || '').toLowerCase();
+        if (wKey === 'utang' && item.isPaid && item.paidApplied && paidKey && paidKey !== 'none' && wallets[paidKey] !== undefined) {
+          if (isIncome) {
+            wallets[paidKey] = (Number(wallets[paidKey]) || 0) + amt;
+          } else {
+            wallets[paidKey] = (Number(wallets[paidKey]) || 0) - amt;
           }
         }
       }
@@ -5321,13 +5421,14 @@
             }
           }
           if (!oldIsProjected && oldWallet === 'utang' && wasPaid) {
+            const oldPaidWallet = item.paidWallet || oldUtangWallet;
             if (oldIsIncome) {
-              if (oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
-                wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmount;
+              if (oldPaidWallet && oldPaidWallet !== 'none' && wallets[oldPaidWallet] !== undefined) {
+                wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) + oldAmount;
               }
             } else {
-              if (oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
-                wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmount;
+              if (oldPaidWallet && oldPaidWallet !== 'none' && wallets[oldPaidWallet] !== undefined) {
+                wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) - oldAmount;
               }
             }
           }
@@ -5348,13 +5449,14 @@
             }
           }
           if (!isProjected && wallet === 'utang' && item.isPaid) {
+            const newPaidWallet = item.paidWallet || utangWallet;
             if (isIncome) {
-              if (utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
-                wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amount;
+              if (newPaidWallet && newPaidWallet !== 'none' && wallets[newPaidWallet] !== undefined) {
+                wallets[newPaidWallet] = (Number(wallets[newPaidWallet]) || 0) - amount;
               }
             } else {
-              if (utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
-                wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amount;
+              if (newPaidWallet && newPaidWallet !== 'none' && wallets[newPaidWallet] !== undefined) {
+                wallets[newPaidWallet] = (Number(wallets[newPaidWallet]) || 0) + amount;
               }
             }
             item.paidApplied = true;
@@ -5504,14 +5606,16 @@
         if (oldWallet === 'utang' && oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
           if (oldIsIncome) {
             wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmt;
-            if (item.isPaid && item.paidApplied) {
-              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmt;
-            }
           } else {
             wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmt;
-            if (item.isPaid && item.paidApplied) {
-              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmt;
-            }
+          }
+        }
+        const oldPaidWallet = item.paidWallet || oldUtangWallet;
+        if (oldWallet === 'utang' && item.isPaid && item.paidApplied && oldPaidWallet && oldPaidWallet !== 'none' && wallets[oldPaidWallet] !== undefined) {
+          if (oldIsIncome) {
+            wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) + oldAmt;
+          } else {
+            wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) - oldAmt;
           }
         }
       }
@@ -5546,6 +5650,7 @@
       item.isCustomized = true;
       item.isPaid = false;
       item.paidApplied = false;
+      item.paidWallet = null;
       if ((item.title || '').trim().toLowerCase() === 'baon' || item.wasProjectedBaon || (item.id && String(item.id).startsWith('exp_proj_baon_'))) {
         item.wasProjectedBaon = true;
       }
@@ -5599,20 +5704,26 @@
 
     const btnMarkPaidUtang = document.getElementById('btn-mark-paid-utang');
     if (btnMarkPaidUtang) {
-      btnMarkPaidUtang.addEventListener('click', () => {
+      btnMarkPaidUtang.addEventListener('click', async () => {
         if (!currentEditExpenseId) return;
         const item = expenses.find(e => e.id === currentEditExpenseId);
         if (!item) return;
 
         const willBePaid = !item.isPaid;
         const amt = Number(item.amount) || 0;
-        const secWallet = item.utangWallet;
+        let secWallet = item.paidWallet || item.utangWallet;
+
+        if (willBePaid) {
+          const chosenWallet = await showUtangPaidWalletPrompt(item);
+          if (!chosenWallet) return;
+          secWallet = chosenWallet;
+        }
 
         if (!item.isProjected) {
           if (willBePaid) {
             // Settling Utang:
-            // Borrowing (Income): repaid from wallet -> subtracts from secondary wallet
-            // Lending (Expense): collected into wallet -> adds back to secondary wallet
+            // Borrowing (Income): repaid from wallet -> subtracts from chosen wallet
+            // Lending (Expense): collected into wallet -> adds back to chosen wallet
             if (item.type === 'income') {
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
                 wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
@@ -5639,6 +5750,7 @@
 
         item.isPaid = willBePaid;
         item.paidApplied = willBePaid;
+        item.paidWallet = willBePaid ? secWallet : null;
 
         syncUtangWalletBalance();
         saveStorage();
