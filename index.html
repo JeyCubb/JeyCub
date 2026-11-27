@@ -1901,6 +1901,36 @@
     .dt-cal-select:focus {
       border-color: var(--accent-primary);
     }
+    .dt-cal-year-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.32rem 0.62rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .dt-cal-year-btn:hover {
+      border-color: var(--border-color-hover);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .dt-cal-year-input {
+      width: 58px;
+      background: var(--bg-input);
+      border: 1px solid var(--accent-primary);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.32rem 0.45rem;
+      text-align: center;
+      outline: none;
+      box-sizing: border-box;
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
     .dt-cal-select option {
       background: #1a1512;
       color: #f5efe6;
@@ -3713,7 +3743,7 @@
             <div class="dt-cal-header">
               <div class="dt-cal-selects">
                 <select id="dt-select-month" class="dt-cal-select" aria-label="Month"></select>
-                <select id="dt-select-year" class="dt-cal-select" aria-label="Year"></select>
+                <button type="button" id="dt-select-year" class="dt-cal-year-btn mono" title="Double-click to type year" aria-label="Year"></button>
               </div>
               <div class="dt-cal-nav">
                 <button type="button" id="dt-prev-month" class="dt-cal-nav-btn" aria-label="Previous month"><i class="fa-solid fa-chevron-up"></i></button>
@@ -6276,11 +6306,6 @@
       monthSelect.innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
 
       const curYear = new Date().getFullYear();
-      let yearOpts = '';
-      for (let y = curYear - 10; y <= curYear + 10; y++) {
-        yearOpts += `<option value="${y}">${y}</option>`;
-      }
-      yearSelect.innerHTML = yearOpts;
 
       let state = {
         viewYear: curYear,
@@ -6295,7 +6320,7 @@
 
       const renderCalendar = () => {
         monthSelect.value = String(state.viewMonth);
-        yearSelect.value = String(state.viewYear);
+        yearSelect.textContent = String(state.viewYear);
 
         const firstDay = new Date(state.viewYear, state.viewMonth, 1).getDay();
         const daysInMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
@@ -6505,9 +6530,61 @@
         renderCalendar();
       });
 
-      yearSelect.addEventListener('change', () => {
-        state.viewYear = parseInt(yearSelect.value, 10);
-        renderCalendar();
+      const startYearEdit = () => {
+        if (!yearSelect.isConnected || yearSelect.parentNode.querySelector('.dt-cal-year-input')) return;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.inputMode = 'numeric';
+        input.maxLength = 4;
+        input.className = 'dt-cal-year-input mono';
+        input.value = String(state.viewYear);
+        input.setAttribute('aria-label', 'Type year');
+
+        let finished = false;
+        const finish = (apply) => {
+          if (finished) return;
+          finished = true;
+          if (apply) {
+            const parsed = parseInt(input.value.trim(), 10);
+            if (!isNaN(parsed) && parsed >= 1900 && parsed <= 2100) {
+              state.viewYear = parsed;
+            }
+          }
+          input.replaceWith(yearSelect);
+          renderCalendar();
+        };
+
+        input.addEventListener('input', () => {
+          input.value = input.value.replace(/\D/g, '').slice(0, 4);
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            finish(true);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            finish(false);
+          }
+        });
+        input.addEventListener('blur', () => finish(true));
+
+        yearSelect.replaceWith(input);
+        input.focus();
+        input.select();
+      };
+
+      yearSelect.addEventListener('dblclick', startYearEdit);
+      let lastYearTap = 0;
+      yearSelect.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastYearTap < 340) {
+          e.preventDefault();
+          lastYearTap = 0;
+          startYearEdit();
+        } else {
+          lastYearTap = now;
+        }
       });
 
       btnPrev.addEventListener('click', () => {
