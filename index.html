@@ -6140,15 +6140,15 @@
         displayEl.textContent = raw;
         return;
       }
-      const mm = String(parsed.getMonth() + 1).padStart(2, '0');
-      const dd = String(parsed.getDate()).padStart(2, '0');
+      const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mon = SHORT_MONTHS[parsed.getMonth()];
+      const dd = parsed.getDate();
       const yyyy = parsed.getFullYear();
       let h = parsed.getHours();
       const ampm = h >= 12 ? 'PM' : 'AM';
       h = h % 12 || 12;
-      const hh = String(h).padStart(2, '0');
       const min = String(parsed.getMinutes()).padStart(2, '0');
-      displayEl.textContent = `${mm}/${dd}/${yyyy}  ${hh}:${min} ${ampm}`;
+      displayEl.textContent = `${mon} ${dd}, ${yyyy} ${h}:${min} ${ampm}`;
     };
 
     (function initCustomDatetimePicker() {
