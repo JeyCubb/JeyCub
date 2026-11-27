@@ -5170,29 +5170,12 @@
 
     function getPreviousUtangPeople() {
       const namesSet = new Set();
-      
-      // 1. From expenses array
+
+      // Only collect actual person (debtor) names from recorded utang expenses
       if (Array.isArray(expenses)) {
         expenses.forEach(item => {
-          if (item && item.debtor && typeof item.debtor === 'string') {
+          if (item && item.wallet === 'utang' && item.debtor && typeof item.debtor === 'string') {
             const trimmed = item.debtor.trim();
-            if (trimmed && trimmed.toLowerCase() !== 'utang') namesSet.add(trimmed);
-          }
-          if (item && item.wallet === 'utang' && item.title && typeof item.title === 'string') {
-            const trimmed = item.title.trim();
-            if (trimmed && trimmed.toLowerCase() !== 'utang') {
-              namesSet.add(trimmed);
-            }
-          }
-        });
-      }
-
-      // 2. From debts array if available
-      if (Array.isArray(debts)) {
-        debts.forEach(d => {
-          const name = d.name || d.person || d.debtor || d.title;
-          if (name && typeof name === 'string') {
-            const trimmed = name.trim();
             if (trimmed && trimmed.toLowerCase() !== 'utang') {
               namesSet.add(trimmed);
             }
