@@ -1620,6 +1620,12 @@
       flex-direction: column;
       gap: 0.22rem;
     }
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+      gap: 0.65rem;
+      align-items: end;
+    }
     .form-label {
       font-size: 0.72rem;
       font-weight: 700;
@@ -1956,75 +1962,64 @@
       border-color: var(--border-color-hover);
     }
 
-    /* Clean iOS-Style Toggle Switch for Income/Add Mode */
+    /* Clean Pill Toggle for Expense / Income Mode */
     .income-toggle-control {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.35rem;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
-      padding: 0.2rem 0.35rem;
+      padding: 0.42rem 0.7rem;
       border-radius: var(--radius-md);
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.32);
       transition: var(--transition);
       flex-shrink: 0;
     }
     .income-toggle-control:hover {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
     }
-    .income-switch {
-      position: relative;
-      display: inline-block;
-      width: 36px;
-      height: 20px;
-      flex-shrink: 0;
+    .income-toggle-control:active {
+      transform: scale(0.96);
     }
-    .income-switch input {
+    .income-toggle-control input[type="checkbox"] {
+      position: absolute;
       opacity: 0;
       width: 0;
       height: 0;
-      position: absolute;
-    }
-    .income-switch-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--bg-input);
-      border: 1px solid var(--border-color);
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      border-radius: 20px;
-    }
-    .income-switch-slider:before {
-      position: absolute;
-      content: "";
-      height: 14px;
-      width: 14px;
-      left: 2px;
-      bottom: 2px;
-      background-color: #ffffff;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    }
-    .income-switch input:checked + .income-switch-slider {
-      background-color: #10b981;
-      border-color: #059669;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
-    }
-    .income-switch input:checked + .income-switch-slider:before {
-      transform: translateX(16px);
-      background-color: #ffffff;
+      pointer-events: none;
     }
     .income-toggle-label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-secondary);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #ef4444;
       transition: color 0.18s ease;
       white-space: nowrap;
+    }
+    .income-toggle-control.is-active {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    .income-toggle-control.is-active:hover {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: #10b981;
     }
     .income-toggle-control.is-active .income-toggle-label {
       color: #10b981;
       font-weight: 700;
+    }
+    .income-toggle-control.is-utang,
+    .income-toggle-control.is-utang:hover {
+      background: transparent;
+      border-color: transparent;
+      padding: 0.2rem 0.35rem;
+    }
+    .income-toggle-control.is-utang .income-toggle-label {
+      color: var(--text-secondary);
+      font-weight: 600;
     }
 
     /* Expense Modal Actions: Adaptive Symmetrical Layout */
@@ -3179,44 +3174,37 @@
   <!-- ==========================================================================
        MODAL 1: ADD EXPENSE
        ========================================================================== -->
-  <div id="modal-expense" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-expense-title">
+  <div id="modal-expense" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Transaction entry">
     <div class="modal-dialog">
-      <div class="modal-header">
-        <div class="modal-title-wrap">
-          <div class="modal-avatar-icon">
-            <i class="fa-solid fa-receipt"></i>
-          </div>
-          <h3 id="modal-expense-title" class="modal-title">Record Expense</h3>
-        </div>
-        <button type="button" class="modal-close-btn" id="btn-close-expense" aria-label="Close dialog">&times;</button>
-      </div>
-
-      <form id="form-add-expense" class="modal-body">
+      <form id="form-add-expense" class="modal-body" style="padding-top: 1rem;">
         <!-- Title / Description -->
         <div class="form-group">
           <label class="form-label" for="expense-input-title">Expense Title / Item *</label>
           <input type="text" id="expense-input-title" class="form-input" required autocomplete="off" />
         </div>
 
-        <!-- Amount -->
-        <div class="form-group">
-          <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
-          <div style="position: relative;">
-            <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
-            <input type="text" inputmode="decimal" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required autocomplete="off" />
+        <!-- Amount & Account -->
+        <div class="form-row-2">
+          <!-- Amount -->
+          <div class="form-group">
+            <label class="form-label" for="expense-input-amount">Amount (₱ Peso) *</label>
+            <div style="position: relative;">
+              <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);" class="mono">₱</span>
+              <input type="text" inputmode="decimal" id="expense-input-amount" class="form-input mono" style="padding-left: 2rem;" required autocomplete="off" />
+            </div>
           </div>
-        </div>
 
-        <!-- Paid From (Account / Wallet) -->
-        <div class="form-group">
-          <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account *</label>
-          <select id="expense-input-wallet" class="form-select">
-            <option value="cash">💵 Cash</option>
-            <option value="maribank">💳 MariBank</option>
-            <option value="bdo">🏛️ BDO</option>
-            <option value="gcash">📱 GCash</option>
-            <option value="utang">🤝 Utang</option>
-          </select>
+          <!-- Paid From (Account / Wallet) -->
+          <div class="form-group">
+            <label class="form-label" for="expense-input-wallet" id="expense-account-label">Deduct From Account *</label>
+            <select id="expense-input-wallet" class="form-select">
+              <option value="cash">💵 Cash</option>
+              <option value="maribank">💳 MariBank</option>
+              <option value="bdo">🏛️ BDO</option>
+              <option value="gcash">📱 GCash</option>
+              <option value="utang">🤝 Utang</option>
+            </select>
+          </div>
         </div>
 
         <!-- Secondary Wallet for Utang (Pick which wallet to deduct/add) -->
@@ -3252,12 +3240,9 @@
 
         <div class="modal-actions-expense" id="modal-actions-expense">
           <div class="modal-actions-left">
-            <label class="income-toggle-control" id="income-toggle-control" title="Toggle between Expense and Add Money">
-              <span class="income-switch">
-                <input type="checkbox" id="checkbox-toggle-income" />
-                <span class="income-switch-slider"></span>
-              </span>
-              <span class="income-toggle-label" id="income-toggle-label">Add Money</span>
+            <label class="income-toggle-control" id="income-toggle-control" title="Toggle between Expense and Income">
+              <input type="checkbox" id="checkbox-toggle-income" />
+              <span class="income-toggle-label" id="income-toggle-label">Expense</span>
             </label>
             <button type="button" id="btn-delete-expense" class="btn-modal-delete" style="display: none;">
               <i class="fa-solid fa-trash-can"></i> Delete
@@ -5371,11 +5356,9 @@
         : Boolean(isProjectedMode);
 
       if (chkIncome) chkIncome.checked = Boolean(isIncome);
-      if (toggleCtrl) toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
-
-      const incomeSwitchEl = toggleCtrl ? toggleCtrl.querySelector('.income-switch') : null;
-      if (incomeSwitchEl) {
-        incomeSwitchEl.style.display = isUtang ? 'none' : '';
+      if (toggleCtrl) {
+        toggleCtrl.classList.toggle('is-active', Boolean(isIncome));
+        toggleCtrl.classList.toggle('is-utang', Boolean(isUtang));
       }
 
       if (isUtang) {
@@ -5386,7 +5369,7 @@
             : `<span style="${btnStyle}">Lending</span> (They owe you)`;
         }
       } else {
-        if (toggleLbl) toggleLbl.textContent = isIncome ? '+ Adding' : 'Add Money';
+        if (toggleLbl) toggleLbl.textContent = isIncome ? 'Income' : 'Expense';
       }
 
       updateSaveActualButtonUI(isProjected, isIncome, isUtang);
@@ -5457,9 +5440,12 @@
       const isIncome = item.type === 'income';
       const isProjected = Boolean(item.isProjected);
 
-      document.getElementById('modal-expense-title').textContent = isProjected
-        ? (isIncome ? 'Edit Projected Value' : 'Edit Projected Expense')
-        : (isIncome ? 'Edit Value / Income' : 'Edit Expense');
+      const titleModal = document.getElementById('modal-expense-title');
+      if (titleModal) {
+        titleModal.textContent = isProjected
+          ? (isIncome ? 'Edit Projected Value' : 'Edit Projected Expense')
+          : (isIncome ? 'Edit Value / Income' : 'Edit Expense');
+      }
       document.getElementById('expense-input-title').value = item.title || '';
       document.getElementById('expense-input-amount').value = (isIncome ? '+' : '-') + (Number(item.amount) || '');
       document.getElementById('expense-input-wallet').value = (item.wallet && item.wallet !== 'none') ? item.wallet : 'cash';
@@ -5577,7 +5563,10 @@
     window.openExpenseModal = function() {
       currentEditExpenseId = null;
       document.getElementById('form-add-expense').reset();
-      document.getElementById('modal-expense-title').textContent = isProjectedMode ? 'Record Projected Expense' : 'Record Expense';
+      const titleModal = document.getElementById('modal-expense-title');
+      if (titleModal) {
+        titleModal.textContent = isProjectedMode ? 'Record Projected Expense' : 'Record Expense';
+      }
 
       // Retain previously used payment method
       const targetWallet = settings.lastUsedWallet || (expenses.find(e => e.wallet && e.wallet !== 'none')?.wallet) || 'cash';
