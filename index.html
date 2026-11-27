@@ -1736,7 +1736,7 @@
       display: none;
       flex-direction: column;
       gap: 2px;
-      max-height: 230px;
+      max-height: min(420px, calc(100dvh - 24px));
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
@@ -6728,7 +6728,8 @@
           menu.style.left = `${Math.max(8, leftPos)}px`;
           menu.style.width = `${menuWidth}px`;
 
-          const menuHeight = Math.min(menu.scrollHeight || 220, 230);
+          const maxAllowed = Math.min(420, window.innerHeight - 24);
+          const menuHeight = Math.min(menu.scrollHeight || maxAllowed, maxAllowed);
           const spaceBelow = window.innerHeight - rect.bottom - 10;
           const openAbove = spaceBelow < menuHeight && rect.top > spaceBelow;
 
@@ -6736,7 +6737,8 @@
           if (openAbove) {
             menu.style.top = `${Math.max(8, rect.top - menuHeight - 6)}px`;
           } else {
-            menu.style.top = `${rect.bottom + 6}px`;
+            const topPos = Math.min(rect.bottom + 6, window.innerHeight - menuHeight - 8);
+            menu.style.top = `${Math.max(8, topPos)}px`;
           }
         };
 
