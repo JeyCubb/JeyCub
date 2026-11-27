@@ -3899,6 +3899,17 @@
     let wallets = { ...DEFAULT_WALLETS };
     let isProjectedMode = false;
     let settings = { ...DEFAULT_SETTINGS };
+
+    /** Round monetary amounts to 2 decimal places to prevent IEEE-754 float drift. */
+    function roundMoney(n) {
+      return Math.round((Number(n) || 0) * 100) / 100;
+    }
+
+    /** Safely adjust a wallet balance by delta, rounding to 2 decimal places. */
+    function adjustWallet(key, delta) {
+      if (!key || key === 'none' || key === 'utang' || wallets[key] === undefined) return;
+      wallets[key] = roundMoney((Number(wallets[key]) || 0) + delta);
+    }
     let currentDebtSearch = '';
     let currentExpenseSearch = '';
 
@@ -4288,13 +4299,9 @@
           const amt = Number(item.amount) || 0;
           const secWallet = item.paidWallet || item.utangWallet;
           if (item.type === 'income') {
-            if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-              wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
-            }
+            adjustWallet(secWallet, -amt);
           } else {
-            if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-              wallets[secWallet] = (Number(wallets[secWallet]) || 0) + amt;
-            }
+            adjustWallet(secWallet, amt);
           }
           item.paidApplied = true;
           migrationApplied = true;
@@ -5277,7 +5284,7 @@
       };
 
       const cfg = walletConfig[walletKey] || { name: walletKey, icon: 'fa-wallet' };
-      const current = Number(wallets[walletKey]) || 0;
+      const current = roundMoney(wallets[walletKey]);
 
       document.getElementById('modal-edit-wallet-title').textContent = `Update ${cfg.name} Balance`;
       const sub = document.getElementById('modal-edit-wallet-sub');
@@ -5669,26 +5676,14 @@
       if (!isProj) {
         // Actual item: adjust actual wallet
         if (wKey && wKey !== 'none' && wKey !== 'utang' && wallets[wKey] !== undefined) {
-          if (isIncome) {
-            wallets[wKey] = (Number(wallets[wKey]) || 0) - amt;
-          } else {
-            wallets[wKey] = (Number(wallets[wKey]) || 0) + amt;
-          }
+          adjustWallet(wKey, isIncome ? -amt : amt);
         }
         if (wKey === 'utang' && utangKey && utangKey !== 'none' && wallets[utangKey] !== undefined) {
-          if (isIncome) {
-            wallets[utangKey] = (Number(wallets[utangKey]) || 0) - amt;
-          } else {
-            wallets[utangKey] = (Number(wallets[utangKey]) || 0) + amt;
-          }
+          adjustWallet(utangKey, isIncome ? -amt : amt);
         }
         const paidKey = (item.paidWallet || item.utangWallet || '').toLowerCase();
         if (wKey === 'utang' && item.isPaid && item.paidApplied && paidKey && paidKey !== 'none' && wallets[paidKey] !== undefined) {
-          if (isIncome) {
-            wallets[paidKey] = (Number(wallets[paidKey]) || 0) + amt;
-          } else {
-            wallets[paidKey] = (Number(wallets[paidKey]) || 0) - amt;
-          }
+          adjustWallet(paidKey, isIncome ? amt : -amt);
         }
       }
 
@@ -5860,59 +5855,27 @@
           wasProj = oldIsProjected;
 
           // 1. Revert old transaction effect if it was NOT projected
-          if (!oldIsProjected && oldWallet && oldWallet !== 'none' && oldWallet !== 'utang' && wallets[oldWallet] !== undefined) {
-            if (oldIsIncome) {
-              wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) - oldAmount;
-            } else {
-              wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmount;
-            }
+          if (!oldIsProjected && oldWallet && oldWallet !== 'none' && oldWallet !== 'utang') {
+            adjustWallet(oldWallet, oldIsIncome ? -oldAmount : oldAmount);
           }
-          if (!oldIsProjected && oldWallet === 'utang' && oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
-            if (oldIsIncome) {
-              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmount;
-            } else {
-              wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmount;
-            }
+          if (!oldIsProjected && oldWallet === 'utang' && oldUtangWallet) {
+            adjustWallet(oldUtangWallet, oldIsIncome ? -oldAmount : oldAmount);
           }
           if (!oldIsProjected && oldWallet === 'utang' && wasPaid) {
             const oldPaidWallet = item.paidWallet || oldUtangWallet;
-            if (oldIsIncome) {
-              if (oldPaidWallet && oldPaidWallet !== 'none' && wallets[oldPaidWallet] !== undefined) {
-                wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) + oldAmount;
-              }
-            } else {
-              if (oldPaidWallet && oldPaidWallet !== 'none' && wallets[oldPaidWallet] !== undefined) {
-                wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) - oldAmount;
-              }
-            }
+            adjustWallet(oldPaidWallet, oldIsIncome ? oldAmount : -oldAmount);
           }
 
           // 2. Apply new transaction effect if it is NOT projected
-          if (!isProjected && wallet && wallet !== 'none' && wallet !== 'utang' && wallets[wallet] !== undefined) {
-            if (isIncome) {
-              wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
-            } else {
-              wallets[wallet] = (Number(wallets[wallet]) || 0) - amount;
-            }
+          if (!isProjected && wallet && wallet !== 'none' && wallet !== 'utang') {
+            adjustWallet(wallet, isIncome ? amount : -amount);
           }
-          if (!isProjected && wallet === 'utang' && utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
-            if (isIncome) {
-              wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amount;
-            } else {
-              wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amount;
-            }
+          if (!isProjected && wallet === 'utang' && utangWallet) {
+            adjustWallet(utangWallet, isIncome ? amount : -amount);
           }
           if (!isProjected && wallet === 'utang' && item.isPaid) {
             const newPaidWallet = item.paidWallet || utangWallet;
-            if (isIncome) {
-              if (newPaidWallet && newPaidWallet !== 'none' && wallets[newPaidWallet] !== undefined) {
-                wallets[newPaidWallet] = (Number(wallets[newPaidWallet]) || 0) - amount;
-              }
-            } else {
-              if (newPaidWallet && newPaidWallet !== 'none' && wallets[newPaidWallet] !== undefined) {
-                wallets[newPaidWallet] = (Number(wallets[newPaidWallet]) || 0) + amount;
-              }
-            }
+            adjustWallet(newPaidWallet, isIncome ? -amount : amount);
             item.paidApplied = true;
           }
 
@@ -5960,19 +5923,11 @@
         };
 
         // Deduct/Add to actual wallet only if NOT projected
-        if (!isProjected && wallet && wallet !== 'none' && wallet !== 'utang' && wallets[wallet] !== undefined) {
-          if (isIncome) {
-            wallets[wallet] = (Number(wallets[wallet]) || 0) + amount;
-          } else {
-            wallets[wallet] = (Number(wallets[wallet]) || 0) - amount;
-          }
+        if (!isProjected && wallet && wallet !== 'none' && wallet !== 'utang') {
+          adjustWallet(wallet, isIncome ? amount : -amount);
         }
-        if (!isProjected && wallet === 'utang' && utangWallet && utangWallet !== 'none' && wallets[utangWallet] !== undefined) {
-          if (isIncome) {
-            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) + amount;
-          } else {
-            wallets[utangWallet] = (Number(wallets[utangWallet]) || 0) - amount;
-          }
+        if (!isProjected && wallet === 'utang' && utangWallet) {
+          adjustWallet(utangWallet, isIncome ? amount : -amount);
         }
 
         expenses.unshift(newExpense);
@@ -6050,27 +6005,15 @@
         const oldUtangWallet = item.utangWallet;
         const oldIsIncome = item.type === 'income';
 
-        if (oldWallet && oldWallet !== 'none' && oldWallet !== 'utang' && wallets[oldWallet] !== undefined) {
-          if (oldIsIncome) {
-            wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) - oldAmt;
-          } else {
-            wallets[oldWallet] = (Number(wallets[oldWallet]) || 0) + oldAmt;
-          }
+        if (oldWallet && oldWallet !== 'none' && oldWallet !== 'utang') {
+          adjustWallet(oldWallet, oldIsIncome ? -oldAmt : oldAmt);
         }
-        if (oldWallet === 'utang' && oldUtangWallet && oldUtangWallet !== 'none' && wallets[oldUtangWallet] !== undefined) {
-          if (oldIsIncome) {
-            wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) - oldAmt;
-          } else {
-            wallets[oldUtangWallet] = (Number(wallets[oldUtangWallet]) || 0) + oldAmt;
-          }
+        if (oldWallet === 'utang' && oldUtangWallet) {
+          adjustWallet(oldUtangWallet, oldIsIncome ? -oldAmt : oldAmt);
         }
         const oldPaidWallet = item.paidWallet || oldUtangWallet;
-        if (oldWallet === 'utang' && item.isPaid && item.paidApplied && oldPaidWallet && oldPaidWallet !== 'none' && wallets[oldPaidWallet] !== undefined) {
-          if (oldIsIncome) {
-            wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) + oldAmt;
-          } else {
-            wallets[oldPaidWallet] = (Number(wallets[oldPaidWallet]) || 0) - oldAmt;
-          }
+        if (oldWallet === 'utang' && item.isPaid && item.paidApplied) {
+          adjustWallet(oldPaidWallet, oldIsIncome ? oldAmt : -oldAmt);
         }
       }
 
@@ -6179,23 +6122,17 @@
             // Borrowing (Income): repaid from wallet -> subtracts from chosen wallet
             // Lending (Expense): collected into wallet -> adds back to chosen wallet
             if (item.type === 'income') {
-              if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-                wallets[secWallet] = (Number(wallets[secWallet]) || 0) - amt;
-              }
+              adjustWallet(secWallet, -amt);
             } else {
-              if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-                wallets[secWallet] = (Number(wallets[secWallet]) || 0) + amt;
-              }
+              adjustWallet(secWallet, amt);
             }
           } else {
             // Re-opening Utang (Unmarking Paid):
             if (item.type === 'income') {
-              if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-                wallets[secWallet] = (Number(wallets[secWallet]) || 0) + amt;
-              }
+              adjustWallet(secWallet, amt);
             } else {
               if (secWallet && secWallet !== 'none' && wallets[secWallet] !== undefined) {
-                const updated = (Number(wallets[secWallet]) || 0) - amt;
+                const updated = roundMoney((Number(wallets[secWallet]) || 0) - amt);
                 wallets[secWallet] = secWallet === 'cash' ? Math.max(0, updated) : updated;
               }
             }
@@ -8445,8 +8382,9 @@
         btnSaveWalletModal.addEventListener('click', () => {
           if (!currentEditWalletKey) return;
           const input = document.getElementById('wallet-modal-input');
-          const parsed = parseFloat(input.value);
-          if (!isNaN(parsed)) {
+          const rawParsed = parseFloat(input.value);
+          if (!isNaN(rawParsed)) {
+            const parsed = roundMoney(rawParsed);
             const key = currentEditWalletKey;
             wallets[key] = parsed;
             saveStorage();
